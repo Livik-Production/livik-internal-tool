@@ -189,6 +189,42 @@ export default function TalentCommunityTab() {
     },
   ];
 
+  const downloadResumeFile = async (key, fullName, id) => {
+    try {
+      const res = await fetch(`/api/talent-community/download?key=${encodeURIComponent(key)}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to get signed URL');
+
+      const fileRes = await fetch(data.url);
+      if (!fileRes.ok) throw new Error('Failed to fetch file');
+      const blob = await fileRes.blob();
+
+      let ext = 'pdf';
+      const lastDot = key.lastIndexOf('.');
+      if (lastDot !== -1) {
+        ext = key.substring(lastDot + 1).split('?')[0] || ext;
+      }
+
+      const safeName = (fullName || 'resume')
+        .trim()
+        .replace(/\s+/g, '_')
+        .replace(/[^a-zA-Z0-9_\-\.]/g, '');
+      const filename = `${safeName}-${id}.${ext}`;
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Error downloading resume:', err);
+      alert('Failed to download resume');
+    }
+  };
+
   const handleDeleteClick = async (id) => {
     if (!window.confirm('Are you sure you want to delete this entry?'))
       return;
@@ -214,7 +250,21 @@ export default function TalentCommunityTab() {
       {row.resume && (
         <IconButton
           title="Download Resume"
-          onClick={() => window.open(row.resume, '_blank')}
+          onClick={async () => {
+            try {
+              const res = await fetch(
+                `/api/talent-community/download?key=${encodeURIComponent(
+                  row.resume
+                )}`
+              );
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.error || 'Download failed');
+              window.open(data.url, '_blank');
+            } catch (err) {
+              console.error('Error opening resume URL:', err);
+              alert('Failed to open resume');
+            }
+          }}
         >
           <Download size={16} />
         </IconButton>
@@ -521,7 +571,13 @@ export default function TalentCommunityTab() {
                   </button>
                   {selectedEntry.resume && (
                     <button
-                      onClick={() => window.open(selectedEntry.resume, '_blank')}
+                      onClick={() =>
+                        downloadResumeFile(
+                          selectedEntry.resume,
+                          selectedEntry.fullName,
+                          selectedEntry.id
+                        )
+                      }
                       className="px-6 py-2.5 bg-[#004475] rounded-xl text-white font-bold text-sm hover:bg-[#004475]/90 transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer"
                     >
                       <Download size={14} />
