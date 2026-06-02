@@ -262,6 +262,51 @@ async function seedPermissions() {
       rightName: 'payroll_view_salarysetup',
       description: 'Access to employee self-service portal',
     },
+    // Website Operations
+    {
+      module: 'Website Operations',
+      displayName: 'Website Operations Access',
+      rightName: 'website_operations_access',
+      description: 'Access to Website Operations module',
+    },
+    {
+      module: 'Website Operations',
+      displayName: 'Website Operations View',
+      rightName: 'website_operations_view',
+      description: 'Can view website operations data',
+    },
+    {
+      module: 'Website Operations',
+      displayName: 'Website Operations Control',
+      rightName: 'website_operations_control',
+      description: 'Can manage website operations',
+    },
+    // Professional Skills
+    {
+      module: 'Professional Skills',
+      displayName: 'Professional Skills View',
+      rightName: 'professional_skills_view',
+      description: 'Can view professional skills directory',
+    },
+    {
+      module: 'Professional Skills',
+      displayName: 'Professional Skills Control',
+      rightName: 'professional_skills_control',
+      description: 'Can update professional skills',
+    },
+    // Staffing & Resourcing
+    {
+      module: 'Staffing & Resourcing',
+      displayName: 'Staffing & Resourcing View',
+      rightName: 'staffing_resourcing_view',
+      description: 'Can view staffing and resourcing details',
+    },
+    {
+      module: 'Staffing & Resourcing',
+      displayName: 'Staffing & Resourcing Control',
+      rightName: 'staffing_resourcing_control',
+      description: 'Can manage staffing and resourcing',
+    },
   ];
 
   // Create rights
@@ -311,6 +356,9 @@ async function seedRoles() {
           (p) =>
             p.rightName.startsWith('hr_') ||
             p.rightName.startsWith('asset_') ||
+            p.rightName.startsWith('website_') ||
+            p.rightName.startsWith('professional_') ||
+            p.rightName.startsWith('staffing_') ||
             p.rightName === 'finance_view_expenses' ||
             p.rightName === 'view_main_dashboard' ||
             p.rightName === 'employee_portal'

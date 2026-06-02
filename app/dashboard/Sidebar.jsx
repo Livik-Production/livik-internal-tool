@@ -146,6 +146,18 @@ export default function Sidebar({ onLinkClick }) {
 
     return navItems.filter((item) => {
       if (item.id === 'index' || item.id === 'employee-portal') return true;
+      if (item.id === 'hr') {
+        return rights.some((r) => {
+          const lr = r.toLowerCase();
+          return lr.includes('hr') || lr.includes('staffing');
+        });
+      }
+      if (item.id === 'admin') {
+        return rights.some((r) => {
+          const lr = r.toLowerCase();
+          return lr.includes('admin') || lr.includes('website');
+        });
+      }
       return rights.some((r) =>
         r.toLowerCase().includes(item.id.toLowerCase())
       );
@@ -193,12 +205,38 @@ export default function Sidebar({ onLinkClick }) {
 
     // Item WITH dropdown
     if (item.dropdown) {
-      const isDropdownActive = item.dropdown.some(
+      const rights = authUser?.rights || [];
+      const roleName = authUser?.role?.name?.toUpperCase() ?? '';
+      const isFullAdmin = roleName === 'ADMIN' || roleName === 'SUPER_ADMIN' || rights.includes('ALL_ACCESS');
+
+      // Filter dropdown sub-items based on rights
+      const visibleDropdownItems = item.dropdown.filter((sub) => {
+        if (isFullAdmin) return true;
+        const normalizedRights = rights.map((r) => r.toLowerCase());
+        
+        if (sub.id === 'hr-module') {
+          return normalizedRights.some((r) => r.startsWith('hr_'));
+        }
+        if (sub.id === 'staffing') {
+          return normalizedRights.some((r) => r.startsWith('staffing_'));
+        }
+        if (sub.id === 'admin-panel') {
+          return normalizedRights.some((r) => r.startsWith('admin_'));
+        }
+        if (sub.id === 'livik site operations') {
+          return normalizedRights.some((r) => r.startsWith('website_'));
+        }
+        return true;
+      });
+
+      if (visibleDropdownItems.length === 0) return null;
+
+      const isDropdownActive = visibleDropdownItems.some(
         (sub) => pathname === sub.href || pathname.startsWith(sub.href + '/')
       );
       const isOpen = openDropdown === item.id;
 
-      const matchingSubs = item.dropdown.filter(
+      const matchingSubs = visibleDropdownItems.filter(
         (s) => pathname === s.href || pathname.startsWith(s.href + '/')
       );
       const activeSubHref =
@@ -228,7 +266,7 @@ export default function Sidebar({ onLinkClick }) {
           {/* Dropdown sub-items */}
           {isOpen && (
             <div className="ml-3 mt-1 flex flex-col gap-1 border-l-2 border-blue-100 pl-3">
-              {item.dropdown.map((sub) => {
+              {visibleDropdownItems.map((sub) => {
                 const isSubActive = sub.href === activeSubHref;
                 return (
                   <Link

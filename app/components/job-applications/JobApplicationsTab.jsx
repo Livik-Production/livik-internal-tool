@@ -257,6 +257,7 @@ export default function JobApplicationsTab() {
             actions={actions}
             actionsHeader="Actions"
             rowKey="id"
+            showScrollbar={true}
           />
         </div>
 

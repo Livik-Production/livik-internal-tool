@@ -351,6 +351,7 @@ export default function TalentCommunityTab() {
             actions={actions}
             actionsHeader="Actions"
             rowKey="id"
+            showScrollbar={true}
           />
         </div>
         <div className="rounded-b-xl overflow-hidden border-x border-b border-gray-200 bg-white">
