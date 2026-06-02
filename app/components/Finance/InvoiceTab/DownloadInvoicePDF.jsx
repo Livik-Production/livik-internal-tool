@@ -28,11 +28,11 @@ export const handleDownloadInvoicePDF = async (
       margin: 0,
       filename: fileName,
       image: {
-        type: 'jpeg',
+        type: 'png',
         quality: 1,
       },
       html2canvas: {
-        scale: 2,
+        scale: 8,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
@@ -67,7 +67,7 @@ export const handleDownloadInvoicePDF = async (
         unit: 'px',
         format: [794, 1123], // A4 exact dimensions (at 96 DPI)
         orientation: 'portrait',
-        compress: true,
+        compress: false,
       },
     };
 

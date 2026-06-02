@@ -90,15 +90,11 @@ const CustomerFormModal = ({
 
     if (!formData.name?.trim()) newErrors.name = 'Name is required';
     
-    if (!formData.mobile?.trim()) {
-      newErrors.mobile = 'Mobile is required';
-    } else if (!mobileRegex.test(formData.mobile.trim())) {
+    if (formData.mobile?.trim() && !mobileRegex.test(formData.mobile.trim())) {
       newErrors.mobile = 'Mobile must be 10 digits';
     }
 
-    if (!formData.email?.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!emailRegex.test(formData.email.trim())) {
+    if (formData.email?.trim() && !emailRegex.test(formData.email.trim())) {
       newErrors.email = 'Invalid email address';
     }
 
@@ -251,7 +247,7 @@ const CustomerFormModal = ({
               </div>
               <div className="space-y-1">
                 <label className="text-sm text-gray-600 flex items-center gap-1">
-                  <Phone size={13} /> Mobile Number <span className="text-red-500">*</span>
+                  <Phone size={13} /> Mobile Number (Optional)
                 </label>
                 <input
                   type="tel"
@@ -271,7 +267,7 @@ const CustomerFormModal = ({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className="text-sm text-gray-600 flex items-center gap-1">
-                  <Mail size={13} /> Email Address <span className="text-red-500">*</span>
+                  <Mail size={13} /> Email Address (Optional)
                 </label>
                 <input
                   type="email"

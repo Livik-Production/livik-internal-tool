@@ -65,6 +65,8 @@ export function middleware(req) {
           '/dashboard/payroll': 'payroll',
           '/dashboard/finance': 'finance',
           '/dashboard/asset': 'asset',
+          '/dashboard/staffing': 'staffing_',
+          '/dashboard/admin/livik-site-operations': 'website_',
           '/dashboard/admin': 'admin',
         };
 
@@ -90,6 +92,7 @@ export function middleware(req) {
                 }
               );
             }
+            break;
           }
         }
       }
@@ -169,6 +172,10 @@ export function middleware(req) {
           '/api/role-rights': 'admin',
           '/api/payroll': 'payroll',
           '/api/hr': 'hr', // Added to protect hr routes generaly
+          '/api/talent-community': 'website_',
+          '/api/job-applications': 'website_',
+          '/api/job-openings': 'website_',
+          '/api/projects': 'staffing_',
         };
 
         // Special handling for payroll to support granular control/view

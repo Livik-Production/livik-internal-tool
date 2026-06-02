@@ -74,8 +74,8 @@ const TAB_CONFIG = [
   {
     id: 'skills',
     label: 'Professional Skills',
-    right: 'hr_module_view_all_employees',
-    controlRight: 'hr_module_control_all_employees',
+    right: 'professional_skills_view',
+    controlRight: 'professional_skills_control',
   },
 ];
 import { useSearchParams } from 'next/navigation';

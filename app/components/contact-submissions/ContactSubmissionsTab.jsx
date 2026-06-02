@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useSelector } from 'react-redux';
+import { selectAuthUser } from '../../../store/slices/authSlice';
 import {
   Inbox,
   UserPlus,
@@ -20,6 +22,10 @@ import Pagination from '../Pagination';
 import Loader from '../Loader';
 
 export default function ContactSubmissionsTab() {
+  const authUser = useSelector(selectAuthUser);
+  const roleName = authUser?.role?.name?.toUpperCase() ?? '';
+  const isAdmin = roleName === 'ADMIN' || roleName === 'SUPER_ADMIN';
+
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
@@ -98,6 +104,7 @@ export default function ContactSubmissionsTab() {
   };
 
   const handleDeleteClick = async (id) => {
+    if (!isAdmin) return;
     if (!window.confirm('Are you sure you want to delete this enquiry?'))
       return;
     try {
@@ -195,9 +202,10 @@ export default function ContactSubmissionsTab() {
         <Eye size={16} />
       </IconButton>
       <IconButton
-        title="Delete Submission"
+        title={isAdmin ? "Delete Submission" : "Delete Submission (Admin only)"}
         onClick={() => handleDeleteClick(row.id)}
-        className="hover:text-red-600 hover:bg-red-50 hover:border-red-200 text-gray-400"
+        disabled={!isAdmin}
+        className="hover:text-red-600 hover:bg-red-50 hover:border-red-200 text-gray-400 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:bg-transparent disabled:shadow-none"
       >
         <Trash2 size={16} />
       </IconButton>

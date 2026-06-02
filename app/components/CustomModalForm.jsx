@@ -45,7 +45,10 @@ export default function CustomModalForm({
       aria-modal="true"
       role="dialog"
     >
-      <div className="absolute inset-0" onClick={disableOutsideClick ? undefined : handleClose} />
+      <div
+        className="absolute inset-0"
+        onClick={disableOutsideClick ? undefined : handleClose}
+      />
 
       <div
         className={`relative z-10 w-full ${widthClass} bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]`}
@@ -55,7 +58,7 @@ export default function CustomModalForm({
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-white shrink-0">
           <div className="flex items-center gap-3">
             {icon && <span className="text-blue-600">{icon}</span>}
-            <div className="text-lg font-bold text-white leading-tight">
+            <div className="text-lg font-bold text-black leading-tight">
               {title}
             </div>
           </div>
