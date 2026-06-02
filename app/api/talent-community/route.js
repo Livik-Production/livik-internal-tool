@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getAllTalentCommunity } from '../../../lib/talentCommunityService.js';
+import { getAllTalentCommunity, getTalentCommunityByEmail } from '../../../lib/talentCommunityService.js';
 
 function addCorsHeaders(response) {
   response.headers.set('Access-Control-Allow-Origin', '*');
@@ -8,8 +8,18 @@ function addCorsHeaders(response) {
   return response;
 }
 
-export async function GET() {
+export async function GET(req) {
   try {
+    const { searchParams } = new URL(req.url);
+    const email = searchParams.get('email');
+    if (email) {
+      const entry = await getTalentCommunityByEmail(email);
+      if (!entry) {
+        return addCorsHeaders(NextResponse.json({ error: 'Talent community entry not found' }, { status: 404 }));
+      }
+      return addCorsHeaders(NextResponse.json({ message: 'Success', data: entry }));
+    }
+
     const entries = await getAllTalentCommunity();
     return addCorsHeaders(NextResponse.json({
       message: 'Success',

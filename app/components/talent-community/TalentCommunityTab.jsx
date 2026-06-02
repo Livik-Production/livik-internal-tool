@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Users,
@@ -12,12 +12,35 @@ import {
   MapPin,
   Star,
   X,
+  SlidersHorizontal,
+  ChevronDown,
 } from 'lucide-react';
 import StatCard from '../StatCard';
 import CustomTable from '../CustomTable';
 import IconButton from '../Buttons/IconButton';
 import Pagination from '../Pagination';
 import Loader from '../Loader';
+import CustomModalForm from '../CustomModalForm';
+import PrimaryButton from '../Buttons/PrimaryButton';
+
+const DEFAULT_COLUMNS = {
+  createdAt: false,
+  applicant: true,
+  phoneNumber: false,
+  qualification: true,
+  roleApplyingFor: false,
+  experienceLevel: true,
+  location: true,
+  skillset: true,
+  shortMessage: false,
+};
+
+const DEFAULT_EXPERIENCE_FILTER = {
+  entry: true,
+  mid: false,
+  senior: false,
+  lead: false,
+};
 
 export default function TalentCommunityTab() {
   const [entries, setEntries] = useState([]);
@@ -26,6 +49,47 @@ export default function TalentCommunityTab() {
   const [jobs, setJobs] = useState([]);
   const [toast, setToast] = useState(null);
   const [selectedEntry, setSelectedEntry] = useState(null);
+
+  // Column selector state
+  const [showColumnFilter, setShowColumnFilter] = useState(false);
+  const [visibleColumns, setVisibleColumns] = useState(DEFAULT_COLUMNS);
+  const [tempVisibleColumns, setTempVisibleColumns] = useState(DEFAULT_COLUMNS);
+
+  // Experience filter state
+  const [experienceFilter, setExperienceFilter] = useState(DEFAULT_EXPERIENCE_FILTER);
+  const [tempExperienceFilter, setTempExperienceFilter] = useState(DEFAULT_EXPERIENCE_FILTER);
+
+  const openColumnFilter = () => {
+    setTempVisibleColumns({ ...visibleColumns });
+    setTempExperienceFilter({ ...experienceFilter });
+    setShowColumnFilter(true);
+  };
+
+  const handleViewDetails = async (email) => {
+    try {
+      const res = await fetch(`/api/talent-community?email=${encodeURIComponent(email)}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to fetch details');
+      if (data.data) {
+        setSelectedEntry(data.data);
+      }
+    } catch (err) {
+      console.error('Error fetching details by email:', err);
+      alert(err.message);
+    }
+  };
+
+  const ALL_COLUMNS = [
+    { key: 'createdAt', label: 'Date Submitted' },
+    { key: 'applicant', label: 'Applicant Name' },
+    { key: 'phoneNumber', label: 'Phone' },
+    { key: 'qualification', label: 'Qualification' },
+    { key: 'roleApplyingFor', label: 'Role Interested In' },
+    { key: 'experienceLevel', label: 'Experience' },
+    { key: 'location', label: 'Location' },
+    { key: 'skillset', label: 'Skills' },
+    { key: 'shortMessage', label: 'Message' },
+  ];
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -95,14 +159,12 @@ export default function TalentCommunityTab() {
       label: 'Applicant Name',
       render: (row) => {
         return (
-          <div>
-            <div className="font-bold text-[13px] text-gray-900">
-              {row.fullName}
-            </div>
-            <div className="text-[11px] text-gray-500 hover:text-[#004475] cursor-pointer">
-              {row.email}
-            </div>
-          </div>
+          <button
+            onClick={() => handleViewDetails(row.email)}
+            className="font-bold text-[13px] text-gray-900 hover:text-[#004475] cursor-pointer hover:underline text-left bg-transparent border-0 p-0 focus:outline-none"
+          >
+            {row.fullName}
+          </button>
         );
       },
     },
@@ -157,7 +219,7 @@ export default function TalentCommunityTab() {
       key: 'location',
       label: 'Location',
       render: (row) => (
-        <div className="flex items-center gap-1 text-gray-500 text-sm">
+        <div className="flex items-center justify-center gap-1 text-gray-500 text-sm">
           <MapPin size={12} />
           {row.location}
         </div>
@@ -244,7 +306,7 @@ export default function TalentCommunityTab() {
 
   const actions = (row) => (
     <div className="flex gap-2 justify-center">
-      <IconButton title="View Details" onClick={() => setSelectedEntry(row)}>
+      <IconButton title="View Details" onClick={() => handleViewDetails(row.email)}>
         <Eye size={16} />
       </IconButton>
       {row.resume && (
@@ -280,6 +342,12 @@ export default function TalentCommunityTab() {
   );
 
   const filtered = entries.filter((e) => {
+    // 1. Experience level filter
+    if (experienceFilter && experienceFilter[e.experienceLevel] === false) {
+      return false;
+    }
+
+    // 2. Search query filter
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return (
@@ -334,24 +402,37 @@ export default function TalentCommunityTab() {
                   setSearchQuery(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004475]/20 focus:border-[#004475] w-64"
+                className="pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004475]/20 focus:border-[#004475] w-64 bg-white"
               />
             </div>
+
+            {/* Column Filter Button (Right of Search) */}
+            <PrimaryButton
+              onClick={openColumnFilter}
+              title="Check the columns to display the extra fields in table"
+            >
+              <SlidersHorizontal size={14} className="text-white" />
+              <span>Columns</span>
+            </PrimaryButton>
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-[#004475] hover:bg-blue-50 rounded-lg transition-colors">
-            <Download size={14} />
-            <span>Export CSV</span>
-          </button>
+          <div className="flex gap-3 items-center">
+            <button className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-[#004475] hover:bg-blue-50 rounded-lg transition-colors cursor-pointer">
+              <Download size={14} />
+              <span>Export CSV</span>
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 bg-white p-2 border-x border-gray-200">
           <CustomTable
-            columns={columns}
+            columns={columns.filter((col) => visibleColumns[col.key])}
             data={paginated}
             actions={actions}
             actionsHeader="Actions"
             rowKey="id"
             showScrollbar={true}
+            headerAlignment={{ location: 'center' }}
+            cellAlignment={{ location: 'center' }}
           />
         </div>
         <div className="rounded-b-xl overflow-hidden border-x border-b border-gray-200 bg-white">
@@ -369,228 +450,320 @@ export default function TalentCommunityTab() {
       </div>
 
       {/* View Details Modal */}
-      {selectedEntry && typeof document !== 'undefined'
-        ? createPortal(
-            <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity">
-              <div className="bg-white rounded-2xl max-w-2xl w-full mx-4 shadow-2xl overflow-hidden border border-gray-100 flex flex-col animate-in fade-in zoom-in-95 duration-200 max-h-[90vh]">
-                {/* Modal Header */}
-                <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50 shrink-0">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-[#004475]/10 text-[#004475] flex items-center justify-center">
-                      <Eye size={18} />
-                    </div>
-                    <h3 className="font-bold text-gray-900 text-base">
-                      Open Application Details
-                    </h3>
-                  </div>
-                  <button
-                    onClick={() => setSelectedEntry(null)}
-                    className="w-8 h-8 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 flex items-center justify-center transition-colors cursor-pointer"
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
-
-                {/* Modal Body */}
-                <div className="p-6 space-y-4 overflow-y-auto flex-1 text-gray-700">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
-                        Application ID
-                      </label>
-                      <input
-                        type="text"
-                        readOnly
-                        disabled
-                        value={selectedEntry.id}
-                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 font-mono cursor-not-allowed focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
-                        Date Submitted
-                      </label>
-                      <input
-                        type="text"
-                        readOnly
-                        disabled
-                        value={new Date(
-                          selectedEntry.createdAt
-                        ).toLocaleString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
-                        Applicant Name
-                      </label>
-                      <input
-                        type="text"
-                        readOnly
-                        disabled
-                        value={selectedEntry.fullName}
-                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
-                        Email Address
-                      </label>
-                      <input
-                        type="text"
-                        readOnly
-                        disabled
-                        value={selectedEntry.email}
-                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
-                        Phone Number
-                      </label>
-                      <input
-                        type="text"
-                        readOnly
-                        disabled
-                        value={selectedEntry.phoneNumber}
-                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
-                        Location
-                      </label>
-                      <input
-                        type="text"
-                        readOnly
-                        disabled
-                        value={selectedEntry.location}
-                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
-                        Qualification
-                      </label>
-                      <input
-                        type="text"
-                        readOnly
-                        disabled
-                        value={selectedEntry.qualification}
-                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
-                        Experience Level
-                      </label>
-                      <input
-                        type="text"
-                        readOnly
-                        disabled
-                        value={experienceLabelMap[selectedEntry.experienceLevel] || selectedEntry.experienceLevel}
-                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
-                        Role Applying For
-                      </label>
-                      <input
-                        type="text"
-                        readOnly
-                        disabled
-                        value={selectedEntry.roleApplyingFor || 'None / Open application'}
-                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none font-semibold"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
-                        Portfolio / LinkedIn URL
-                      </label>
-                      {selectedEntry.portfolioUrl ? (
-                        <a
-                          href={selectedEntry.portfolioUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block w-full border border-blue-200 rounded-lg px-3 py-2 text-sm bg-blue-50 text-blue-600 font-semibold hover:underline"
-                        >
-                          View Portfolio &rarr;
-                        </a>
-                      ) : (
-                        <input
-                          type="text"
-                          readOnly
-                          disabled
-                          value="Not Provided"
-                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-400 cursor-not-allowed focus:outline-none"
-                        />
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
-                      Skillset / Stack
-                    </label>
-                    <textarea
-                      readOnly
-                      disabled
-                      rows={2}
-                      value={selectedEntry.skillset}
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none resize-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
-                      Short Message
-                    </label>
-                    <textarea
-                      readOnly
-                      disabled
-                      rows={4}
-                      value={selectedEntry.shortMessage}
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none resize-none"
-                    />
-                  </div>
-                </div>
-
-                {/* Modal Footer */}
-                <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/50 shrink-0">
-                  <button
-                    onClick={() => setSelectedEntry(null)}
-                    className="px-5 py-2.5 border border-gray-300 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
-                  >
-                    Close
-                  </button>
-                  {selectedEntry.resume && (
-                    <button
-                      onClick={() =>
-                        downloadResumeFile(
-                          selectedEntry.resume,
-                          selectedEntry.fullName,
-                          selectedEntry.id
-                        )
-                      }
-                      className="px-6 py-2.5 bg-[#004475] rounded-xl text-white font-bold text-sm hover:bg-[#004475]/90 transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <Download size={14} />
-                      <span>Download Resume</span>
-                    </button>
-                  )}
-                </div>
+      <CustomModalForm
+        open={!!selectedEntry}
+        onClose={() => setSelectedEntry(null)}
+        title={selectedEntry?.fullName || "Open Application Details"}
+        icon={<Eye size={18} />}
+        widthClass="max-w-2xl"
+        footer={
+          <>
+            <button
+              onClick={() => setSelectedEntry(null)}
+              className="px-5 py-2.5 border border-gray-300 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
+            >
+              Close
+            </button>
+            {selectedEntry?.resume && (
+              <button
+                onClick={async () => {
+                  try {
+                    const res = await fetch(
+                      `/api/talent-community/download?key=${encodeURIComponent(
+                        selectedEntry.resume
+                      )}`
+                    );
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || 'Download failed');
+                    window.open(data.url, '_blank');
+                  } catch (err) {
+                    console.error('Error opening resume URL:', err);
+                    alert('Failed to open resume');
+                  }
+                }}
+                className="px-6 py-2.5 bg-[#004475] rounded-xl text-white font-bold text-sm hover:bg-[#004475]/90 transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer"
+              >
+                <Download size={14} />
+                <span>Download Resume</span>
+              </button>
+            )}
+          </>
+        }
+      >
+        {selectedEntry && (
+          <div className="p-6 space-y-4 text-gray-700">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                  Application ID
+                </label>
+                <input
+                  type="text"
+                  readOnly
+                  disabled
+                  value={selectedEntry.id}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 font-mono cursor-not-allowed focus:outline-none"
+                />
               </div>
-            </div>,
-            document.body
-          )
-        : null}
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                  Date Submitted
+                </label>
+                <input
+                  type="text"
+                  readOnly
+                  disabled
+                  value={new Date(selectedEntry.createdAt).toLocaleString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                  Applicant Name
+                </label>
+                <input
+                  type="text"
+                  readOnly
+                  disabled
+                  value={selectedEntry.fullName}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                  Email Address
+                </label>
+                <input
+                  type="text"
+                  readOnly
+                  disabled
+                  value={selectedEntry.email}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                  Phone Number
+                </label>
+                <input
+                  type="text"
+                  readOnly
+                  disabled
+                  value={selectedEntry.phoneNumber}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                  Location
+                </label>
+                <input
+                  type="text"
+                  readOnly
+                  disabled
+                  value={selectedEntry.location}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                  Qualification
+                </label>
+                <input
+                  type="text"
+                  readOnly
+                  disabled
+                  value={selectedEntry.qualification}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                  Experience Level
+                </label>
+                <input
+                  type="text"
+                  readOnly
+                  disabled
+                  value={experienceLabelMap[selectedEntry.experienceLevel] || selectedEntry.experienceLevel}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                  Role Applying For
+                </label>
+                <input
+                  type="text"
+                  readOnly
+                  disabled
+                  value={selectedEntry.roleApplyingFor || 'None / Open application'}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none font-semibold"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                  Portfolio / LinkedIn URL
+                </label>
+                {selectedEntry.portfolioUrl ? (
+                  <a
+                    href={selectedEntry.portfolioUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full border border-blue-200 rounded-lg px-3 py-2 text-sm bg-blue-50 text-blue-600 font-semibold hover:underline"
+                  >
+                    View Portfolio &rarr;
+                  </a>
+                ) : (
+                  <input
+                    type="text"
+                    readOnly
+                    disabled
+                    value="Not Provided"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-400 cursor-not-allowed focus:outline-none"
+                  />
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                Skillset / Stack
+              </label>
+              <textarea
+                readOnly
+                disabled
+                rows={2}
+                value={selectedEntry.skillset}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none resize-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                Short Message
+              </label>
+              <textarea
+                readOnly
+                disabled
+                rows={4}
+                value={selectedEntry.shortMessage}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none resize-none"
+              />
+            </div>
+          </div>
+        )}
+      </CustomModalForm>
+
+      {/* Column Filter Modal */}
+      <CustomModalForm
+        open={showColumnFilter}
+        onClose={() => setShowColumnFilter(false)}
+        title="Customize Table Columns"
+        icon={<SlidersHorizontal size={18} />}
+        widthClass="max-w-2xl"
+        footer={
+          <div className="flex justify-between w-full">
+            <button
+              onClick={() => {
+                setTempVisibleColumns({ ...DEFAULT_COLUMNS });
+                setTempExperienceFilter({ ...DEFAULT_EXPERIENCE_FILTER });
+              }}
+              className="px-4 py-2 border border-gray-300 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors cursor-pointer"
+            >
+              Reset Defaults
+            </button>
+            <button
+              onClick={() => {
+                setVisibleColumns({ ...tempVisibleColumns });
+                setExperienceFilter({ ...tempExperienceFilter });
+                setShowColumnFilter(false);
+              }}
+              className="px-5 py-2.5 bg-[#004475] rounded-xl text-white font-bold text-sm hover:bg-[#004475]/90 transition-colors shadow-sm cursor-pointer"
+            >
+              Apply Changes
+            </button>
+          </div>
+        }
+      >
+        <div className="p-6 space-y-6 text-gray-700">
+          {/* Top Section: Experience Filter Checkboxes */}
+          <div className="pb-4 border-b border-gray-100">
+            <h4 className="text-xs font-bold text-[#004475] uppercase tracking-wider mb-2">
+              Filter Experience
+            </h4>
+            <p className="text-xs text-gray-500 font-medium mb-3">
+              Select candidate experience levels to display in the table.
+            </p>
+            <div className="flex flex-wrap gap-2.5">
+              {Object.keys(tempExperienceFilter).map((level) => {
+                const labels = {
+                  entry: "0-2 Years (Entry-level)",
+                  mid: "3-5 Years (Mid)",
+                  senior: "5-8 Years (Senior)",
+                  lead: "8+ Years (Lead / Expert)"
+                };
+                return (
+                  <label
+                    key={level}
+                    className="flex items-center gap-2.5 px-3.5 py-2 hover:bg-gray-50 rounded-xl cursor-pointer text-xs font-semibold text-gray-800 select-none transition-colors border border-gray-100 hover:border-gray-200"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={tempExperienceFilter[level]}
+                      onChange={() => {
+                        setTempExperienceFilter((prev) => ({
+                          ...prev,
+                          [level]: !prev[level],
+                        }));
+                      }}
+                      className="h-4.5 w-4.5 rounded border-gray-300 text-[#004475] focus:ring-[#004475]/20 accent-[#004475] cursor-pointer"
+                    />
+                    <span>{labels[level] || level}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Bottom Section: Column Visibility Checkboxes */}
+          <div>
+            <h4 className="text-xs font-bold text-[#004475] uppercase tracking-wider mb-2">
+              Column Visibility
+            </h4>
+            <p className="text-xs text-gray-500 font-medium mb-3">
+              Select which columns should be visible in the open applications table.
+            </p>
+            <div className="flex flex-wrap gap-2.5">
+              {ALL_COLUMNS.map((col) => (
+                <label
+                  key={col.key}
+                  className="flex items-center gap-2.5 px-3.5 py-2 hover:bg-gray-50 rounded-xl cursor-pointer text-xs font-semibold text-gray-800 select-none transition-colors border border-gray-100 hover:border-gray-200"
+                >
+                  <input
+                    type="checkbox"
+                    checked={tempVisibleColumns[col.key]}
+                    onChange={() => {
+                      setTempVisibleColumns((prev) => ({
+                        ...prev,
+                        [col.key]: !prev[col.key],
+                      }));
+                    }}
+                    className="h-4.5 w-4.5 rounded border-gray-300 text-[#004475] focus:ring-[#004475]/20 accent-[#004475] cursor-pointer"
+                  />
+                  <span>{col.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+      </CustomModalForm>
     </div>
   );
 }
