@@ -344,10 +344,8 @@ const PreviewForm = ({
           <div className="w-full border-t border-b border-[#1f2937]">
             {/* Table Header */}
             <div className="flex border-b border-[#1f2937]">
-              <div className="w-8 border-r border-[#1f2937] p-1 text-center text-[11px] font-semibold flex items-center justify-center">
-                Sl
-                <br />
-                No.
+              <div className="w-12 border-r border-[#1f2937] p-1 text-center text-[11px] font-semibold flex items-center justify-center whitespace-nowrap">
+                Sl No.
               </div>
               <div className="flex-1 border-r border-[#1f2937] p-1 text-center text-[11px] font-semibold flex items-center justify-center">
                 Particulars
@@ -368,7 +366,7 @@ const PreviewForm = ({
                   .filter(Boolean);
                 return (
                   <div key={index} className="flex">
-                    <div className="w-8 border-r border-[#1f2937] p-1 pt-2 text-center text-xs">
+                    <div className="w-12 border-r border-[#1f2937] p-1 pt-2 text-center text-xs">
                       {index + 1}
                     </div>
                     <div className="flex-1 border-r border-[#1f2937] p-1 pt-2 px-2">
@@ -399,7 +397,7 @@ const PreviewForm = ({
                 );
               }) || (
                 <div className="flex">
-                  <div className="w-8 border-r border-[#1f2937] p-1 pt-2 text-center text-xs">
+                  <div className="w-12 border-r border-[#1f2937] p-1 pt-2 text-center text-xs whitespace-nowrap">
                     1
                   </div>
                   <div className="flex-1 border-r border-[#1f2937] p-1 pt-2 px-2">
@@ -431,7 +429,7 @@ const PreviewForm = ({
                   !sgstAmount &&
                   totalAmountWithGST > totalAmount)) && (
                 <div className="flex">
-                  <div className="w-8 border-r border-[#1f2937]"></div>
+                  <div className="w-12 border-r border-[#1f2937]"></div>
                   <div className="flex-1 border-r border-[#1f2937] p-1 px-2 pt-6 flex flex-col items-end pr-4">
                     {discountAmount > 0 && (
                       <div className="font-bold text-[12px] text-[#111827]">
@@ -504,7 +502,7 @@ const PreviewForm = ({
 
               {/* Filler space to push Total to bottom, maintaining column borders */}
               <div className="flex flex-1 min-h-[100px]">
-                <div className="w-8 border-r border-[#1f2937]"></div>
+                <div className="w-12 border-r border-[#1f2937]"></div>
                 <div className="flex-1 border-r border-[#1f2937]"></div>
                 <div className="w-24 border-r border-[#1f2937]"></div>
                 <div className="w-28"></div>

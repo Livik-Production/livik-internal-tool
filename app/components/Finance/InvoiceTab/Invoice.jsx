@@ -20,7 +20,7 @@ import {
   SquarePen,
   Trash,
   MoreHorizontal,
-  ArrowRightLeft
+  ArrowRightLeft,
 } from 'lucide-react';
 import HyperlinkButton from '../../Buttons/HyperlinkButton';
 import CustomModalForm from '../../CustomModalForm';
@@ -29,7 +29,13 @@ import { handlePrint } from '../../HrModule/PrintForm';
 
 import { createPortal } from 'react-dom';
 
-const RowActions = ({ invoice, onFollowUp, onToggleType, onEdit, onDelete }) => {
+const RowActions = ({
+  invoice,
+  onFollowUp,
+  onToggleType,
+  onEdit,
+  onDelete,
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
   const buttonRef = useRef(null);
@@ -37,17 +43,22 @@ const RowActions = ({ invoice, onFollowUp, onToggleType, onEdit, onDelete }) => 
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target) && buttonRef.current && !buttonRef.current.contains(event.target)) {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(event.target) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target)
+      ) {
         setIsOpen(false);
       }
     };
     const handleScroll = () => {
       if (isOpen) setIsOpen(false);
     };
-    
+
     document.addEventListener('mousedown', handleClickOutside);
     window.addEventListener('scroll', handleScroll, true); // true for capturing phase to catch table scroll
-    
+
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       window.removeEventListener('scroll', handleScroll, true);
@@ -76,38 +87,49 @@ const RowActions = ({ invoice, onFollowUp, onToggleType, onEdit, onDelete }) => 
             <MoreHorizontal size={16} />
           </IconButton>
         </div>
-        {isOpen && typeof document !== 'undefined' && createPortal(
-          <div 
-            ref={menuRef}
-            style={{ top: menuPos.top, left: menuPos.left }}
-            className="fixed w-48 bg-white border border-gray-200 rounded-lg shadow-xl z-[9999] py-1 text-sm"
-          >
-            <button
-              onClick={() => { setIsOpen(false); onFollowUp(invoice); }}
-              className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2 text-gray-700"
+        {isOpen &&
+          typeof document !== 'undefined' &&
+          createPortal(
+            <div
+              ref={menuRef}
+              style={{ top: menuPos.top, left: menuPos.left }}
+              className="fixed w-48 bg-white border border-gray-200 rounded-lg shadow-xl z-[9999] py-1 text-sm"
             >
-              <MailCheckIcon size={14} className="text-gray-600" />
-              <span>Invoice Follow-up</span>
-            </button>
-            <div className="border-t border-gray-100 my-1"></div>
-            <button
-              onClick={() => { setIsOpen(false); onToggleType(invoice); }}
-              className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2 text-gray-700"
-            >
-              <ArrowRightLeft size={14} className="text-gray-600" />
-              <span>Change Invoice Type</span>
-            </button>
-            <div className="border-t border-gray-100 my-1"></div>
-            <button
-              onClick={() => { setIsOpen(false); onDelete(invoice.id); }}
-              className="w-full text-left px-4 py-2 hover:bg-red-50 flex items-center gap-2 text-red-600"
-            >
-              <Trash size={14} className="text-red-600" />
-              <span className="text-red-600">Delete</span>
-            </button>
-          </div>,
-          document.body
-        )}
+              <button
+                onClick={() => {
+                  setIsOpen(false);
+                  onFollowUp(invoice);
+                }}
+                className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2 text-gray-700"
+              >
+                <MailCheckIcon size={14} className="text-gray-600" />
+                <span>Invoice Follow-up</span>
+              </button>
+              <div className="border-t border-gray-100 my-1"></div>
+              <button
+                onClick={() => {
+                  setIsOpen(false);
+                  onToggleType(invoice);
+                }}
+                className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2 text-gray-700"
+              >
+                <ArrowRightLeft size={14} className="text-gray-600" />
+                <span>Change Invoice Type</span>
+              </button>
+              <div className="border-t border-gray-100 my-1"></div>
+              <button
+                onClick={() => {
+                  setIsOpen(false);
+                  onDelete(invoice.id);
+                }}
+                className="w-full text-left px-4 py-2 hover:bg-red-50 flex items-center gap-2 text-red-600"
+              >
+                <Trash size={14} className="text-red-600" />
+                <span className="text-red-600">Delete</span>
+              </button>
+            </div>,
+            document.body
+          )}
       </div>
     </div>
   );
@@ -250,7 +272,7 @@ const InvoiceTable = ({ onRefresh }) => {
     const matchesStatus =
       statusFilter === 'all' ||
       (invoice.status || 'pending').toLowerCase() ===
-      statusFilter.toLowerCase();
+        statusFilter.toLowerCase();
 
     return matchesSearch && matchesType && matchesStatus;
   });
@@ -289,7 +311,12 @@ const InvoiceTable = ({ onRefresh }) => {
   const formatCurrency = (amount, currencyCode = 'INR') => {
     const val = Number(amount);
     if (isNaN(val)) {
-      const sym = currencyCode === 'INR' ? '₹' : currencyCode === '₹' ? '$' : currencyCode;
+      const sym =
+        currencyCode === 'INR'
+          ? '₹'
+          : currencyCode === '₹'
+            ? '$'
+            : currencyCode;
       return `${sym}0`;
     }
     const locales = {
@@ -365,7 +392,9 @@ const InvoiceTable = ({ onRefresh }) => {
           return {
             serialNumber: i + 1,
             particular: p.name || p.productName || 'Item',
-            description: desc ? `${desc}||CUR:${currency}` : `||CUR:${currency}`,
+            description: desc
+              ? `${desc}||CUR:${currency}`
+              : `||CUR:${currency}`,
             hsnSacCode: p.hsn || p.hsnCode || '',
             amount: Number(p.amount || p.price || 0),
           };
@@ -407,7 +436,8 @@ const InvoiceTable = ({ onRefresh }) => {
       await fetchData();
       if (onRefresh) onRefresh();
       showSuccessToast(
-        `Invoice ${invoiceNumber} ${editingInvoice ? 'updated' : 'created'
+        `Invoice ${invoiceNumber} ${
+          editingInvoice ? 'updated' : 'created'
         } successfully!`
       );
     } catch (error) {
@@ -452,19 +482,29 @@ const InvoiceTable = ({ onRefresh }) => {
           };
         }) || [],
       totalAmount: Number(invoice.subTotal || 0),
-      subtotalAfterDiscount: Number(invoice.total || 0) / (1 + Number(invoice.taxPercent || 0) / 100),
+      subtotalAfterDiscount:
+        Number(invoice.total || 0) /
+        (1 + Number(invoice.taxPercent || 0) / 100),
       discountAmount:
         Number(invoice.subTotal || 0) -
         Number(invoice.total || 0) /
-        (1 + Number(invoice.taxPercent || 0) / 100), // Approximate back-calc or just use stored totals
+          (1 + Number(invoice.taxPercent || 0) / 100), // Approximate back-calc or just use stored totals
       // Actually invoice object has totals
       totalAmountWithGST: Number(invoice.total || 0),
 
       // We don't have separated CGST/SGST amounts stored in DB easily accessible here unless we calc.
       cgstRate: Number(invoice.taxPercent || 0) / 2,
       sgstRate: Number(invoice.taxPercent || 0) / 2,
-      cgstAmount: (Number(invoice.total || 0) - (Number(invoice.total || 0) / (1 + Number(invoice.taxPercent || 0) / 100))) / 2,
-      sgstAmount: (Number(invoice.total || 0) - (Number(invoice.total || 0) / (1 + Number(invoice.taxPercent || 0) / 100))) / 2,
+      cgstAmount:
+        (Number(invoice.total || 0) -
+          Number(invoice.total || 0) /
+            (1 + Number(invoice.taxPercent || 0) / 100)) /
+        2,
+      sgstAmount:
+        (Number(invoice.total || 0) -
+          Number(invoice.total || 0) /
+            (1 + Number(invoice.taxPercent || 0) / 100)) /
+        2,
 
       date: invoice.invoiceDate,
       invoiceNumber: invoice.invoiceNumber,
@@ -755,13 +795,13 @@ const InvoiceTable = ({ onRefresh }) => {
                     <div className="text-[11px] text-gray-400 mt-0.5 ml-0">
                       {invoice.invoiceDate
                         ? new Date(invoice.invoiceDate).toLocaleDateString(
-                          'en-IN',
-                          {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric',
-                          }
-                        )
+                            'en-IN',
+                            {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                            }
+                          )
                         : 'N/A'}
                     </div>
                   </div>
@@ -817,10 +857,11 @@ const InvoiceTable = ({ onRefresh }) => {
                 render: (invoice) => (
                   <div>
                     <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${(invoice.invoiceType || 'actual') === 'proforma'
-                        ? 'bg-purple-50 text-purple-600 border border-purple-100'
-                        : 'bg-blue-50 text-blue-600 border border-blue-100'
-                        }`}
+                      className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                        (invoice.invoiceType || 'actual') === 'proforma'
+                          ? 'bg-purple-50 text-purple-600 border border-purple-100'
+                          : 'bg-blue-50 text-blue-600 border border-blue-100'
+                      }`}
                     >
                       {invoice.invoiceType || 'actual'}
                     </span>
@@ -834,7 +875,10 @@ const InvoiceTable = ({ onRefresh }) => {
                   const currencyCode = getInvoiceCurrency(invoice);
                   return (
                     <div className="font-bold text-gray-900 text-base">
-                      {formatCurrency(invoice.total || invoice.totalAmount, currencyCode)}
+                      {formatCurrency(
+                        invoice.total || invoice.totalAmount,
+                        currencyCode
+                      )}
                     </div>
                   );
                 },
@@ -918,10 +962,11 @@ const InvoiceTable = ({ onRefresh }) => {
                     <button
                       key={i}
                       onClick={() => setCurrentPage(i + 1)}
-                      className={`w-8 h-8 flex items-center justify-center rounded transition-colors ${currentPage === i + 1
-                        ? 'bg-[#004475] text-white font-bold'
-                        : 'text-gray-600 hover:bg-gray-200'
-                        }`}
+                      className={`w-8 h-8 flex items-center justify-center rounded transition-colors ${
+                        currentPage === i + 1
+                          ? 'bg-[#004475] text-white font-bold'
+                          : 'text-gray-600 hover:bg-gray-200'
+                      }`}
                     >
                       {i + 1}
                     </button>
@@ -963,8 +1008,11 @@ const InvoiceTable = ({ onRefresh }) => {
           setShowPreview(false);
           setPreviewInvoiceData(null);
         }}
-        title={<span className="mr-6 px-4 py-1.5 bg-gray-100 border border-gray-200 rounded-md text-md font-bold text-gray-800 shadow-sm uppercase">
-                INVOICE - {previewInvoiceData?.invoiceNumber}</span>}
+        title={
+          <span className="mr-6 px-4 py-1.5 bg-gray-100 border border-gray-200 rounded-md text-md font-bold text-gray-800 shadow-sm uppercase">
+            INVOICE - {previewInvoiceData?.invoiceNumber}
+          </span>
+        }
         widthClass="max-w-6xl text-lg"
         headerActions={
           previewInvoiceData && (
@@ -1032,8 +1080,8 @@ const InvoiceTable = ({ onRefresh }) => {
           </div>
         }
       >
-        <div className="p-6 bg-gray-50/50 min-h-[400px]">
-          <div 
+        <div className="px-6 bg-gray-50/50 min-h-[400px]">
+          <div
             className="bg-white rounded-2xl shadow-sm border border-gray-100 p-0 overflow-hidden printable"
             id="invoice-preview-print"
           >
@@ -1074,10 +1122,11 @@ const InvoiceTable = ({ onRefresh }) => {
         message={
           invoiceToToggleType?.paymentStatus === 'paid'
             ? `Invoice ${invoiceToToggleType.invoiceNumber} is already PAID and cannot be converted back to proforma.`
-            : `Are you sure you want to change invoice ${invoiceToToggleType?.invoiceNumber} to ${(invoiceToToggleType?.invoiceType || 'actual') === 'actual'
-              ? 'PROFORMA'
-              : 'ACTUAL'
-            }?`
+            : `Are you sure you want to change invoice ${invoiceToToggleType?.invoiceNumber} to ${
+                (invoiceToToggleType?.invoiceType || 'actual') === 'actual'
+                  ? 'PROFORMA'
+                  : 'ACTUAL'
+              }?`
         }
         type={
           invoiceToToggleType?.paymentStatus === 'paid' ? 'info' : 'warning'
