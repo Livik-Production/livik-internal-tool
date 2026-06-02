@@ -56,8 +56,12 @@ export default function TalentCommunityTab() {
   const [tempVisibleColumns, setTempVisibleColumns] = useState(DEFAULT_COLUMNS);
 
   // Experience filter state
-  const [experienceFilter, setExperienceFilter] = useState(DEFAULT_EXPERIENCE_FILTER);
-  const [tempExperienceFilter, setTempExperienceFilter] = useState(DEFAULT_EXPERIENCE_FILTER);
+  const [experienceFilter, setExperienceFilter] = useState(
+    DEFAULT_EXPERIENCE_FILTER
+  );
+  const [tempExperienceFilter, setTempExperienceFilter] = useState(
+    DEFAULT_EXPERIENCE_FILTER
+  );
 
   const openColumnFilter = () => {
     setTempVisibleColumns({ ...visibleColumns });
@@ -67,7 +71,9 @@ export default function TalentCommunityTab() {
 
   const handleViewDetails = async (email) => {
     try {
-      const res = await fetch(`/api/talent-community?email=${encodeURIComponent(email)}`);
+      const res = await fetch(
+        `/api/talent-community?email=${encodeURIComponent(email)}`
+      );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to fetch details');
       if (data.data) {
@@ -176,7 +182,11 @@ export default function TalentCommunityTab() {
     {
       key: 'qualification',
       label: 'Qualification',
-      render: (row) => <span className="text-gray-600 font-semibold">{row.qualification || '-'}</span>,
+      render: (row) => (
+        <span className="text-gray-600 font-semibold">
+          {row.qualification || '-'}
+        </span>
+      ),
     },
     {
       key: 'roleApplyingFor',
@@ -253,7 +263,9 @@ export default function TalentCommunityTab() {
 
   const downloadResumeFile = async (key, fullName, id) => {
     try {
-      const res = await fetch(`/api/talent-community/download?key=${encodeURIComponent(key)}`);
+      const res = await fetch(
+        `/api/talent-community/download?key=${encodeURIComponent(key)}`
+      );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to get signed URL');
 
@@ -288,8 +300,7 @@ export default function TalentCommunityTab() {
   };
 
   const handleDeleteClick = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this entry?'))
-      return;
+    if (!window.confirm('Are you sure you want to delete this entry?')) return;
     try {
       const res = await fetch(`/api/talent-community/${id}`, {
         method: 'DELETE',
@@ -306,7 +317,10 @@ export default function TalentCommunityTab() {
 
   const actions = (row) => (
     <div className="flex gap-2 justify-center">
-      <IconButton title="View Details" onClick={() => handleViewDetails(row.email)}>
+      <IconButton
+        title="View Details"
+        onClick={() => handleViewDetails(row.email)}
+      >
         <Eye size={16} />
       </IconButton>
       {row.resume && (
@@ -453,7 +467,7 @@ export default function TalentCommunityTab() {
       <CustomModalForm
         open={!!selectedEntry}
         onClose={() => setSelectedEntry(null)}
-        title={selectedEntry?.fullName || "Open Application Details"}
+        title={selectedEntry?.fullName || 'Open Application Details'}
         icon={<Eye size={18} />}
         widthClass="max-w-2xl"
         footer={
@@ -474,7 +488,8 @@ export default function TalentCommunityTab() {
                       )}`
                     );
                     const data = await res.json();
-                    if (!res.ok) throw new Error(data.error || 'Download failed');
+                    if (!res.ok)
+                      throw new Error(data.error || 'Download failed');
                     window.open(data.url, '_blank');
                   } catch (err) {
                     console.error('Error opening resume URL:', err);
@@ -513,13 +528,16 @@ export default function TalentCommunityTab() {
                   type="text"
                   readOnly
                   disabled
-                  value={new Date(selectedEntry.createdAt).toLocaleString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
+                  value={new Date(selectedEntry.createdAt).toLocaleString(
+                    'en-US',
+                    {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    }
+                  )}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none"
                 />
               </div>
@@ -591,7 +609,10 @@ export default function TalentCommunityTab() {
                   type="text"
                   readOnly
                   disabled
-                  value={experienceLabelMap[selectedEntry.experienceLevel] || selectedEntry.experienceLevel}
+                  value={
+                    experienceLabelMap[selectedEntry.experienceLevel] ||
+                    selectedEntry.experienceLevel
+                  }
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none"
                 />
               </div>
@@ -603,7 +624,9 @@ export default function TalentCommunityTab() {
                   type="text"
                   readOnly
                   disabled
-                  value={selectedEntry.roleApplyingFor || 'None / Open application'}
+                  value={
+                    selectedEntry.roleApplyingFor || 'None / Open application'
+                  }
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none font-semibold"
                 />
               </div>
@@ -704,10 +727,10 @@ export default function TalentCommunityTab() {
             <div className="flex flex-wrap gap-2.5">
               {Object.keys(tempExperienceFilter).map((level) => {
                 const labels = {
-                  entry: "0-2 Years (Entry-level)",
-                  mid: "3-5 Years (Mid)",
-                  senior: "5-8 Years (Senior)",
-                  lead: "8+ Years (Lead / Expert)"
+                  entry: '0-2 Years (Entry-level)',
+                  mid: '3-5 Years (Mid)',
+                  senior: '5-8 Years (Senior)',
+                  lead: '8+ Years (Lead / Expert)',
                 };
                 return (
                   <label
@@ -738,7 +761,8 @@ export default function TalentCommunityTab() {
               Column Visibility
             </h4>
             <p className="text-xs text-gray-500 font-medium mb-3">
-              Select which columns should be visible in the open applications table.
+              Select which columns should be visible in the open applications
+              table.
             </p>
             <div className="flex flex-wrap gap-2.5">
               {ALL_COLUMNS.map((col) => (
