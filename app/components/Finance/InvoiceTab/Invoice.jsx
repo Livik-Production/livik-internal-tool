@@ -261,10 +261,24 @@ const InvoiceTable = ({ onRefresh }) => {
   const filteredData = invoicesData.filter((invoice) => {
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch =
+      searchTerm === '' ||
       invoice.invoiceNumber?.toLowerCase().includes(searchLower) ||
       getClientName(invoice)?.toLowerCase().includes(searchLower) ||
+      getClientMail(invoice)?.toLowerCase().includes(searchLower) ||
+      getPhoneNumber(invoice)?.toLowerCase().includes(searchLower) ||
       getCity(invoice)?.toLowerCase().includes(searchLower) ||
-      invoice.status?.toLowerCase().includes(searchLower);
+      invoice.status?.toLowerCase().includes(searchLower) ||
+      invoice.invoiceType?.toLowerCase().includes(searchLower) ||
+      String(invoice.total || '')
+        .toLowerCase()
+        .includes(searchLower) ||
+      (invoice.items &&
+        invoice.items.some(
+          (item) =>
+            item.particular?.toLowerCase().includes(searchLower) ||
+            item.description?.toLowerCase().includes(searchLower) ||
+            item.hsnSacCode?.toLowerCase().includes(searchLower)
+        ));
 
     const matchesType =
       typeFilter === 'all' || (invoice.invoiceType || 'actual') === typeFilter;
@@ -460,7 +474,8 @@ const InvoiceTable = ({ onRefresh }) => {
       id: invoice.id,
       client: {
         name: invoice.client || 'Client',
-        address: invoice.customer?.address1 || invoice.address || 'Address', // Map from customer object
+        address: invoice.customer?.address1 || invoice.address || 'Address',
+        address2: invoice.customer?.address2 || '',
         city: invoice.customer?.city || invoice.city || 'City',
         state: invoice.customer?.state || invoice.state || 'State',
         gst: invoice.customer?.gstnNumber || invoice.gst || '',
@@ -534,6 +549,7 @@ const InvoiceTable = ({ onRefresh }) => {
       setInvoicesData((prev) =>
         prev.filter((inv) => inv.id !== invoiceToDelete.id)
       );
+      showSuccessToast('Invoice deleted successfully!');
       if (onRefresh) onRefresh();
       setShowDeleteConfirm(false);
       setInvoiceToDelete(null);
@@ -1080,7 +1096,7 @@ const InvoiceTable = ({ onRefresh }) => {
           </div>
         }
       >
-        <div className="px-6 bg-gray-50/50 min-h-[400px]">
+        <div className="p-6 bg-gray-50/50 min-h-[400px]">
           <div
             className="bg-white rounded-2xl shadow-sm border border-gray-100 p-0 overflow-hidden printable"
             id="invoice-preview-print"
