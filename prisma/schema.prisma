@@ -237,6 +237,8 @@ model Customer {
   email                  String?
   pincode                String
   paymentTerms           String
+  website                String?
+  cinNumber              String?  @map("cin_number")
   gstnNumber             String?  @map("gstn_number")
   remarks                String?
   createdAt              DateTime @default(now()) @map("created_at")

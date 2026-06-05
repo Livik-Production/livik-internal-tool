@@ -10,6 +10,7 @@ import {
   Hash,
   CreditCard,
   SquarePen,
+  Globe,
 } from 'lucide-react';
 
 const CustomerFormModal = ({
@@ -29,6 +30,8 @@ const CustomerFormModal = ({
     city: '',
     state: '',
     gstnNumber: '',
+    website: '',
+    cinNumber: '',
     mobile: '',
     email: '',
     preferredPaymentMethod: '',
@@ -52,6 +55,8 @@ const CustomerFormModal = ({
         city: customer.city || '',
         state: customer.state || '',
         gstnNumber: customer.gstnNumber || '',
+        website: customer.website || '',
+        cinNumber: customer.cinNumber || '',
         mobile: customer.mobile || '',
         email: customer.email || '',
         preferredPaymentMethod: customer.preferredPaymentMethod || '',
@@ -69,6 +74,8 @@ const CustomerFormModal = ({
         city: '',
         state: '',
         gstnNumber: '',
+        website: '',
+        cinNumber: '',
         mobile: '',
         email: '',
         preferredPaymentMethod: '',
@@ -88,6 +95,9 @@ const CustomerFormModal = ({
     const gstnRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/i;
     const pincodeRegex = /^\d{6}$/;
 
+    const cinRegex = /^([LUu]{1})([0-9]{5})([A-Za-z]{2})([0-9]{4})([A-Za-z]{3})([0-9]{6})$/;
+    const urlRegex = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/i;
+
     if (!formData.name?.trim()) newErrors.name = 'Name is required';
     
     if (formData.mobile?.trim() && !mobileRegex.test(formData.mobile.trim())) {
@@ -96,6 +106,10 @@ const CustomerFormModal = ({
 
     if (formData.email?.trim() && !emailRegex.test(formData.email.trim())) {
       newErrors.email = 'Invalid email address';
+    }
+
+    if (formData.website?.trim() && !urlRegex.test(formData.website.trim())) {
+      newErrors.website = 'Invalid website URL format';
     }
 
     if (!formData.address1?.trim()) newErrors.address1 = 'Address is required';
@@ -110,6 +124,10 @@ const CustomerFormModal = ({
 
     if (formData.gstnNumber?.trim() && !gstnRegex.test(formData.gstnNumber.trim())) {
       newErrors.gstnNumber = 'Invalid GSTN format (e.g. 22AAAAA0000A1Z5)';
+    }
+
+    if (formData.cinNumber?.trim() && !cinRegex.test(formData.cinNumber.trim())) {
+      newErrors.cinNumber = 'Invalid CIN format (21 alphanumeric characters)';
     }
 
     return newErrors;
@@ -230,7 +248,7 @@ const CustomerFormModal = ({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className="text-sm text-gray-600">
-                  Full Name <span className="text-red-500">*</span>
+                  Company Name <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -263,7 +281,7 @@ const CustomerFormModal = ({
               </div>
             </div>
 
-            {/* Row 2: Email + GSTN */}
+            {/* Row 2: Email + Website + GSTN + CIN */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className="text-sm text-gray-600 flex items-center gap-1">
@@ -283,6 +301,22 @@ const CustomerFormModal = ({
               </div>
               <div className="space-y-1">
                 <label className="text-sm text-gray-600 flex items-center gap-1">
+                  <Globe size={13} /> Website Address (Optional)
+                </label>
+                <input
+                  type="text"
+                  name="website"
+                  value={formData.website || ''}
+                  onChange={handleInputChange}
+                  readOnly={type === 'view'}
+                  className={`w-full px-3 py-2 border rounded-md text-sm outline-none transition-all ${
+                    errors.website ? 'border-red-300' : 'border-gray-300 focus:border-blue-400'
+                  } ${type === 'view' ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'}`}
+                />
+                {errors.website && <p className="text-xs text-red-500">{errors.website}</p>}
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm text-gray-600 flex items-center gap-1">
                   <Hash size={13} /> GSTN Number (Optional)
                 </label>
                 <input
@@ -297,10 +331,27 @@ const CustomerFormModal = ({
                 />
                 {errors.gstnNumber && <p className="text-xs text-red-500">{errors.gstnNumber}</p>}
               </div>
+              <div className="space-y-1">
+                <label className="text-sm text-gray-600 flex items-center gap-1">
+                  <Hash size={13} /> CIN Number (Optional)
+                </label>
+                <input
+                  type="text"
+                  name="cinNumber"
+                  value={formData.cinNumber || ''}
+                  onChange={handleInputChange}
+                  readOnly={type === 'view'}
+                  className={`w-full px-3 py-2 border rounded-md text-sm uppercase font-mono outline-none transition-all ${
+                    errors.cinNumber ? 'border-red-300' : 'border-gray-300 focus:border-blue-400'
+                  } ${type === 'view' ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'}`}
+                />
+                {errors.cinNumber && <p className="text-xs text-red-500">{errors.cinNumber}</p>}
+              </div>
             </div>
 
             {/* Row 3: Payment Method + Terms */}
             <div className="grid grid-cols-2 gap-4">
+             
               <div className="space-y-1">
                 <label className="text-sm text-gray-600 flex items-center gap-1">
                   <CreditCard size={13} /> Preferred Payment Method

@@ -479,6 +479,7 @@ const InvoiceTable = ({ onRefresh }) => {
         city: invoice.customer?.city || invoice.city || 'City',
         state: invoice.customer?.state || invoice.state || 'State',
         gst: invoice.customer?.gstnNumber || invoice.gst || '',
+        cin: invoice.customer?.cinNumber || invoice.cin || '',
         email: invoice.customer?.email || '',
         mobile: invoice.customer?.mobile || '',
       },
