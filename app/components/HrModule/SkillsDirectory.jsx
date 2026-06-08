@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import Loader from '../Loader';
 import { toast } from 'react-toastify';
+import Pagination from '../Pagination';
+import { useMemo } from 'react';
 
 const SkillsDirectory = ({ isTab = false, isViewOnly = false }) => {
   const [employees, setEmployees] = useState([]);
@@ -35,15 +37,52 @@ const SkillsDirectory = ({ isTab = false, isViewOnly = false }) => {
   const [newSkill, setNewSkill] = useState({ name: '', category: 'Mid' });
   const [isSaving, setIsSaving] = useState(false);
 
-  // Derive unique departments from employee data
-  const departments = [
-    'All Departments',
-    ...Array.from(new Set(employees.map((e) => e.department).filter(Boolean))).sort(),
-  ];
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(9); // 9 matches 3-column grid layout perfectly
+
+  const [dropdownDepartments, setDropdownDepartments] = useState([]);
+  const [dropdownLevels, setDropdownLevels] = useState([]);
+
+  // Derive final departments and levels
+  const finalDepartments =
+    dropdownDepartments.length > 0
+      ? ['All Departments', ...dropdownDepartments]
+      : [
+          'All Departments',
+          ...Array.from(
+            new Set(employees.map((e) => e.department).filter(Boolean))
+          ).sort(),
+        ];
+
+  const finalLevels =
+    dropdownLevels.length > 0
+      ? ['All Employees', ...dropdownLevels]
+      : ['All Employees', 'Junior', 'Mid', 'Senior', 'Expert'];
 
   useEffect(() => {
     setMounted(true);
     fetchEmployees();
+
+    const fetchDropdowns = async () => {
+      try {
+        const deptRes = await fetch('/api/dropdowns?type=departments');
+        if (deptRes.ok) {
+          const deptJson = await deptRes.json();
+          if (deptJson.data)
+            setDropdownDepartments(deptJson.data.map((d) => d.value));
+        }
+
+        const lvlRes = await fetch('/api/dropdowns?type=levels');
+        if (lvlRes.ok) {
+          const lvlJson = await lvlRes.json();
+          if (lvlJson.data) setDropdownLevels(lvlJson.data.map((d) => d.value));
+        }
+      } catch (err) {
+        console.error('Failed to fetch skill dropdowns', err);
+      }
+    };
+    fetchDropdowns();
   }, []);
 
   const fetchEmployees = async () => {
@@ -67,9 +106,9 @@ const SkillsDirectory = ({ isTab = false, isViewOnly = false }) => {
     setEditForm({
       skills: employee.skills
         ? employee.skills.map((s) => ({
-          name: s.name,
-          category: s.category || 'Mid',
-        }))
+            name: s.name,
+            category: s.category || 'Mid',
+          }))
         : [],
       totalExperience: employee.totalExperience || '',
       projectsDone: employee.projectsDone || '',
@@ -136,25 +175,59 @@ const SkillsDirectory = ({ isTab = false, isViewOnly = false }) => {
   };
 
   const filteredEmployees = employees.filter((emp) => {
+    const searchLower = searchTerm.toLowerCase();
     const fullName = `${emp.firstName} ${emp.lastName}`.toLowerCase();
     const matchesSearch =
-      fullName.includes(searchTerm.toLowerCase()) ||
-      emp.empId.toLowerCase().includes(searchTerm.toLowerCase());
+      searchTerm === '' ||
+      fullName.includes(searchLower) ||
+      emp.empId?.toLowerCase().includes(searchLower) ||
+      emp.department?.toLowerCase().includes(searchLower) ||
+      emp.designation?.toLowerCase().includes(searchLower) ||
+      String(emp.totalExperience || '')
+        .toLowerCase()
+        .includes(searchLower) ||
+      String(emp.projectsDone || '')
+        .toLowerCase()
+        .includes(searchLower) ||
+      (emp.skills &&
+        emp.skills.some(
+          (s) =>
+            s.name?.toLowerCase().includes(searchLower) ||
+            s.category?.toLowerCase().includes(searchLower)
+        ));
     const matchesDept =
       selectedDept === 'All Departments' || emp.department === selectedDept;
     const matchesExp =
       selectedExp === 'All Employees' ||
-      (emp.skills && emp.skills.some((s) =>
-        (s.category || '').toLowerCase() === selectedExp.toLowerCase()
-      ));
+      (emp.skills &&
+        emp.skills.some(
+          (s) => (s.category || '').toLowerCase() === selectedExp.toLowerCase()
+        ));
     const status = (emp.status || '').toLowerCase();
     const isApproved = status === 'active' || status === 'approved';
 
     return matchesSearch && matchesDept && matchesExp && isApproved;
   });
 
+  // Reset pagination when search query or filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedDept, selectedExp]);
+
+  const handleItemsPerPageChange = (newItemsPerPage) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1);
+  };
+
+  const paginatedEmployees = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredEmployees.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredEmployees, currentPage, itemsPerPage]);
+
   return (
-    <div className={`flex flex-col h-full bg-transparent ${isTab ? '' : 'space-y-2 overflow-hidden'}`}>
+    <div
+      className={`flex flex-col h-full bg-transparent ${isTab ? '' : 'space-y-2 overflow-hidden'}`}
+    >
       {/* Page Header */}
       {!isTab && (
         <header className="bg-white rounded-xl shadow-md p-2 m-0.5 border border-gray-200 animate-dashboard-reveal">
@@ -168,16 +241,32 @@ const SkillsDirectory = ({ isTab = false, isViewOnly = false }) => {
                   Employee Skills Directory
                 </h1>
                 <p className="text-sm text-gray-400 mt-1 font-medium">
-                  Manage and track workforce competencies across all departments.
+                  Manage and track workforce competencies across all
+                  departments.
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-4 bg-blue-50 border border-blue-100 rounded-xl px-4 py-2 shadow-sm">
               <div className="flex -space-x-3">
-                {employees.slice(0, 5).map((e, i) => (
-                  <img key={i} src={e.photo || `https://i.pravatar.cc/150?u=${e.id}`} className="w-8 h-8 rounded-full border-2 border-white shadow-sm" alt="" />
-                ))}
+                {employees.slice(0, 5).map((e, i) =>
+                  e.photo ? (
+                    <img
+                      key={i}
+                      src={e.photo}
+                      className="w-8 h-8 rounded-full border-2 border-white shadow-sm object-cover"
+                      alt=""
+                    />
+                  ) : (
+                    <div
+                      key={i}
+                      className="w-8 h-8 rounded-full border-2 border-white shadow-sm bg-blue-100 flex items-center justify-center text-blue-700 text-[10px] font-bold"
+                    >
+                      {e.firstName?.[0] || ''}
+                      {e.lastName?.[0] || ''}
+                    </div>
+                  )
+                )}
                 <div className="w-8 h-8 rounded-full bg-white border-2 border-white shadow-sm flex items-center justify-center text-[10px] font-black text-gray-400">
                   +{employees.length > 5 ? employees.length - 5 : 0}
                 </div>
@@ -195,9 +284,15 @@ const SkillsDirectory = ({ isTab = false, isViewOnly = false }) => {
       )}
 
       {/* Content Card */}
-      <div className={isTab ? "flex-1 flex flex-col min-h-0 space-y-3 md:space-y-3" : "bg-white rounded-2xl shadow-xl border border-gray-200 m-1 flex-1 flex flex-col min-h-0 space-y-3 md:space-y-3 overflow-y-auto custom-scrollbar"}>
+      <div
+        className={
+          isTab
+            ? 'flex-1 flex flex-col min-h-0 space-y-3 md:space-y-3'
+            : 'bg-white rounded-2xl shadow-xl border border-gray-200 m-1 flex-1 flex flex-col min-h-0 space-y-3 md:space-y-3 overflow-y-auto custom-scrollbar'
+        }
+      >
         {/* Filter Bar */}
-        <div className="p-3 md:p-4">
+        <div className="p-2 md:p-2">
           <div className="flex flex-col lg:flex-row lg:items-center justify-end gap-3 md:gap-4">
             {/* Search */}
             <div className="relative flex-1 w-full lg:max-w-md">
@@ -222,8 +317,10 @@ const SkillsDirectory = ({ isTab = false, isViewOnly = false }) => {
                   onChange={(e) => setSelectedDept(e.target.value)}
                   className="w-full pl-4 pr-10 py-3 bg-gray-50 border border-gray-300 rounded-xl text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-bold text-gray-600 sm:min-w-[180px]"
                 >
-                  {departments.map(dept => (
-                    <option key={dept} value={dept}>{dept}</option>
+                  {finalDepartments.map((dept) => (
+                    <option key={dept} value={dept}>
+                      {dept}
+                    </option>
                   ))}
                 </select>
                 <ChevronDown
@@ -239,11 +336,11 @@ const SkillsDirectory = ({ isTab = false, isViewOnly = false }) => {
                   onChange={(e) => setSelectedExp(e.target.value)}
                   className="w-full pl-4 pr-10 py-3 bg-gray-50 border border-gray-300 rounded-xl text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-bold text-gray-600 sm:min-w-[160px]"
                 >
-                  <option value="All Employees">All Levels</option>
-                  <option value="Junior">Junior</option>
-                  <option value="Mid">Mid</option>
-                  <option value="Senior">Senior</option>
-                  <option value="Expert">Expert</option>
+                  {finalLevels.map((lvl) => (
+                    <option key={lvl} value={lvl}>
+                      {lvl === 'All Employees' ? 'All Levels' : lvl}
+                    </option>
+                  ))}
                 </select>
                 <ChevronDown
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
@@ -260,113 +357,134 @@ const SkillsDirectory = ({ isTab = false, isViewOnly = false }) => {
             <Loader label="Syncing directory..." size="lg" fullScreen={false} />
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-4 px-3">
-            {filteredEmployees.map((emp) => (
-              <div
-                key={emp.id}
-                className="bg-white border border-gray-400 rounded-[1.5rem] p-3 md:p-4 shadow-[0_15px_50px_rgba(0,0,0,0.03)] hover:shadow-[0_25px_70px_rgba(0,0,0,0.07)] transition-all duration-500 group flex flex-col justify-between min-h-[320px] md:min-h-[290px] relative overflow-hidden"
-              >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50/30 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-blue-100/40 transition-colors"></div>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-4 px-3">
+              {paginatedEmployees.map((emp) => (
+                <div
+                  key={emp.id}
+                  className="bg-white border border-gray-400 rounded-[1.5rem] p-3 md:p-4 shadow-[0_15px_50px_rgba(0,0,0,0.03)] hover:shadow-[0_25px_70px_rgba(0,0,0,0.07)] transition-all duration-500 group flex flex-col justify-between min-h-[320px] md:min-h-[290px] relative overflow-hidden"
+                >
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50/30 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-blue-100/40 transition-colors"></div>
 
-                <div className="relative">
-                  <div className="flex items-start justify-between mb-5">
-                    <div className="flex gap-5">
-                      <div className="w-20 h-20 rounded-[1.5rem] overflow-hidden border-2 border-white">
-                        <img
-                          src={emp.photo || `https://i.pravatar.cc/150?u=${emp.id}`}
-                          alt={emp.firstName}
-                          className="w-full h-full object-cover"
-                        />
+                  <div className="relative">
+                    <div className="flex items-start justify-between mb-5">
+                      <div className="flex gap-5">
+                        <div className="w-20 h-20 rounded-[1.5rem] overflow-hidden border-2 border-white bg-blue-50 flex items-center justify-center shadow-inner">
+                          {emp.photo ? (
+                            <img
+                              src={emp.photo}
+                              alt={emp.firstName}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-2xl font-bold text-blue-600 uppercase tracking-widest">
+                              {emp.firstName?.[0] || ''}
+                              {emp.lastName?.[0] || ''}
+                            </span>
+                          )}
+                        </div>
+                        <div className="pt-1">
+                          <h3 className="text-xl font-bold text-[#1a1c23] leading-tight transition-colors">
+                            {emp.firstName} {emp.lastName}
+                          </h3>
+                          <p className="text-[11px] font-bold text-[#004475] mt-1.5 uppercase tracking-[0.05em]">
+                            {emp.designation || 'Technical Specialist'}
+                          </p>
+                          <div className="mt-1.5 py-0.5 text-gray-500 text-[11px] font-bold rounded-lg w-fit">
+                            {emp.empId}
+                          </div>
+                        </div>
                       </div>
-                      <div className="pt-1">
-                        <h3 className="text-xl font-bold text-[#1a1c23] leading-tight transition-colors">
-                          {emp.firstName} {emp.lastName}
-                        </h3>
-                        <p className="text-[11px] font-bold text-[#004475] mt-1.5 uppercase tracking-[0.05em]">
-                          {emp.designation || 'Technical Specialist'}
-                        </p>
-                        <div className="mt-1.5 py-0.5 text-gray-500 text-[11px] font-bold rounded-lg w-fit">
-                          {emp.empId}
+                      {!isViewOnly && (
+                        <div className="flex flex-col items-end gap-6">
+                          <button
+                            onClick={() => handleEditClick(emp)}
+                            className="w-8 h-8 flex items-center justify-center text-gray-500 border border-gray-300 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all border border-gray-50 shadow-sm bg-white hover:border-blue-100"
+                            title="Edit Skills"
+                          >
+                            <SquarePen size={16} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Metrics Section (Moved Above Proficiencies) */}
+                    <div className="pt-3 pb-2.5 mb-4 border-t border-b border-gray-300 flex flex-wrap items-center justify-between gap-4">
+                      <div className="flex flex-col items-start min-w-[120px]">
+                        <span className="text-[12px] font-bold text-[#004475] mb-2 uppercase tracking-[0.04em]">
+                          Department
+                        </span>
+                        <span className="text-[11.5px] font-bold text-[#1a1c23] uppercase tracking-tight">
+                          {emp.department || 'Dev Team'}
+                        </span>
+                      </div>
+                      <div className="flex gap-8 md:gap-12">
+                        <div className="flex flex-col items-center">
+                          <span className="text-[12px] font-bold text-[#004475] mb-2 uppercase tracking-[0.05em]">
+                            Experience
+                          </span>
+                          <span className="text-md font-bold text-[#1a1c23]">
+                            {emp.totalExperience || '0Y'}
+                          </span>
+                        </div>
+                        <div className="flex flex-col items-center relative">
+                          <span className="text-[12px] font-bold text-[#004475] mb-2 uppercase tracking-[0.05em]">
+                            Projects
+                          </span>
+                          <span className="text-md font-bold text-[#1a1c23]">
+                            {emp.projectsDone || '0'}
+                          </span>
                         </div>
                       </div>
                     </div>
-                    {!isViewOnly && (
-                      <div className="flex flex-col items-end gap-6">
-                        <button
-                          onClick={() => handleEditClick(emp)}
-                          className="w-8 h-8 flex items-center justify-center text-gray-500 border border-gray-300 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all border border-gray-50 shadow-sm bg-white hover:border-blue-100"
-                          title="Edit Skills"
-                        >
-                          <SquarePen size={16} />
-                        </button>
-                      </div>
-                    )}
-                  </div>
 
-                  {/* Metrics Section (Moved Above Proficiencies) */}
-                  <div className="pt-3 pb-2.5 mb-4 border-t border-b border-gray-300 flex flex-wrap items-center justify-between gap-4">
-                    <div className="flex flex-col items-start min-w-[120px]">
-                      <span className="text-[12px] font-bold text-[#004475] mb-2 uppercase tracking-[0.04em]">
-                        Department
-                      </span>
-                      <span className="text-[11.5px] font-bold text-[#1a1c23] uppercase tracking-tight">
-                        {emp.department || 'Dev Team'}
-                      </span>
-                    </div>
-                    <div className="flex gap-8 md:gap-12">
-                      <div className="flex flex-col items-center">
-                        <span className="text-[12px] font-bold text-[#004475] mb-2 uppercase tracking-[0.05em]">
-                          Experience
-                        </span>
-                        <span className="text-md font-bold text-[#1a1c23]">
-                          {emp.totalExperience || '0Y'}
-                        </span>
-                      </div>
-                      <div className="flex flex-col items-center relative">
-                        <span className="text-[12px] font-bold text-[#004475] mb-2 uppercase tracking-[0.05em]">
-                          Projects
-                        </span>
-                        <span className="text-md font-bold text-[#1a1c23]">
-                          {emp.projectsDone || '0'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Core Proficiencies (Now at bottom) */}
-                  <div className="space-y-4">
-                    <div>
-                      <div className="flex flex-col items-center">
-                        <p className="text-[12px] font-black text-gray-700 uppercase tracking-[0.1em] mb-2 flex items-center gap-2.5 justify-center">
-                          Core Proficiencies
-                        </p>
-                      </div>
-                      <div className="max-h-[110px] overflow-y-auto pr-2 custom-scrollbar mt-1 mb-2 p-1 border-2 border-dashed border-gray-100 rounded-2xl bg-gray-50/30">
-                        <div className="flex flex-wrap gap-1 justify-center">
-                          {emp.skills && emp.skills.length > 0 ? (
-                            emp.skills.map((skill, idx) => (
-                              <span
-                                key={idx}
-                                className="px-2.5 py-1.5 bg-white text-[#475569] text-[10px] font-bold rounded-xl uppercase tracking-wider shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-300 hover:scale-105 hover:text-[#33a8d9] transition-all duration-300"
-                              >
-                                {skill.name}
-                              </span>
-                            ))
-                          ) : (
-                            <div className="w-full h-20 flex items-center justify-center">
-                              <span className="text-xs text-gray-400 italic font-bold">
-                                No skills listed
-                              </span>
-                            </div>
-                          )}
+                    {/* Core Proficiencies (Now at bottom) */}
+                    <div className="space-y-4">
+                      <div>
+                        <div className="flex flex-col items-center">
+                          <p className="text-[12px] font-black text-gray-700 uppercase tracking-[0.1em] mb-2 flex items-center gap-2.5 justify-center">
+                            Core Proficiencies
+                          </p>
+                        </div>
+                        <div className="max-h-[110px] overflow-y-auto pr-2 custom-scrollbar mt-1 mb-2 p-1 border-2 border-dashed border-gray-100 rounded-2xl bg-gray-50/30">
+                          <div className="flex flex-wrap gap-1 justify-center">
+                            {emp.skills && emp.skills.length > 0 ? (
+                              emp.skills.map((skill, idx) => (
+                                <span
+                                  key={idx}
+                                  className="px-2.5 py-1.5 bg-white text-[#475569] text-[10px] font-bold rounded-xl uppercase tracking-wider shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-300 hover:scale-105 hover:text-[#33a8d9] transition-all duration-300"
+                                >
+                                  {skill.name}
+                                </span>
+                              ))
+                            ) : (
+                              <div className="w-full h-20 flex items-center justify-center">
+                                <span className="text-xs text-gray-400 italic font-bold">
+                                  No skills listed
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+
+            {/* Pagination Controls */}
+            <div className="p-4 border-t border-gray-100">
+              <Pagination
+                currentPage={currentPage}
+                totalItems={filteredEmployees.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={handleItemsPerPageChange}
+                rowsPerPageOptions={[6, 9, 12, 24, 48, 99]}
+              />
+            </div>
+          </>
         )}
       </div>
 
@@ -450,10 +568,13 @@ const SkillsDirectory = ({ isTab = false, isViewOnly = false }) => {
                         }
                         className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600 transition-all font-medium appearance-none"
                       >
-                        <option value="Junior">Junior</option>
-                        <option value="Mid">Mid</option>
-                        <option value="Senior">Senior</option>
-                        <option value="Expert">Expert</option>
+                        {finalLevels
+                          .filter((lvl) => lvl !== 'All Employees')
+                          .map((lvl) => (
+                            <option key={lvl} value={lvl}>
+                              {lvl}
+                            </option>
+                          ))}
                       </select>
                       <ChevronDown
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"

@@ -279,6 +279,7 @@ const AssetForm = ({
   isViewMode = false,
   initialData = null,
   existingAssets = [],
+  isSubmitting = false,
 }) => {
   const [formData, setFormData] = useState({
     assetTag: '',
@@ -665,8 +666,14 @@ const AssetForm = ({
                 <Button onClick={onCancel} className="min-w-[100px]">
                   Cancel
                 </Button>
-                <PrimaryButton onClick={handleSubmit} className="min-w-[120px]">
-                  {initialData ? 'Update' : 'Add'} {assetType} Asset
+                <PrimaryButton
+                  onClick={handleSubmit}
+                  className="min-w-[120px]"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting
+                    ? 'Saving...'
+                    : `${initialData ? 'Update' : 'Add'} ${assetType} Asset`}
                 </PrimaryButton>
               </>
             ) : (

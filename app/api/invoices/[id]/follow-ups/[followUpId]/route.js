@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
-import { updateInvoiceFollowUp, deleteInvoiceFollowUp } from '../../../../../../lib/invoiceService';
+import {
+  updateInvoiceFollowUp,
+  deleteInvoiceFollowUp,
+} from '../../../../../../lib/invoiceService';
 
 export async function PUT(req, { params }) {
   try {
@@ -24,8 +27,9 @@ export async function PUT(req, { params }) {
   }
 }
 
-export async function DELETE(req, { params }) {
+export async function DELETE(req, context) {
   try {
+    const params = await context.params;
     const { followUpId } = params;
     await deleteInvoiceFollowUp(followUpId);
     return NextResponse.json({ success: true }, { status: 200 });

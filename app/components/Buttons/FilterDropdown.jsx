@@ -114,9 +114,9 @@ const FilterDropdown = ({
                 WebkitOverflowScrolling: 'touch',
               }}
             >
-              {options.map((option) => (
+              {options.map((option, index) => (
                 <div
-                  key={option.value}
+                  key={`${option.value}-${index}`}
                   onClick={() => {
                     if (!option.disabled) {
                       onChange(option.value);

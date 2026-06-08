@@ -12,8 +12,7 @@ import CustomAlertForm from '../../../components/CustomAlertForm';
 import Pagination from '../../../components/Pagination';
 import FilterDropdown from '../../Buttons/FilterDropdown';
 import HyperlinkButton from '../../Buttons/HyperlinkButton';
-
-const ALL_PAYMENT_MODES = ['Bank Transfer', 'Cash', 'Cheque', 'Petty Cash'];
+import { toast } from 'react-toastify';
 
 const MONTH_OPTIONS = [
   { value: 'all', label: 'All Months' },
@@ -44,6 +43,14 @@ const CashFlowTab = ({ inflows = [], expenses = [], onView, onRefresh }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [recordToDelete, setRecordToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const [paymentModes, setPaymentModes] = useState([
+    { value: 'all', label: 'All Methods' },
+    { value: 'Bank Transfer', label: 'Bank Transfer' },
+    { value: 'Cash', label: 'Cash' },
+    { value: 'Cheque', label: 'Cheque' },
+    { value: 'Petty Cash', label: 'Petty Cash' },
+  ]);
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -90,6 +97,30 @@ const CashFlowTab = ({ inflows = [], expenses = [], onView, onRefresh }) => {
   };
 
   const { totalTopUp, totalSpending, cashInHand } = calculateSummary();
+
+  useEffect(() => {
+    const fetchPaymentModes = async () => {
+      try {
+        const res = await fetch('/api/dropdowns?type=payment_type');
+        if (res.ok) {
+          const json = await res.json();
+          if (json && json.data && json.data.length > 0) {
+            const dynamicModes = json.data.map((d) => ({
+              value: d.value,
+              label: d.value,
+            }));
+            setPaymentModes([
+              { value: 'all', label: 'All Methods' },
+              ...dynamicModes,
+            ]);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch payment types', err);
+      }
+    };
+    fetchPaymentModes();
+  }, []);
 
   useEffect(() => {
     const data = transformData();
@@ -157,12 +188,13 @@ const CashFlowTab = ({ inflows = [], expenses = [], onView, onRefresh }) => {
         if (!res.ok) throw new Error('Failed to delete record');
       }
 
+      toast.success('Record deleted successfully!');
       onRefresh && onRefresh();
       setShowDeleteConfirm(false);
       setRecordToDelete(null);
     } catch (error) {
       console.error(error);
-      alert('Error deleting record: ' + error.message);
+      toast.error('Error deleting record: ' + error.message);
     } finally {
       setIsDeleting(false);
     }
@@ -284,10 +316,7 @@ const CashFlowTab = ({ inflows = [], expenses = [], onView, onRefresh }) => {
             Top Up Petty Cash
           </PrimaryButton>
           <FilterDropdown
-            options={[
-              { value: 'all', label: 'All Methods' },
-              ...ALL_PAYMENT_MODES.map((m) => ({ value: m, label: m })),
-            ]}
+            options={paymentModes}
             value={paymentModeFilter}
             onChange={setPaymentModeFilter}
             placeholder="All Methods"

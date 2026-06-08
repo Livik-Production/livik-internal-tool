@@ -28,6 +28,8 @@ export async function GET(req) {
         sunday: 'Leave',
         saturday: 'Leave',
         effectiveDate: new Date().toISOString().split('T')[0],
+        basicPayPercent: 40.0,
+        hraPercent: 50.0,
       });
     }
 
@@ -46,13 +48,17 @@ export async function GET(req) {
 
 export async function POST(req) {
   try {
-    const { sunday, saturday, effectiveDate } = await req.json();
+    const { sunday, saturday, effectiveDate, basicPayPercent, hraPercent } =
+      await req.json();
 
     const settings = await prisma.payrollSettings.create({
       data: {
         sunday: sunday || 'Leave',
         saturday: saturday || 'Leave',
         effectiveDate: new Date(effectiveDate || new Date()),
+        basicPayPercent:
+          basicPayPercent !== undefined ? parseFloat(basicPayPercent) : 40.0,
+        hraPercent: hraPercent !== undefined ? parseFloat(hraPercent) : 50.0,
       },
     });
 

@@ -49,12 +49,14 @@ function FinanceContent() {
 
     const { role, rights = [] } = authUser;
     const roleName = (role?.name || role?.roleName || '').toUpperCase();
-    const isAdmin =
-      roleName === 'ADMIN' ||
+    const isSuperAdmin =
       roleName === 'SUPER_ADMIN' ||
+      roleName === 'SUPER ADMIN' ||
+      roleName === 'SUPERADMIN' ||
+      roleName === 'ADMIN' ||
       rights.includes('ALL_ACCESS');
 
-    if (isAdmin) return TAB_CONFIG;
+    if (isSuperAdmin) return TAB_CONFIG;
 
     return TAB_CONFIG.filter((tab) => rights.includes(tab.right));
   }, [authUser]);
@@ -391,10 +393,11 @@ function FinanceContent() {
 
         <div
           key={activeTab}
-          className={`flex-1 overflow-y-auto no-scrollbar transition-all duration-400 min-h-0 ${isLoading && activeTab !== 'expenses'
+          className={`flex-1 overflow-y-auto no-scrollbar transition-all duration-400 min-h-0 ${
+            isLoading && activeTab !== 'expenses'
               ? 'opacity-0 translate-y-4'
               : 'animate-dashboard-reveal'
-            }`}
+          }`}
         >
           {activeTab === 'overview' && (
             <OverviewForm financeData={financeData} />
@@ -591,14 +594,15 @@ function FinanceContent() {
                     Payment Status
                   </label>
                   <span
-                    className={`px-3 py-0.5 rounded text-xs font-bold uppercase tracking-wider ${selectedRecord.paymentStatus === 'paid'
+                    className={`px-3 py-0.5 rounded text-xs font-bold uppercase tracking-wider ${
+                      selectedRecord.paymentStatus === 'paid'
                         ? 'bg-green-100 text-green-800 border border-green-200'
                         : selectedRecord.paymentStatus === 'pending'
                           ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
                           : selectedRecord.paymentStatus === 'approved'
                             ? 'bg-blue-100 text-blue-800 border border-blue-200'
                             : 'bg-red-100 text-red-800 border border-red-200'
-                      }`}
+                    }`}
                   >
                     {selectedRecord.paymentStatus}
                   </span>

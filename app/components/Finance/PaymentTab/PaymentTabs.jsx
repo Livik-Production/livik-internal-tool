@@ -1,11 +1,13 @@
 // components/Finance/PaymentTabs.jsx
 'use client';
 
+import { useState, useEffect, useMemo } from 'react';
 import { SquarePen, X } from 'lucide-react';
 import CustomTable from '../../CustomTable'; // Adjust path as needed
 import TabButton from '../../Buttons/TabButton';
 import IconButton from '../../Buttons/IconButton';
 import HyperlinkButton from '../../Buttons/HyperlinkButton';
+import Pagination from '../../Pagination';
 
 export default function PaymentTabs({
   activeTab,
@@ -20,6 +22,19 @@ export default function PaymentTabs({
   handlePaymentClick,
   showLoading,
 }) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10); // default to 10
+
+  // Reset pagination when active tab or search query changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, searchQuery]);
+
+  const handleItemsPerPageChange = (newItemsPerPage) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1);
+  };
+
   const formatCurrency = (amount) => {
     return `$${amount?.toLocaleString() || '0'}`;
   };
@@ -84,6 +99,19 @@ export default function PaymentTabs({
 
   // Count of actual pending invoices
   const actualPendingInvoicesCount = actualPendingInvoices.length;
+
+  const paginatedPendingInvoices = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return actualPendingInvoices.slice(startIndex, startIndex + itemsPerPage);
+  }, [actualPendingInvoices, currentPage, itemsPerPage]);
+
+  const paginatedCompletedInvoices = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredCompletedInvoices.slice(
+      startIndex,
+      startIndex + itemsPerPage
+    );
+  }, [filteredCompletedInvoices, currentPage, itemsPerPage]);
 
   // Pending Payments Table Columns
   const pendingColumns = [
@@ -471,7 +499,7 @@ export default function PaymentTabs({
             <>
               <CustomTable
                 columns={pendingColumns}
-                data={actualPendingInvoices}
+                data={paginatedPendingInvoices}
                 actions={pendingActions}
                 actionsHeader="Update"
                 className="max-h-[60vh]"
@@ -481,7 +509,7 @@ export default function PaymentTabs({
                 rowClassName="hover:bg-gray-50/50 transition-colors duration-150"
               />
               <div className="px-6 py-4 bg-gray-50/80 border-t border-gray-200">
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center mb-4">
                   <div className="text-sm text-gray-600">
                     {actualPendingInvoicesCount} actual invoice
                     {actualPendingInvoicesCount !== 1 ? 's' : ''} found
@@ -498,6 +526,16 @@ export default function PaymentTabs({
                     </div>
                   </div>
                 </div>
+                <div className="border-t border-gray-200/80 pt-4 mt-2">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalItems={actualPendingInvoices.length}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={setCurrentPage}
+                    onItemsPerPageChange={handleItemsPerPageChange}
+                    rowsPerPageOptions={[5, 10, 20, 50, 100]}
+                  />
+                </div>
               </div>
             </>
           )}
@@ -513,7 +551,7 @@ export default function PaymentTabs({
             <>
               <CustomTable
                 columns={completedColumns}
-                data={filteredCompletedInvoices}
+                data={paginatedCompletedInvoices}
                 className="max-h-[60vh]"
                 tableClassName="min-w-full divide-y divide-gray-200"
                 theadClassName="bg-gray-50"
@@ -521,7 +559,7 @@ export default function PaymentTabs({
                 rowClassName="hover:bg-gray-50/50 transition-colors duration-150"
               />
               <div className="px-6 py-4 bg-gray-50/80 border-t border-gray-200">
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center mb-4">
                   <div className="text-sm text-gray-600">
                     {filteredCompletedInvoices.length} payment
                     {filteredCompletedInvoices.length !== 1 ? 's' : ''} found
@@ -535,6 +573,16 @@ export default function PaymentTabs({
                       </div>
                     </div>
                   </div>
+                </div>
+                <div className="border-t border-gray-200/80 pt-4 mt-2">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalItems={filteredCompletedInvoices.length}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={setCurrentPage}
+                    onItemsPerPageChange={handleItemsPerPageChange}
+                    rowsPerPageOptions={[5, 10, 20, 50, 100]}
+                  />
                 </div>
               </div>
             </>

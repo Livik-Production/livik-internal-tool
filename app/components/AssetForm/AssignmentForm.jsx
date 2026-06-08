@@ -8,6 +8,7 @@ import {
 } from '../../../store/slices/employeesSlice';
 import { SquarePen, LogOut, Eye, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'react-toastify';
 import TabButton from '../Buttons/TabButton';
 import PrimaryButton from '../Buttons/PrimaryButton';
 import IconButton from '../Buttons/IconButton';
@@ -176,6 +177,7 @@ export default function AssignmentForm({
           });
         }
         handleCloseEditForm();
+        toast.success('Assignment updated successfully!');
       } else {
         if (onAssign) {
           await onAssign(assetId, empId, empName, assignDate, notes);
@@ -189,7 +191,7 @@ export default function AssignmentForm({
       }
     } catch (error) {
       console.error('Error in assignment:', error);
-      alert('Failed to assign asset. Please check the console for details.');
+      toast.error('Failed to process assignment. Please try again.');
     }
   };
 
@@ -245,6 +247,7 @@ export default function AssignmentForm({
       setUnassignedCurrentPage(1);
     } catch (error) {
       console.error('Error unassigning:', error);
+      toast.error('Failed to unassign asset. Please try again.');
     } finally {
       setIsUnassigning(false);
     }
@@ -328,12 +331,13 @@ export default function AssignmentForm({
             <div className="font-medium text-gray-700">{warrantyInfo.text}</div>
             {warrantyInfo.daysRemaining !== null && (
               <div
-                className={`px-2 py-1 rounded-full text-xs font-semibold ${warrantyInfo.isExpired
+                className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                  warrantyInfo.isExpired
                     ? 'bg-red-100 text-red-800'
                     : warrantyInfo.isNearExpiry
                       ? 'bg-yellow-100 text-yellow-800'
                       : 'bg-green-100 text-green-800'
-                  }`}
+                }`}
               >
                 {warrantyInfo.isExpired
                   ? `Expired ${Math.abs(warrantyInfo.daysRemaining)} days ago`
@@ -426,12 +430,13 @@ export default function AssignmentForm({
       label: 'STATUS',
       render: (asset) => (
         <span
-          className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${asset.status === 'Assigned'
+          className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+            asset.status === 'Assigned'
               ? 'bg-green-100 text-green-800'
               : asset.status === 'In Repair'
                 ? 'bg-red-100 text-red-800'
                 : 'bg-gray-100 text-gray-800'
-            }`}
+          }`}
         >
           {asset.status}
         </span>

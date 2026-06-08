@@ -4,12 +4,13 @@ import PrimaryButton from '../../Buttons/PrimaryButton';
 import IconButton from '../../Buttons/IconButton';
 import HyperlinkButton from '../../Buttons/HyperlinkButton';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import ApprovalCard from '../../ApprovalCard';
 import PermissionCard from '../../PermissionCard';
 import PermissionConfirmModal from '../../PermissionConfirmModal';
 import Loader from '../../Loader';
 import { showSuccessToast, showErrorToast } from '../../Toast';
+import Pagination from '../../Pagination';
 import {
   Search,
   Calendar,
@@ -37,6 +38,10 @@ const LeaveRequestsTab = ({
   const [sortOrder, setSortOrder] = useState('desc'); // 'asc' | 'desc'
   const [requestType, setRequestType] = useState('leave'); // 'leave' | 'permission'
   const [confirmingPermission, setConfirmingPermission] = useState(null); // permission object for confirm modal
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(6); // 6 is recommended for 2-column card layouts
 
   // Fetch history for all unique employees in the list
   useEffect(() => {
@@ -150,13 +155,17 @@ const LeaveRequestsTab = ({
       if (requestType === 'leave' && isPermission) return false;
       if (requestType === 'permission' && !isPermission) return false;
 
-      // 2. Filter by Search Query
       if (!searchQuery) return true;
       const lowerQ = searchQuery.toLowerCase();
       return (
         a.employee?.toLowerCase().includes(lowerQ) ||
+        a.empId?.toLowerCase().includes(lowerQ) ||
         a.leaveId?.toLowerCase().includes(lowerQ) ||
-        a.type?.toLowerCase().includes(lowerQ)
+        a.type?.toLowerCase().includes(lowerQ) ||
+        a.details?.toLowerCase().includes(lowerQ) ||
+        a.category?.toLowerCase().includes(lowerQ) ||
+        a.employeeDepartment?.toLowerCase().includes(lowerQ) ||
+        a.status?.toLowerCase().includes(lowerQ)
       );
     })
     .sort((a, b) => {
@@ -164,6 +173,21 @@ const LeaveRequestsTab = ({
       const dateB = new Date(b.startDate || 0);
       return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
     });
+
+  // Reset pagination when search query or request type changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, requestType]);
+
+  const handleItemsPerPageChange = (newItemsPerPage) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1);
+  };
+
+  const paginatedApprovals = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredApprovals.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredApprovals, currentPage, itemsPerPage]);
 
   if (isLoading) {
     return (
@@ -284,75 +308,50 @@ const LeaveRequestsTab = ({
       </div>
 
       <section className="space-y-6">
-        {filteredApprovals.length === 0 ? (
+        {paginatedApprovals.length === 0 ? (
           <div className="text-center text-gray-500 text-sm py-10 select-none bg-gray-50 rounded-xl border border-dashed border-gray-300">
             {searchQuery
               ? 'No matching requests found.'
               : 'No pending leave requests found.'}
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {filteredApprovals.map((a) => {
-              const stats = calculateRelativeStats(
-                a.employeeId || a.id,
-                a.startDate
-              );
+          <>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {paginatedApprovals.map((a) => {
+                const stats = calculateRelativeStats(
+                  a.employeeId || a.id,
+                  a.startDate
+                );
 
-              const isPermission =
-                a.type?.toLowerCase().includes('permission') ||
-                a.category?.toLowerCase() === 'permission';
+                const isPermission =
+                  a.type?.toLowerCase().includes('permission') ||
+                  a.category?.toLowerCase() === 'permission';
 
-              return (
-                <div key={a.id} className="flex flex-col group h-full">
-                  <div className="border border-gray-200 rounded-xl shadow-sm bg-white hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col h-full">
-                    {isPermission ? (
-                      <div className="flex-grow">
-                        <PermissionCard
-                          approval={a}
-                          onApprove={onApprove}
-                          onReject={onReject}
-                          onConfirm={(perm) => setConfirmingPermission(perm)}
-                          isDisabled={!canApprove}
-                          onViewDetails={onViewLeaveDetails}
-                          onViewQuickInfo={onViewQuickInfo}
-                        />
-                      </div>
-                    ) : (
-                      <>
+                return (
+                  <div key={a.id} className="flex flex-col group h-full">
+                    <div className="border border-gray-200 rounded-xl shadow-sm bg-white hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col h-full">
+                      {isPermission ? (
                         <div className="flex-grow">
-                          <ApprovalCard
+                          <PermissionCard
                             approval={a}
                             onApprove={onApprove}
                             onReject={onReject}
+                            onConfirm={(perm) => setConfirmingPermission(perm)}
                             isDisabled={!canApprove}
                             onViewDetails={onViewLeaveDetails}
-                            onViewStats={() =>
-                              onViewLeaveHistory?.({
-                                name: a.employee,
-                                stats: stats,
-                                employeeId: a.employeeId,
-                                appliedDate: a.appliedDate,
-                                startDate: a.startDate,
-                              })
-                            }
-                            onViewEmployeeProfile={onViewEmployeeProfile}
                             onViewQuickInfo={onViewQuickInfo}
                           />
                         </div>
-
-                        {/* History Section - Redesigned */}
-                        <div className="bg-gradient-to-r from-gray-50 to-white px-4 py-3 border border-gray-300">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <div className="p-1 rounded bg-blue-100 text-blue-600">
-                                <Clock size={14} />
-                              </div>
-                              <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                                Recent History
-                              </span>
-                            </div>
-                            <HyperlinkButton
-                              onClick={() =>
+                      ) : (
+                        <>
+                          <div className="flex-grow">
+                            <ApprovalCard
+                              approval={a}
+                              onApprove={onApprove}
+                              onReject={onReject}
+                              isDisabled={!canApprove}
+                              onViewDetails={onViewLeaveDetails}
+                              onViewStats={() =>
                                 onViewLeaveHistory?.({
                                   name: a.employee,
                                   stats: stats,
@@ -361,71 +360,106 @@ const LeaveRequestsTab = ({
                                   startDate: a.startDate,
                                 })
                               }
-                              className="text-xs flex items-center gap-1"
-                              title="click to view history"
-                            >
-                              View History <ChevronRight size={12} />
-                            </HyperlinkButton>
+                              onViewEmployeeProfile={onViewEmployeeProfile}
+                              onViewQuickInfo={onViewQuickInfo}
+                            />
                           </div>
 
-                          <div className="bg-blue-100 p-2.5 rounded-lg border border-blue-200 flex items-center justify-between gap-4">
-                            <div className="flex items-center gap-17 flex-grow overflow-hidden">
-                              {/* This Month */}
-                              <div className="flex items-center gap-1.5 whitespace-nowrap">
-                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">
-                                  This Month :
-                                </span>
-                                <span
-                                  className={`text-xs font-bold ${stats.presentMonthLeaves > 0 ? 'text-orange-600' : 'text-gray-700'}`}
-                                >
-                                  {stats.presentMonthLeaves}d
+                          {/* History Section - Redesigned */}
+                          <div className="bg-gradient-to-r from-gray-50 to-white px-4 py-3 border border-gray-300">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <div className="p-1 rounded bg-blue-100 text-blue-600">
+                                  <Clock size={14} />
+                                </div>
+                                <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                                  Recent History
                                 </span>
                               </div>
+                              <HyperlinkButton
+                                onClick={() =>
+                                  onViewLeaveHistory?.({
+                                    name: a.employee,
+                                    stats: stats,
+                                    employeeId: a.employeeId,
+                                    appliedDate: a.appliedDate,
+                                    startDate: a.startDate,
+                                  })
+                                }
+                                className="text-xs flex items-center gap-1"
+                                title="click to view history"
+                              >
+                                View History <ChevronRight size={12} />
+                              </HyperlinkButton>
+                            </div>
 
-                              <div className="w-px h-3 bg-blue-200 shrink-0"></div>
+                            <div className="bg-blue-100 p-2.5 rounded-lg border border-blue-200 flex items-center justify-between gap-4">
+                              <div className="flex items-center gap-17 flex-grow overflow-hidden">
+                                {/* This Month */}
+                                <div className="flex items-center gap-1.5 whitespace-nowrap">
+                                  <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">
+                                    This Month :
+                                  </span>
+                                  <span
+                                    className={`text-xs font-bold ${stats.presentMonthLeaves > 0 ? 'text-orange-600' : 'text-gray-700'}`}
+                                  >
+                                    {stats.presentMonthLeaves}d
+                                  </span>
+                                </div>
 
-                              {/* Last 3 Months Total */}
-                              <div className="flex items-center gap-1.5 whitespace-nowrap">
-                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">
-                                  Last 3M :
-                                </span>
-                                <span className="text-xs font-bold text-gray-700">
-                                  {stats.lastThreeMonthsTotal}d
-                                </span>
-                              </div>
+                                <div className="w-px h-3 bg-blue-200 shrink-0"></div>
 
-                              <div className="w-px h-3 bg-blue-200 shrink-0"></div>
+                                {/* Last 3 Months Total */}
+                                <div className="flex items-center gap-1.5 whitespace-nowrap">
+                                  <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">
+                                    Last 3M :
+                                  </span>
+                                  <span className="text-xs font-bold text-gray-700">
+                                    {stats.lastThreeMonthsTotal}d
+                                  </span>
+                                </div>
 
-                              {/* Breakdown */}
-                              <div className="flex items-center gap-3 overflow-x-auto no-scrollbar py-0.5">
-                                {stats.lastThreeMonthsBreakdown.map(
-                                  (m, idx) => (
-                                    <div
-                                      key={idx}
-                                      className="flex items-center gap-1 whitespace-nowrap"
-                                    >
-                                      <span className="text-[10px] font-bold text-gray-500 uppercase">
-                                        {m.name} :
-                                      </span>
-                                      <span
-                                        className={`text-[11px] font-semibold ${m.days > 0 ? 'text-blue-600' : 'text-gray-400'}`}
+                                <div className="w-px h-3 bg-blue-200 shrink-0"></div>
+
+                                {/* Breakdown */}
+                                <div className="flex items-center gap-3 overflow-x-auto no-scrollbar py-0.5">
+                                  {stats.lastThreeMonthsBreakdown.map(
+                                    (m, idx) => (
+                                      <div
+                                        key={idx}
+                                        className="flex items-center gap-1 whitespace-nowrap"
                                       >
-                                        {m.days}d
-                                      </span>
-                                    </div>
-                                  )
-                                )}
+                                        <span className="text-[10px] font-bold text-gray-500 uppercase">
+                                          {m.name} :
+                                        </span>
+                                        <span
+                                          className={`text-[11px] font-semibold ${m.days > 0 ? 'text-blue-600' : 'text-gray-400'}`}
+                                        >
+                                          {m.days}d
+                                        </span>
+                                      </div>
+                                    )
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      </>
-                    )}
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+            <Pagination
+              currentPage={currentPage}
+              totalItems={filteredApprovals.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={handleItemsPerPageChange}
+              rowsPerPageOptions={[4, 6, 10, 20, 50, 100]}
+            />
+          </>
         )}
       </section>
 

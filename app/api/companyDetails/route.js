@@ -30,13 +30,23 @@ export async function PUT(request) {
       gstnNumber,
       panNumber,
       accountHolderName,
+      branchName,
       accountNumber,
       ifscCode,
       swiftCode,
     } = body;
 
     // Validate required fields
-    if (!companyName || !companyEmail || !companyPhone || !city || !state || !country || !address || !startedDate) {
+    if (
+      !companyName ||
+      !companyEmail ||
+      !companyPhone ||
+      !city ||
+      !state ||
+      !country ||
+      !address ||
+      !startedDate
+    ) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -61,6 +71,7 @@ export async function PUT(request) {
       gstnNumber: gstnNumber || null,
       panNumber: panNumber || null,
       accountHolderName: accountHolderName || null,
+      branchName: branchName || null,
       accountNumber: accountNumber || null,
       ifscCode: ifscCode || null,
       swiftCode: swiftCode || null,

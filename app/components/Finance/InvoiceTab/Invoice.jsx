@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
+import { useSelector } from 'react-redux';
+import { selectAuthUser } from '../../../../store/slices/authSlice';
 import ClientSelectionModal from './InvoiceModal';
 import PreviewForm from './PreviewForm';
 import FollowUpModal from './FollowUpModal';
@@ -24,6 +26,7 @@ import {
 } from 'lucide-react';
 import HyperlinkButton from '../../Buttons/HyperlinkButton';
 import CustomModalForm from '../../CustomModalForm';
+import Pagination from '../../Pagination';
 import { handleDownloadInvoicePDF } from './DownloadInvoicePDF';
 import { handlePrint } from '../../HrModule/PrintForm';
 
@@ -36,6 +39,14 @@ const RowActions = ({
   onEdit,
   onDelete,
 }) => {
+  const user = useSelector(selectAuthUser);
+  const userRole = (
+    user?.role?.roleName ||
+    user?.role?.name ||
+    ''
+  ).toUpperCase();
+  const isSuperAdmin = userRole === 'SUPER_ADMIN';
+
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
   const buttonRef = useRef(null);
@@ -118,11 +129,23 @@ const RowActions = ({
               </button>
               <div className="border-t border-gray-100 my-1"></div>
               <button
+                disabled={!isSuperAdmin}
                 onClick={() => {
+                  if (!isSuperAdmin) return;
                   setIsOpen(false);
                   onDelete(invoice.id);
                 }}
-                className="w-full text-left px-4 py-2 hover:bg-red-50 flex items-center gap-2 text-red-600"
+                title={
+                  !isSuperAdmin
+                    ? 'Delete access restricted (Super Admin only)'
+                    : 'Delete'
+                }
+                className={`w-full text-left px-4 py-2 flex gap-2 items-center text-red-600 transition-colors
+                  ${
+                    !isSuperAdmin
+                      ? 'opacity-40 cursor-not-allowed'
+                      : 'hover:bg-red-50'
+                  }`}
               >
                 <Trash size={14} className="text-red-600" />
                 <span className="text-red-600">Delete</span>
@@ -158,10 +181,25 @@ const InvoiceTable = ({ onRefresh }) => {
   const [selectedInvoiceForFollowUp, setSelectedInvoiceForFollowUp] =
     useState(null);
   const [followUpsData, setFollowUpsData] = useState({}); // Local mock storage for follow-ups
+  const [invoiceTypes, setInvoiceTypes] = useState([
+    { value: 'all', label: 'All Types' },
+    { value: 'actual', label: 'Actual' },
+    { value: 'proforma', label: 'Proforma' },
+  ]);
+  const [statusTypes, setStatusTypes] = useState([
+    { value: 'all', label: 'All Status' },
+    { value: 'paid', label: 'Paid' },
+    { value: 'pending', label: 'Pending' },
+  ]);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  const handleItemsPerPageChange = (newItemsPerPage) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1);
+  };
 
   // Fetch Data on Mount
   useEffect(() => {
@@ -222,6 +260,38 @@ const InvoiceTable = ({ onRefresh }) => {
       if (Array.isArray(custData)) {
         setClients(custData);
       }
+
+      // Fetch Invoice Types from settings (Dropdowns)
+      const typesRes = await fetch('/api/dropdowns?type=invoice_type');
+      if (typesRes.ok) {
+        const typesJson = await typesRes.json();
+        if (typesJson && typesJson.data && typesJson.data.length > 0) {
+          const dynamicTypes = typesJson.data.map((d) => ({
+            value: d.value.toLowerCase(),
+            label: d.value,
+          }));
+          setInvoiceTypes([
+            { value: 'all', label: 'All Types' },
+            ...dynamicTypes,
+          ]);
+        }
+      }
+
+      // Fetch Payment Statuses from settings (Dropdowns)
+      const statusRes = await fetch('/api/dropdowns?type=payment_status');
+      if (statusRes.ok) {
+        const statusJson = await statusRes.json();
+        if (statusJson && statusJson.data && statusJson.data.length > 0) {
+          const dynamicStatuses = statusJson.data.map((d) => ({
+            value: d.value.toLowerCase(),
+            label: d.value,
+          }));
+          setStatusTypes([
+            { value: 'all', label: 'All Status' },
+            ...dynamicStatuses,
+          ]);
+        }
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
       showErrorToast('Failed to load invoices or clients.');
@@ -281,7 +351,9 @@ const InvoiceTable = ({ onRefresh }) => {
         ));
 
     const matchesType =
-      typeFilter === 'all' || (invoice.invoiceType || 'actual') === typeFilter;
+      typeFilter === 'all' ||
+      (invoice.invoiceType || 'actual').toLowerCase() ===
+        typeFilter.toLowerCase();
 
     const matchesStatus =
       statusFilter === 'all' ||
@@ -296,7 +368,6 @@ const InvoiceTable = ({ onRefresh }) => {
   );
 
   // Pagination calculation
-  const totalPages = Math.ceil(data.length / itemsPerPage);
   const paginatedData = data.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
@@ -749,11 +820,7 @@ const InvoiceTable = ({ onRefresh }) => {
             </div>
 
             <FilterDropdown
-              options={[
-                { value: 'all', label: 'All Types' },
-                { value: 'actual', label: 'Actual' },
-                { value: 'proforma', label: 'Proforma' },
-              ]}
+              options={invoiceTypes}
               value={typeFilter}
               onChange={setTypeFilter}
               placeholder="All Types"
@@ -761,11 +828,7 @@ const InvoiceTable = ({ onRefresh }) => {
             />
 
             <FilterDropdown
-              options={[
-                { value: 'all', label: 'All Status' },
-                { value: 'paid', label: 'Paid' },
-                { value: 'pending', label: 'Pending' },
-              ]}
+              options={statusTypes}
               value={statusFilter}
               onChange={setStatusFilter}
               placeholder="All Statuses"
@@ -934,72 +997,15 @@ const InvoiceTable = ({ onRefresh }) => {
           />
 
           {/* Footer with Pagination */}
-          <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-medium text-gray-500">
-            <div>
-              Showing{' '}
-              <span className="text-gray-900 font-bold">
-                {data.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}
-              </span>{' '}
-              to{' '}
-              <span className="text-gray-900 font-bold">
-                {Math.min(data.length, currentPage * itemsPerPage)}
-              </span>{' '}
-              of <span className="text-gray-900 font-bold">{data.length}</span>{' '}
-              invoices
-            </div>
-
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-1.5 border border-gray-200 rounded text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                Previous
-              </button>
-              <div className="flex gap-1 px-2">
-                {Array.from({ length: Math.max(1, totalPages) }).map((_, i) => {
-                  // Show a window of pages to avoid too many buttons
-                  if (
-                    totalPages > 7 &&
-                    i !== 0 &&
-                    i !== totalPages - 1 &&
-                    Math.abs(currentPage - 1 - i) > 1
-                  ) {
-                    if (i === 1 || i === totalPages - 2) {
-                      return (
-                        <span key={i} className="px-1 text-gray-400">
-                          ...
-                        </span>
-                      );
-                    }
-                    return null;
-                  }
-
-                  return (
-                    <button
-                      key={i}
-                      onClick={() => setCurrentPage(i + 1)}
-                      className={`w-8 h-8 flex items-center justify-center rounded transition-colors ${
-                        currentPage === i + 1
-                          ? 'bg-[#004475] text-white font-bold'
-                          : 'text-gray-600 hover:bg-gray-200'
-                      }`}
-                    >
-                      {i + 1}
-                    </button>
-                  );
-                })}
-              </div>
-              <button
-                onClick={() =>
-                  setCurrentPage((p) => Math.min(totalPages, p + 1))
-                }
-                disabled={currentPage >= totalPages}
-                className="px-3 py-1.5 border border-gray-200 rounded text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                Next
-              </button>
-            </div>
+          <div className="p-4 border-t border-gray-100 bg-gray-50 rounded-b-xl">
+            <Pagination
+              currentPage={currentPage}
+              totalItems={data.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={handleItemsPerPageChange}
+              rowsPerPageOptions={[5, 10, 20, 50, 100]}
+            />
           </div>
         </div>
       </div>

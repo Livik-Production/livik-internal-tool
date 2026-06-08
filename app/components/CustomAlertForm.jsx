@@ -63,7 +63,7 @@ const CustomAlertForm = ({
         onClick={!isSubmitting ? onClose : undefined}
       />
 
-      <div className="relative z-10 w-full max-w-sm bg-white rounded-2xl shadow-2xl p-6 animate-in fade-in zoom-in duration-200">
+      <div className="relative z-10 w-full max-w-sm bg-white rounded-2xl shadow-2xl p-6 animate-in fade-in zoom-in duration-200 border border-gray-500">
         <div className="text-center">
           <div
             className={`mx-auto flex items-center justify-center h-12 w-12 rounded-full ${styles.iconBg} mb-4 uppercase`}
@@ -88,7 +88,7 @@ const CustomAlertForm = ({
               type="button"
               disabled={isSubmitting}
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-600 rounded-xl text-sm font-bold hover:bg-gray-50 transition-colors disabled:opacity-50"
+              className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-800 rounded-xl text-sm font-bold hover:bg-gray-200 transition-colors disabled:opacity-50"
             >
               {cancelText}
             </button>

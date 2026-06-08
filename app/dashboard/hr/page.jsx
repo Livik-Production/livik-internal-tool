@@ -19,13 +19,23 @@ import PermissionRequestForm from '../../components/EmployeePortal/PermissionReq
 import HistoryTab from '../../components/EmployeePortal/LeaveRequestTab/HistoryTab';
 import EmployeeAssetView from '../../components/EmployeePortal/EmployeeAssetView';
 import OfferLetter from '../../components/HrModule/OfferLetterTab/OfferLetterTab';
-import { SquarePen, Trash, Calendar, Clock, ArrowLeft, Loader2, Monitor, IndianRupee } from 'lucide-react';
+import {
+  SquarePen,
+  Trash,
+  Calendar,
+  Clock,
+  ArrowLeft,
+  Loader2,
+  Monitor,
+  IndianRupee,
+} from 'lucide-react';
 import { showSuccessToast, showErrorToast } from '../../components/Toast';
 import '../../globals.css';
 import HrDashboardTab from '../../components/HrModule/HrDashboardTab';
 import LeaveMainTab from '../../components/HrModule/LeaveTab/LeaveMainTab';
 import PendingMainTab from '../../components/HrModule/PendingEmployees/PendingMainTab';
 import SkillsDirectory from '../../components/HrModule/SkillsDirectory';
+import Pagination from '../../components/Pagination';
 import { X } from 'lucide-react';
 
 import {
@@ -89,7 +99,8 @@ function EmployeeLeaveHistoryTab({ initialData }) {
       const fetchLeavesAndPermissions = async () => {
         setIsLoadingLeaves(true);
         try {
-          const targetId = initialData.id || initialData.__raw?.id || initialData.employeeId;
+          const targetId =
+            initialData.id || initialData.__raw?.id || initialData.employeeId;
           if (targetId) {
             const [leaveRes, permRes] = await Promise.all([
               fetch(`/api/leave?employeeId=${targetId}`),
@@ -107,12 +118,16 @@ function EmployeeLeaveHistoryTab({ initialData }) {
             ];
 
             // Sort by creation date or start date
-            combined.sort((a, b) => new Date(b.createdAt || b.startDate) - new Date(a.createdAt || a.startDate));
+            combined.sort(
+              (a, b) =>
+                new Date(b.createdAt || b.startDate) -
+                new Date(a.createdAt || a.startDate)
+            );
 
             setLeaveHistory(combined);
           }
         } catch (error) {
-          console.error("Failed to fetch leaves and permissions:", error);
+          console.error('Failed to fetch leaves and permissions:', error);
         } finally {
           setIsLoadingLeaves(false);
         }
@@ -124,9 +139,16 @@ function EmployeeLeaveHistoryTab({ initialData }) {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 h-full overflow-y-auto">
       <div className="flex justify-between items-center mb-4">
-        <h4 className="text-lg font-bold text-gray-900 flex items-center gap-2"><Calendar size={20} /> Leave & Permission History</h4>
+        <h4 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+          <Calendar size={20} /> Leave & Permission History
+        </h4>
       </div>
-      <HistoryTab data={leaveHistory} isLoading={isLoadingLeaves} isViewMode={true} onOpenLeaveForm={() => { }} />
+      <HistoryTab
+        data={leaveHistory}
+        isLoading={isLoadingLeaves}
+        isViewMode={true}
+        onOpenLeaveForm={() => {}}
+      />
     </div>
   );
 }
@@ -138,6 +160,10 @@ function HRPageContent() {
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredEmployees, setFilteredEmployees] = useState([]);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // ... (rest of the logic remains the same)
 
@@ -197,19 +223,21 @@ function HRPageContent() {
     const normalizedRights = rawRights.map((r) => String(r).toLowerCase());
 
     const roleName = (role?.name || role?.roleName || '').toUpperCase();
-    const isAdmin =
-      roleName === 'ADMIN' ||
+    const isSuperAdmin =
       roleName === 'SUPER_ADMIN' ||
+      roleName === 'SUPER ADMIN' ||
+      roleName === 'SUPERADMIN' ||
+      roleName === 'ADMIN' ||
       normalizedRights.includes('all_access');
 
     const checkRight = (r) => normalizedRights.includes(r.toLowerCase());
 
     const hasGlobalControl =
-      isAdmin || checkRight('hr_module_control_all_employees');
+      isSuperAdmin || checkRight('hr_module_control_all_employees');
 
     // Filter tabs based on granular or global rights
     const tabs = TAB_CONFIG.filter((tab) => {
-      if (isAdmin) return true;
+      if (isSuperAdmin) return true;
       return checkRight(tab.right) || checkRight(tab.controlRight);
     });
 
@@ -219,7 +247,7 @@ function HRPageContent() {
     let activeIsViewOnly = true;
 
     if (currentTabConfig) {
-      if (isAdmin) {
+      if (isSuperAdmin) {
         activeIsViewOnly = false;
       } else {
         const hasControl = checkRight(currentTabConfig.controlRight);
@@ -228,12 +256,12 @@ function HRPageContent() {
       }
     }
 
-    const canApprove = isAdmin || checkRight('hr_module_approve_leave');
+    const canApprove = isSuperAdmin || checkRight('hr_module_approve_leave');
 
     return {
       visibleTabs: tabs,
       isViewOnly: activeIsViewOnly,
-      isAdmin,
+      isAdmin: isSuperAdmin,
       canApprove,
     };
   }, [authUser, activeMainTab]);
@@ -293,6 +321,21 @@ function HRPageContent() {
   const handleSearch = (e) => {
     setSearchQuery(e.target.value);
   };
+
+  // Reset pagination when search query or tab changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, activeMainTab]);
+
+  const handleItemsPerPageChange = (newItemsPerPage) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1);
+  };
+
+  const paginatedEmployees = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredEmployees.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredEmployees, currentPage, itemsPerPage]);
 
   useEffect(() => {
     const tabParam = searchParams?.get('tab');
@@ -519,14 +562,18 @@ function HRPageContent() {
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
-        const txt = await res.text().catch(() => null);
-        throw new Error(txt || 'Failed to create employee');
+        let errData;
+        try {
+          errData = await res.json();
+        } catch (e) {}
+        throw new Error(errData?.error || 'Failed to create employee');
       }
 
       const created = await res.json();
       const id = created.empId ?? created.id;
-      const name = `${created.firstName ?? ''} ${created.lastName ?? ''
-        }`.trim();
+      const name = `${created.firstName ?? ''} ${
+        created.lastName ?? ''
+      }`.trim();
 
       const uiRow = {
         id,
@@ -572,8 +619,9 @@ function HRPageContent() {
 
       const updated = await res.json();
       const id = updated.empId ?? updated.id;
-      const name = `${updated.firstName ?? ''} ${updated.lastName ?? ''
-        }`.trim();
+      const name = `${updated.firstName ?? ''} ${
+        updated.lastName ?? ''
+      }`.trim();
 
       const calculatedDocs = [
         updated.docSSLCCollected ? 'sslc' : null,
@@ -609,8 +657,9 @@ function HRPageContent() {
     const row = employees.find((r) => r.id === id);
     const displayName =
       (row?.name ??
-        `${row?.__raw?.firstName ?? ''} ${row?.__raw?.lastName ?? ''
-          }`.trim()) ||
+        `${row?.__raw?.firstName ?? ''} ${
+          row?.__raw?.lastName ?? ''
+        }`.trim()) ||
       id;
 
     setConfirmMessage(
@@ -642,9 +691,7 @@ function HRPageContent() {
         throw new Error(txt || 'Server delete failed');
       }
 
-      // On success, remove from UI
       dispatch(deleteEmployeeAction(id));
-      // alert("Employee deleted successfully"); // Optional feedback
     } catch (err) {
       console.error('Delete failed:', err);
       showErrorToast(`Failed to delete employee: ${err.message}`);
@@ -861,25 +908,53 @@ function HRPageContent() {
         {viewingEmployee ? (
           <div className="bg-white h-full rounded-xl flex flex-col min-h-0">
             <div className=" relative flex items-center justify-center py-3 px-2">
-              <PrimaryButton onClick={() => setViewingEmployee(null)} className="absolute left-0 top-1 py-1 text-gray-800 sm-px-1 md-px-2">
+              <PrimaryButton
+                onClick={() => setViewingEmployee(null)}
+                className="absolute left-0 top-1 py-1 text-gray-800 sm-px-1 md-px-2"
+              >
                 <ArrowLeft size={16} />
                 Back
               </PrimaryButton>
-              <h2 className="text-2xl sm:text-base md:text-3xl font-extrabold text-[#173469] ">Employee Profile</h2>
+              <h2 className="text-2xl sm:text-base md:text-3xl font-extrabold text-[#173469] ">
+                Employee Profile
+              </h2>
             </div>
 
             <nav className="flex shrink-0 space-x-1 mb-1 border-b border-gray-300 bg-transparent overflow-x-auto no-scroll px-2 mt-2">
-              <TabButton isActive={viewingEmployeeTab === 'info'} onClick={() => setViewingEmployeeTab('info')}>Employee Information</TabButton>
-              <TabButton isActive={viewingEmployeeTab === 'assets'} onClick={() => setViewingEmployeeTab('assets')}>Asset Assigned</TabButton>
-              <TabButton isActive={viewingEmployeeTab === 'salary'} onClick={() => setViewingEmployeeTab('salary')}>Salary Details</TabButton>
-              <TabButton isActive={viewingEmployeeTab === 'leave'} onClick={() => setViewingEmployeeTab('leave')}>Leave/Permission History</TabButton>
+              <TabButton
+                isActive={viewingEmployeeTab === 'info'}
+                onClick={() => setViewingEmployeeTab('info')}
+              >
+                Employee Information
+              </TabButton>
+              <TabButton
+                isActive={viewingEmployeeTab === 'assets'}
+                onClick={() => setViewingEmployeeTab('assets')}
+              >
+                Asset Assigned
+              </TabButton>
+              <TabButton
+                isActive={viewingEmployeeTab === 'salary'}
+                onClick={() => setViewingEmployeeTab('salary')}
+              >
+                Salary Details
+              </TabButton>
+              <TabButton
+                isActive={viewingEmployeeTab === 'leave'}
+                onClick={() => setViewingEmployeeTab('leave')}
+              >
+                Leave/Permission History
+              </TabButton>
             </nav>
 
             <div className="flex-1 overflow-hidden min-h-0 flex flex-col relative">
               {viewingEmployeeTab === 'info' && (
                 <div className="flex-1 min-h-0 h-full overflow-hidden">
                   <EmployeeView
-                    initialData={{ ...(viewingEmployee.__raw ?? {}), ...viewingEmployee }}
+                    initialData={{
+                      ...(viewingEmployee.__raw ?? {}),
+                      ...viewingEmployee,
+                    }}
                     onEdit={() => openEdit(viewingEmployee)}
                   />
                 </div>
@@ -887,20 +962,41 @@ function HRPageContent() {
               {viewingEmployeeTab === 'assets' && (
                 <div className="flex flex-col h-full overflow-y-auto no-scroll">
                   <div className="h-full">
-                    <EmployeeAssetView employeeId={viewingEmployee.id || viewingEmployee.__raw?.id || viewingEmployee.employeeId} initialAssignments={viewingEmployee.assetAssignments || viewingEmployee.__raw?.assetAssignments || []} />
+                    <EmployeeAssetView
+                      employeeId={
+                        viewingEmployee.id ||
+                        viewingEmployee.__raw?.id ||
+                        viewingEmployee.employeeId
+                      }
+                      initialAssignments={
+                        viewingEmployee.assetAssignments ||
+                        viewingEmployee.__raw?.assetAssignments ||
+                        []
+                      }
+                    />
                   </div>
                 </div>
               )}
               {viewingEmployeeTab === 'salary' && (
                 <div className="flex flex-col h-full overflow-y-auto no-scroll">
                   <div className="">
-                    <EmployeePayrollView employee={{ ...(viewingEmployee.__raw ?? {}), ...viewingEmployee }} />
+                    <EmployeePayrollView
+                      employee={{
+                        ...(viewingEmployee.__raw ?? {}),
+                        ...viewingEmployee,
+                      }}
+                    />
                   </div>
                 </div>
               )}
               {viewingEmployeeTab === 'leave' && (
                 <div className="flex flex-col h-full overflow-y-auto no-scroll">
-                  <EmployeeLeaveHistoryTab initialData={{ ...(viewingEmployee.__raw ?? {}), ...viewingEmployee }} />
+                  <EmployeeLeaveHistoryTab
+                    initialData={{
+                      ...(viewingEmployee.__raw ?? {}),
+                      ...viewingEmployee,
+                    }}
+                  />
                 </div>
               )}
             </div>
@@ -937,7 +1033,9 @@ function HRPageContent() {
                     value={searchQuery}
                     onChange={handleSearch}
                     placeholder={
-                      activeMainTab === 'all' ? 'Search employees...' : 'Search...'
+                      activeMainTab === 'all'
+                        ? 'Search employees...'
+                        : 'Search...'
                     }
                     className="px-3 py-2 pl-10 border border-gray-300 rounded-lg text-sm w-64 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                   />
@@ -968,10 +1066,11 @@ function HRPageContent() {
                         {canViewAllEmployees && (
                           <PrimaryButton
                             onClick={openAdd}
-                            className={`px-4 py-2 text-sm ${!canControlAllEmployees
-                              ? 'opacity-60 cursor-not-allowed'
-                              : ''
-                              }`}
+                            className={`px-4 py-2 text-sm ${
+                              !canControlAllEmployees
+                                ? 'opacity-60 cursor-not-allowed'
+                                : ''
+                            }`}
                             disabled={!canControlAllEmployees}
                             title={
                               canControlAllEmployees
@@ -1002,10 +1101,11 @@ function HRPageContent() {
 
                   <div
                     key={activeMainTab}
-                    className={`flex-1 overflow-y-auto no-scrollbar transition-all duration-400 min-h-0 ${animating
-                      ? 'opacity-0 translate-y-4'
-                      : 'animate-dashboard-reveal'
-                      }`}
+                    className={`flex-1 overflow-y-auto no-scrollbar transition-all duration-400 min-h-0 ${
+                      animating
+                        ? 'opacity-0 translate-y-4'
+                        : 'animate-dashboard-reveal'
+                    }`}
                   >
                     {/* DASHBOARD TAB */}
                     {activeMainTab === 'dashboard' && (
@@ -1022,18 +1122,28 @@ function HRPageContent() {
 
                     {/* ALL EMPLOYEES TAB - Combined for both HR Executive and Admin */}
                     {activeMainTab === 'all' && canViewAllEmployees && (
-                      <section className="overflow-hidden rounded-xl border border-gray-200 shadow-inner text-gray-900">
-                        <div className="overflow-y-auto">
-                          <CustomTable
-                            columns={[...employeeColumns]}
-                            data={filteredEmployees}
-                            rowKey="id"
-                            actions={(row) => <ActionButtons row={row} />}
-                            actionsHeader="Actions"
-                            actionsAlign="center"
-                          />
-                        </div>
-                      </section>
+                      <div className="flex flex-col gap-4">
+                        <section className="overflow-hidden rounded-xl border border-gray-200 shadow-inner text-gray-900">
+                          <div className="overflow-y-auto">
+                            <CustomTable
+                              columns={[...employeeColumns]}
+                              data={paginatedEmployees}
+                              rowKey="id"
+                              actions={(row) => <ActionButtons row={row} />}
+                              actionsHeader="Actions"
+                              actionsAlign="center"
+                            />
+                          </div>
+                        </section>
+                        <Pagination
+                          currentPage={currentPage}
+                          totalItems={filteredEmployees.length}
+                          itemsPerPage={itemsPerPage}
+                          onPageChange={setCurrentPage}
+                          onItemsPerPageChange={handleItemsPerPageChange}
+                          rowsPerPageOptions={[5, 10, 20, 50, 100]}
+                        />
+                      </div>
                     )}
 
                     {/* LEAVE TAB */}
@@ -1188,10 +1298,11 @@ function HRPageContent() {
                 {(selectedStatsData.monthlyStats || []).map((m, idx) => (
                   <div
                     key={idx}
-                    className={`border rounded-2xl p-4 shadow-sm transition-all hover:shadow-md ${idx === 0
-                      ? 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-100'
-                      : 'bg-white border-gray-100'
-                      }`}
+                    className={`border rounded-2xl p-4 shadow-sm transition-all hover:shadow-md ${
+                      idx === 0
+                        ? 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-100'
+                        : 'bg-white border-gray-100'
+                    }`}
                   >
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center justify-between">
@@ -1311,12 +1422,13 @@ function HRPageContent() {
                               <td className="px-6 py-4">
                                 <span
                                   className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm
-                                  ${leave.status === 'APPROVED'
+                                  ${
+                                    leave.status === 'APPROVED'
                                       ? 'bg-green-100 text-green-700 ring-1 ring-green-600/20'
                                       : leave.status === 'REJECTED'
                                         ? 'bg-red-100 text-red-700 ring-1 ring-red-600/20'
                                         : 'bg-yellow-100 text-yellow-700 ring-1 ring-yellow-600/20'
-                                    }`}
+                                  }`}
                                 >
                                   {leave.status}
                                 </span>
@@ -1435,8 +1547,8 @@ function HRPageContent() {
                       label: 'DOB',
                       value: selectedQuickInfo.dateOfBirth
                         ? new Date(
-                          selectedQuickInfo.dateOfBirth
-                        ).toLocaleDateString('en-GB')
+                            selectedQuickInfo.dateOfBirth
+                          ).toLocaleDateString('en-GB')
                         : 'N/A',
                     },
                     {

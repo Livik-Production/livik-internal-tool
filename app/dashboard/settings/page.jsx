@@ -12,6 +12,7 @@ import SystemSettingsTab from '../../components/Settings/SystemSettingsTab';
 import HrModuleSettingsTab from '../../components/Settings/HrModuleSettingsTab';
 import LookupDataTab from '../../components/Settings/LookupDataTab';
 import PayrollSettingsTab from '../../components/Settings/PayrollSettingsTab';
+import NumberFormatsTab from '../../components/Settings/NumberFormatsTab';
 import TabButton from '../../components/Buttons/TabButton';
 
 export default function SettingsPage() {
@@ -19,19 +20,29 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('companyDetails'); // 'companyDetails', 'system', 'hr_module', 'lookup', 'payroll_new'
   const authUser = useSelector((state) => state.auth.user);
 
-  // Check if user is admin
+  // Check if user has settings access
   const roleName =
     authUser?.role?.roleName?.toUpperCase() ??
     authUser?.role?.name?.toUpperCase() ??
     '';
-  const isAdminUser = roleName === 'ADMIN' || roleName === 'SUPER_ADMIN';
+  const isSuperAdmin =
+    roleName === 'SUPER_ADMIN' ||
+    roleName === 'SUPER ADMIN' ||
+    roleName === 'SUPERADMIN' ||
+    roleName === 'ADMIN';
+  const hasSettingsAccess =
+    isSuperAdmin ||
+    (authUser?.rights || []).some(
+      (r) =>
+        r.toUpperCase() === 'ALL_ACCESS' || r.toLowerCase().includes('settings')
+    );
 
   useEffect(() => {
-    // Redirect non-admin users
-    if (authUser && !isAdminUser) {
+    // Redirect unauthorized users
+    if (authUser && !hasSettingsAccess) {
       router.push('/dashboard');
     }
-  }, [authUser, isAdminUser, router]);
+  }, [authUser, hasSettingsAccess, router]);
 
   if (!authUser) {
     return <Loader label="Validating access..." fullScreen />;
@@ -90,6 +101,12 @@ export default function SettingsPage() {
             >
               Payroll Settings
             </TabButton>
+            <TabButton
+              isActive={activeTab === 'numberFormats'}
+              onClick={() => setActiveTab('numberFormats')}
+            >
+              Number Formats
+            </TabButton>
           </div>
 
           {/* Tab Content */}
@@ -99,6 +116,7 @@ export default function SettingsPage() {
             {activeTab === 'hr_module' && <HrModuleSettingsTab />}
             {activeTab === 'lookup' && <LookupDataTab />}
             {activeTab === 'payroll_new' && <PayrollSettingsTab />}
+            {activeTab === 'numberFormats' && <NumberFormatsTab />}
           </div>
         </div>
       </div>

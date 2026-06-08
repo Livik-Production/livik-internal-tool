@@ -262,50 +262,44 @@ async function seedPermissions() {
       rightName: 'payroll_view_salarysetup',
       description: 'Access to employee self-service portal',
     },
-    // Website Operations
+    // Staffing & Resourcing Module
     {
-      module: 'Website Operations',
-      displayName: 'Website Operations Access',
-      rightName: 'website_operations_access',
-      description: 'Access to Website Operations module',
+      module: 'Staffing',
+      displayName: 'Staffing Access',
+      rightName: 'staffing_module_access',
+      description: 'Access to Staffing and Resourcing module',
     },
     {
-      module: 'Website Operations',
-      displayName: 'Website Operations View',
-      rightName: 'website_operations_view',
-      description: 'Can view website operations data',
-    },
-    {
-      module: 'Website Operations',
-      displayName: 'Website Operations Control',
-      rightName: 'website_operations_control',
-      description: 'Can manage website operations',
-    },
-    // Professional Skills
-    {
-      module: 'Professional Skills',
-      displayName: 'Professional Skills View',
-      rightName: 'professional_skills_view',
-      description: 'Can view professional skills directory',
-    },
-    {
-      module: 'Professional Skills',
-      displayName: 'Professional Skills Control',
-      rightName: 'professional_skills_control',
-      description: 'Can update professional skills',
-    },
-    // Staffing & Resourcing
-    {
-      module: 'Staffing & Resourcing',
-      displayName: 'Staffing & Resourcing View',
-      rightName: 'staffing_resourcing_view',
+      module: 'Staffing',
+      displayName: 'Staffing View',
+      rightName: 'staffing_view',
       description: 'Can view staffing and resourcing details',
     },
     {
-      module: 'Staffing & Resourcing',
-      displayName: 'Staffing & Resourcing Control',
-      rightName: 'staffing_resourcing_control',
-      description: 'Can manage staffing and resourcing',
+      module: 'Staffing',
+      displayName: 'Staffing Control',
+      rightName: 'staffing_control',
+      description: 'Can manage staffing and projects',
+    },
+    // Website Operations
+    {
+      module: 'Admin',
+      displayName: 'Website Operations Access',
+      rightName: 'website_ops_access',
+      description: 'Access to Website Operations tab',
+    },
+    {
+      module: 'Admin',
+      displayName: 'Website Operations Control',
+      rightName: 'website_ops_control',
+      description: 'Can control website operations content',
+    },
+    // Settings Module
+    {
+      module: 'Settings',
+      displayName: 'Settings Access',
+      rightName: 'settings_module_access',
+      description: 'Access to Settings module',
     },
   ];
 
@@ -348,6 +342,12 @@ async function seedRoles() {
       rights: allRights.map((p) => p.id),
     },
     {
+      displayName: 'Super Admin',
+      roleName: 'SUPER_ADMIN',
+      description: 'Super Administrator with bypass access',
+      rights: allRights.map((p) => p.id),
+    },
+    {
       displayName: 'hr_admin',
       roleName: 'HR_ADMIN',
       description: 'Human Resources Administrator',
@@ -356,9 +356,8 @@ async function seedRoles() {
           (p) =>
             p.rightName.startsWith('hr_') ||
             p.rightName.startsWith('asset_') ||
-            p.rightName.startsWith('website_') ||
-            p.rightName.startsWith('professional_') ||
             p.rightName.startsWith('staffing_') ||
+            p.rightName.startsWith('website_ops_') ||
             p.rightName === 'finance_view_expenses' ||
             p.rightName === 'view_main_dashboard' ||
             p.rightName === 'employee_portal'
@@ -400,8 +399,8 @@ async function seedEmployees() {
   console.log('🔁 Seeding employees...');
 
   // Get roles for assignment - using roleName (unique)
-  const adminRole = await prisma.role.findUnique({
-    where: { roleName: 'ADMIN' },
+  const superAdminRole = await prisma.role.findUnique({
+    where: { roleName: 'SUPER_ADMIN' },
   });
   const hrAdminRole = await prisma.role.findUnique({
     where: { roleName: 'HR_ADMIN' },
@@ -410,103 +409,109 @@ async function seedEmployees() {
     where: { roleName: 'EMPLOYEE' },
   });
 
-  // Seed Subiramani - Admin (LK001)
   await prisma.employee.upsert({
-    where: { email: 'subiramani.g.m@gmail.com' },
-    update: {},
+    where: { email: 'ram@liviktech.com' },
+    update: {
+      status: 'Active',
+    },
     create: {
       empId: 'LK001',
-      firstName: 'SUBIRAMANI',
-      lastName: 'G',
+      firstName: 'RAM KUMAR',
+      lastName: 'B',
       dateOfBirth: new Date('2000-05-17'),
       gender: 'MALE',
-      aadhaarNumber: '266013543602',
-      panNumber: 'MQIPS2999J',
-      email: 'subiramani.g.m@gmail.com',
-      phoneNumber: '6381986147',
-      emergencyContact: 'Brother - 9566567962',
+      aadhaarNumber: '26601350000',
+      panNumber: 'MQIPS0000',
+      email: 'ram@liviktech.com',
+      phoneNumber: '7708814551',
+      emergencyContact: 'Brother - 1234567893',
       bloodGroup: 'O+',
-      presentAddress: '4/25, Middle Street, Mandhithoppu, Kovilpatti - 628501',
-      permanentAddress:
-        '4/25, Middle Street, Mandhithoppu, Kovilpatti - 628501',
-      designation: 'Technical Lead',
-      department: 'Technical',
+      presentAddress: 'ABC ROAD, DINDIGUL',
+      permanentAddress: 'ABC ROAD, DINDIGUL',
+      designation: 'CEO',
+      department: 'CEO',
       dateOfJoining: new Date('2025-08-03'),
       workLocation: 'Dindigul',
-      bankName: 'Indian Overseas Bank',
-      accountNumber: '266001000007598',
-      ifscCode: 'IOBA0002660',
-      roleId: adminRole?.id,
+      bankName: 'ABC Bank',
+      accountNumber: '266001000000000',
+      ifscCode: 'IOBA0000000',
+      roleId: superAdminRole?.id,
+      status: 'Active',
       educationDetails: {
         create: [
           {
-            institution: 'Nadar Higher Secondary School, Kovilpatti',
+            institution: 'VOC Higher Secondary School, Kovilpatti',
             qualification: 'HSC',
-            yearCompleted: '2017',
+            yearCompleted: '2006',
           },
           {
             university: 'MANONMANIUM SUNDARANAR UNIVERSITY',
-            institution: 'Government Arts and Science College, Kovilpatti',
-            qualification: 'B.Sc',
-            yearCompleted: '2020',
+            institution: 'PSR ENGINEERING COLLEGE, SIVAKAI',
+            qualification: 'BE.CSE',
+            yearCompleted: '2011',
           },
         ],
       },
     },
   });
 
-  console.log('✅ Subiramani (Admin) seeded successfully');
+  console.log('✅ Ram kumar (Admin) seeded successfully');
 
-  // Seed Bavinthra Kumar - Employee (LK002)
+  // Seed Naveen - Employee (LK002)
   await prisma.employee.upsert({
-    where: { email: 'bavinthirakumar@gmail.com' },
-    update: {},
+    where: { email: '.naveen.v@liviktech.com' },
+    update: {
+      status: 'Active',
+    },
     create: {
       empId: 'LK002',
-      firstName: 'BAVINTHIRA',
-      lastName: 'KUMAR',
+      firstName: 'NAVEEN',
+      lastName: 'V',
       dateOfBirth: new Date('2004-03-08'),
       gender: 'MALE',
-      aadhaarNumber: '236205736423',
-      panNumber: 'GOLPB1729C',
-      email: 'bavinthirakumar@gmail.com',
-      phoneNumber: '6374020069',
-      emergencyContact: 'BROTHER - 8754858838',
-      bloodGroup: 'A1+',
-      presentAddress: '2/498-B, SARADHA NAGAR, SIVAKASI.-626124',
-      permanentAddress: '2/498-B, SARADHA NAGAR, SIVAKASI.-626124',
-      designation: 'SOFTWARE DEVELOPER',
+      aadhaarNumber: '236205730000',
+      panNumber: 'GOLPB17ABC',
+      email: 'naveen.v@liviktech.com',
+      phoneNumber: '8883143318',
+      emergencyContact: 'FATHER - 1234567893',
+      bloodGroup: 'O+',
+      presentAddress: 'ABC ROAD, DINDIGUL',
+      permanentAddress: 'ABC ROAD, DINDIGUL',
+      designation: 'TECHNICAL LEAD',
       department: 'TECHNICAL',
       dateOfJoining: new Date('2025-09-10'),
       workLocation: 'Dindigul',
-      bankName: 'STATE BANK OF INDIA',
-      accountNumber: '41323516161',
-      ifscCode: 'SBIN0000975',
-      roleId: employeeRole?.id,
+      bankName: 'ABC BANK OF INDIA',
+      accountNumber: '41323510000',
+      ifscCode: 'SBIN0000000',
+      roleId: superAdminRole?.id,
+      status: 'Active',
       educationDetails: {
         create: [
           {
-            institution: 'MUSLIM HR SEC SCHOOL',
+            institution: 'ABC HR SEC SCHOOL',
             qualification: 'HSC',
-            yearCompleted: '2022',
+            yearCompleted: '2008',
           },
           {
-            university: 'MANONMANIUM SUNDARANAR UNIVERSITY',
-            institution: 'G.VENKATASWAMY NAIDU COLLEGE',
+            university: 'ABC UNIVERSITY',
+            institution: 'ABC COLLEGE',
             qualification: 'BCA',
-            yearCompleted: '2025',
+            yearCompleted: '2011',
           },
         ],
       },
     },
   });
 
-  console.log('✅ Bavinthra Kumar seeded successfully');
+  console.log('✅ Naveen (Admin) seeded successfully');
 
   // Seed Prathip Kumar - hr_admin (LK003)
   await prisma.employee.upsert({
     where: { email: 'aswinudhaya10@gmail.com' },
-    update: {},
+    update: {
+      status: 'Active',
+    },
     create: {
       empId: 'LK003',
       firstName: 'PRATHIP',
@@ -531,6 +536,7 @@ async function seedEmployees() {
       accountNumber: '6753217844',
       ifscCode: 'IDIB000D018',
       roleId: hrAdminRole?.id,
+      status: 'Active',
       educationDetails: {
         create: [
           {
@@ -549,7 +555,7 @@ async function seedEmployees() {
     },
   });
 
-  console.log('✅ Prathip Kumar seeded successfully');
+  console.log('✅ Prathip Kumar (HR) seeded successfully');
 }
 
 async function main() {
@@ -569,7 +575,9 @@ async function main() {
     console.log('🎉 Seed completed successfully!');
     console.log('📊 Summary:');
     console.log('   - 14 Rights created');
-    console.log('   - 3 Roles created (EMPLOYEE, ADMIN, HR_ADMIN)');
+    console.log(
+      '   - 4 Roles created (EMPLOYEE, ADMIN, SUPER_ADMIN, HR_ADMIN)'
+    );
     console.log('   - 3 Employees created (LK001, LK002, LK003)');
     console.log('   - Employee sequence initialized');
     console.log('===============================');

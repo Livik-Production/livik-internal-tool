@@ -151,7 +151,7 @@ function StaffingContent() {
                   benchDays,
                   benchStartDate: emp.benchDetail?.benchStartDate || null,
                   status: isAssigned ? 'Assigned' : 'Available',
-                  avatar: emp.photo || `https://i.pravatar.cc/150?u=${emp.id}`,
+                  avatar: emp.photo,
                 };
               })
             : []

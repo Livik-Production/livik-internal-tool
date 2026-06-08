@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import CustomTable from '../../CustomTable';
 import IconButton from '../../Buttons/IconButton';
 import { CheckCircle, XCircle, Eye, Loader2 } from 'lucide-react';
@@ -8,10 +8,18 @@ import { useSelector, useDispatch } from 'react-redux';
 import { showSuccessToast, showErrorToast } from '../../Toast';
 import ConfirmDialog from '../../ConfirmDialog';
 import { fetchEmployees } from '../../../../store/slices/employeesSlice';
+import Pagination from '../../Pagination';
 
-export default function DocumentApprovalsTable() {
+export default function DocumentApprovalsTable({
+  searchElement = null,
+  searchQuery = '',
+}) {
   const [requests, setRequests] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10); // default to 10
   const authUser = useSelector((state) => state.auth.user);
   const dispatch = useDispatch();
 
@@ -26,6 +34,35 @@ export default function DocumentApprovalsTable() {
     fetchRequests();
   }, [authUser]);
 
+  // Reset pagination when search query changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  const handleItemsPerPageChange = (newItemsPerPage) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1);
+  };
+
+  // Filter requests based on search query
+  const filteredRequests = useMemo(() => {
+    if (!searchQuery) return requests;
+    const lowerQuery = searchQuery.toLowerCase();
+    return requests.filter(
+      (req) =>
+        req.employee?.firstName?.toLowerCase().includes(lowerQuery) ||
+        req.employee?.lastName?.toLowerCase().includes(lowerQuery) ||
+        req.employee?.empId?.toLowerCase().includes(lowerQuery) ||
+        req.documentType?.toLowerCase().includes(lowerQuery) ||
+        req.proofLabel?.toLowerCase().includes(lowerQuery)
+    );
+  }, [requests, searchQuery]);
+
+  const paginatedRequests = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredRequests.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredRequests, currentPage, itemsPerPage]);
+
   const fetchRequests = async () => {
     try {
       setIsLoading(true);
@@ -35,8 +72,12 @@ export default function DocumentApprovalsTable() {
         authUser?.role?.roleName ||
         ''
       ).toUpperCase();
-      const roleFilter =
-        userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' ? 'HR' : 'EMPLOYEE';
+      const isAdmin =
+        userRole === 'ADMIN' ||
+        userRole === 'SUPER_ADMIN' ||
+        userRole === 'SUPER ADMIN' ||
+        userRole === 'SUPERADMIN';
+      const roleFilter = isAdmin ? 'HR' : 'EMPLOYEE';
 
       const res = await fetch(
         `/api/document-requests?status=PENDING&requestedByRole=${roleFilter}`
@@ -184,10 +225,10 @@ export default function DocumentApprovalsTable() {
               Fetching pending approvals...
             </span>
           </div>
-        ) : requests.length > 0 ? (
+        ) : filteredRequests.length > 0 ? (
           <CustomTable
             columns={columns}
-            data={requests}
+            data={paginatedRequests}
             rowKey="id"
             actions={tableActions}
             actionsHeader="Review"
@@ -202,6 +243,19 @@ export default function DocumentApprovalsTable() {
           </div>
         )}
       </div>
+
+      {!isLoading && filteredRequests.length > 0 && (
+        <div className="mt-4">
+          <Pagination
+            currentPage={currentPage}
+            totalItems={filteredRequests.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={handleItemsPerPageChange}
+            rowsPerPageOptions={[5, 10, 20, 50, 100]}
+          />
+        </div>
+      )}
 
       {/* Approve Dialog */}
       <ConfirmDialog

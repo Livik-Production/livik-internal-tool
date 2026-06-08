@@ -126,22 +126,47 @@ export default function DashboardIndex() {
   // 2. Only exact 'Employee' gets EmployeeDashboard
   // 3. Only exact 'Hr Admin' (handles 'HR ADMIN' or 'HR_ADMIN') gets HrDashboard
   // 4. Everything else (e.g., 'System Admin', 'Finance Manager') gets CommonDashboard
-  
-  const isAdminUser = upperRole === 'ADMIN';
+
+  const isAdminUser =
+    upperRole === 'ADMIN' ||
+    upperRole === 'SUPER ADMIN' ||
+    upperRole === 'SUPER_ADMIN' ||
+    upperRole === 'SUPERADMIN';
   const isEmployeeDashboard = upperRole === 'EMPLOYEE';
   const isHrUser = upperRole === 'HR ADMIN';
-  const isAdminOrHr = isAdminUser || isHrUser;
+  const isSuperAdmin =
+    upperRole === 'SUPER ADMIN' ||
+    upperRole === 'SUPER_ADMIN' ||
+    upperRole === 'SUPERADMIN';
   const userRights = authUser?.rights || [];
 
   const visibleQuickActions = useMemo(() => {
-    if (isAdminOrHr || userRights.includes('ALL_ACCESS')) return quickActions;
+    if (isAdminUser || userRights.includes('ALL_ACCESS')) return quickActions;
 
     return quickActions.filter((action) => {
       const moduleId = action.id.toLowerCase();
       if (moduleId === 'employee-portal' || moduleId === 'portal') return true;
-      return userRights.some((r) => r.toLowerCase().includes(moduleId));
+
+      switch (moduleId) {
+        case 'hr':
+          return userRights.some(
+            (r) =>
+              r.toLowerCase().includes('hr') ||
+              r.toLowerCase().includes('staffing')
+          );
+        case 'admin':
+          return userRights.some(
+            (r) =>
+              r.toLowerCase().includes('admin') ||
+              r.toLowerCase().includes('website_ops') ||
+              r.toLowerCase().includes('site_operations') ||
+              r.toLowerCase().includes('livik_site')
+          );
+        default:
+          return userRights.some((r) => r.toLowerCase().includes(moduleId));
+      }
     });
-  }, [isAdminOrHr, userRights]);
+  }, [isSuperAdmin, userRights]);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -459,24 +484,30 @@ export default function DashboardIndex() {
       }
 
       try {
-        const [empRes, leaveRes, holidayRes, assetRes, payslipRes, attendanceRes] =
-          await Promise.all([
-            fetch(`/api/employees/${authUser.id}`),
-            fetch(`/api/hr/leave-requests?employeeId=${authUser.id}`),
-            fetch('/api/hr/holidays'),
-            fetch('/api/assets'),
-            fetch(`/api/payroll/salary-setup?employeeId=${authUser.id}`),
-            fetch(`/api/attendance?employeeId=${authUser.id}`),
-          ]);
+        const [
+          empRes,
+          leaveRes,
+          holidayRes,
+          assetRes,
+          payslipRes,
+          attendanceRes,
+        ] = await Promise.all([
+          fetch(`/api/employees/${authUser.id}`),
+          fetch(`/api/hr/leave-requests?employeeId=${authUser.id}`),
+          fetch('/api/hr/holidays'),
+          fetch('/api/assets'),
+          fetch(`/api/payroll/salary-setup?employeeId=${authUser.id}`),
+          fetch(`/api/attendance?employeeId=${authUser.id}`),
+        ]);
 
         const empData = empRes.ok ? await empRes.json() : {};
         const leaveData = leaveRes.ok ? await leaveRes.json() : [];
         const holidayData = holidayRes.ok ? await holidayRes.json() : [];
         const assetData = assetRes.ok ? await assetRes.json() : [];
         const salaryHistory = payslipRes.ok ? await payslipRes.json() : [];
-        const attendanceData = (await Promise.all([
-          attendanceRes.ok ? attendanceRes.json() : []
-        ]))[0];
+        const attendanceData = (
+          await Promise.all([attendanceRes.ok ? attendanceRes.json() : []])
+        )[0];
 
         const pendingLeaves = leaveData.filter(
           (l) => l.status === 'Pending'
@@ -504,7 +535,7 @@ export default function DashboardIndex() {
             const allocated = Number(bal.allocated || 0);
             const used = Number(bal.used || 0);
             const balance = allocated - used;
-            
+
             totalLeaves += allocated;
             remainingLeaves += balance;
 
@@ -523,22 +554,36 @@ export default function DashboardIndex() {
           ...leaveData.slice(0, 3).map((l) => ({
             id: `l-${l.id}`,
             title: `Leave Request: ${l.leaveType}`,
-            date: new Date(l.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+            date: new Date(l.createdAt).toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+            }),
             status: l.status,
             type: 'Leave',
           })),
-          ...assetData.map(a => {
-             const assignment = a.assignments?.find(as => as.employeeId === authUser.id);
-             if(!assignment) return null;
-             return {
+          ...assetData
+            .map((a) => {
+              const assignment = a.assignments?.find(
+                (as) => as.employeeId === authUser.id
+              );
+              if (!assignment) return null;
+              return {
                 id: `a-${a.id}`,
                 title: `Asset Assigned: ${a.deviceName}`,
-                date: new Date(assignment.assignedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+                date: new Date(assignment.assignedDate).toLocaleDateString(
+                  'en-US',
+                  { month: 'short', day: 'numeric', year: 'numeric' }
+                ),
                 status: assignment.returnDate ? 'Returned' : 'Active',
                 type: 'Asset',
-             }
-          }).filter(Boolean).slice(0, 2),
-        ].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 4);
+              };
+            })
+            .filter(Boolean)
+            .slice(0, 2),
+        ]
+          .sort((a, b) => new Date(b.date) - new Date(a.date))
+          .slice(0, 4);
 
         // CALCULATE MONTHLY ATTENDANCE RATE
         const now = new Date();
@@ -551,9 +596,13 @@ export default function DashboardIndex() {
             const dt = new Date(y, m, d);
             const day = dt.getDay();
             if (day !== 0 && day !== 6) {
-              const isH = hols.some(h => {
+              const isH = hols.some((h) => {
                 const hd = new Date(h.holidayDate);
-                return hd.getFullYear() === y && hd.getMonth() === m && hd.getDate() === d;
+                return (
+                  hd.getFullYear() === y &&
+                  hd.getMonth() === m &&
+                  hd.getDate() === d
+                );
               });
               if (!isH) count++;
             }
@@ -562,43 +611,54 @@ export default function DashboardIndex() {
         };
 
         // Current Month Stats
-        const workingNow = getWorkingDays(curY, curM, now.getDate(), holidayData);
-        const presentNow = attendanceData.filter(a => {
+        const workingNow = getWorkingDays(
+          curY,
+          curM,
+          now.getDate(),
+          holidayData
+        );
+        const presentNow = attendanceData.filter((a) => {
           const ad = new Date(a.date);
           return ad.getMonth() === curM && ad.getFullYear() === curY;
         }).length;
-        const currentRate = workingNow > 0 ? (presentNow / workingNow) * 100 : 0;
+        const currentRate =
+          workingNow > 0 ? (presentNow / workingNow) * 100 : 0;
 
         // Previous Month Stats (for trend)
         const prevDate = new Date(curY, curM, 0); // Last day of prev month
         const prevM = prevDate.getMonth();
         const prevY = prevDate.getFullYear();
-        const workingPrev = getWorkingDays(prevY, prevM, prevDate.getDate(), holidayData);
-        const presentPrev = attendanceData.filter(a => {
+        const workingPrev = getWorkingDays(
+          prevY,
+          prevM,
+          prevDate.getDate(),
+          holidayData
+        );
+        const presentPrev = attendanceData.filter((a) => {
           const ad = new Date(a.date);
           return ad.getMonth() === prevM && ad.getFullYear() === prevY;
         }).length;
-        const prevRate = workingPrev > 0 ? (presentPrev / workingPrev) * 100 : 0;
-        
-        const rateChange = prevRate > 0 ? 
-          `${(currentRate - prevRate).toFixed(1)}%` : 
-          '0%';
+        const prevRate =
+          workingPrev > 0 ? (presentPrev / workingPrev) * 100 : 0;
+
+        const rateChange =
+          prevRate > 0 ? `${(currentRate - prevRate).toFixed(1)}%` : '0%';
 
         const announcements = [];
         if (nextHoliday) {
           announcements.push({
-             time: 'UPCOMING HOLIDAY',
-             title: nextHoliday.holidayName,
-             desc: `${nextHoliday.holidayName} is on ${new Date(nextHoliday.holidayDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}.`,
-             active: true,
+            time: 'UPCOMING HOLIDAY',
+            title: nextHoliday.holidayName,
+            desc: `${nextHoliday.holidayName} is on ${new Date(nextHoliday.holidayDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}.`,
+            active: true,
           });
         }
         if (pendingLeaves > 0) {
           announcements.push({
-             time: 'SYSTEM ALERT',
-             title: 'Pending Leave Approvals',
-             desc: `You have ${pendingLeaves} pending leave request(s) awaiting approval from HR.`,
-             active: false,
+            time: 'SYSTEM ALERT',
+            title: 'Pending Leave Approvals',
+            desc: `You have ${pendingLeaves} pending leave request(s) awaiting approval from HR.`,
+            active: false,
           });
         }
 
@@ -621,7 +681,7 @@ export default function DashboardIndex() {
           attendanceRate: `${currentRate.toFixed(1)}%`,
           attendanceChange: (currentRate >= prevRate ? '+' : '') + rateChange,
           recentActivities,
-          announcements
+          announcements,
         });
       } catch (error) {
         console.error('Error fetching employee dashboard data:', error);
@@ -657,9 +717,7 @@ export default function DashboardIndex() {
     return (
       <div className="h-full w-full flex items-center justify-center py-20">
         <Loader
-          label={
-            !authUser ? 'Loading...' : 'Loading your dashboard...'
-          }
+          label={!authUser ? 'Loading...' : 'Loading your dashboard...'}
           size="lg"
           fullScreen={false}
         />
@@ -686,44 +744,43 @@ export default function DashboardIndex() {
         </div>
 
         <div className="flex-1 overflow-y-auto no-scrollbar min-h-0 pr-1 pb-6">
-
-        {isEmployeeDashboard ? (
-          <EmployeeDashboard
-            employeeStats={employeeStats}
-            visibleQuickActions={visibleQuickActions}
-          />
-        ) : isHrUser ? (
-          <HrDashboard
-            statsData={statsData}
-            roleName={roleName}
-            visibleQuickActions={visibleQuickActions}
-            employeesData={employeesData}
-            attendanceData={attendanceData}
-            holidaysData={holidaysData}
-            permissionsData={permissionsData}
-          />
-        ) : isAdminUser ? (
-          <AdminDashboard
-            statsData={statsData}
-            roleName={roleName}
-            visibleQuickActions={visibleQuickActions}
-            invoiceData={invoiceData}
-            paymentData={paymentData}
-            pendingEmployeesData={pendingEmployeesData}
-          />
-        ) : (
-          <CommonDashboard 
-            statsData={statsData}
-            userRights={userRights}
-            roleName={roleName}
-            invoiceData={invoiceData}
-            paymentData={paymentData}
-            pendingEmployeesData={pendingEmployeesData}
-            attendanceData={attendanceData}
-            employeeStats={employeeStats}
-            visibleQuickActions={visibleQuickActions}
-          />
-        )}
+          {isEmployeeDashboard ? (
+            <EmployeeDashboard
+              employeeStats={employeeStats}
+              visibleQuickActions={visibleQuickActions}
+            />
+          ) : isHrUser ? (
+            <HrDashboard
+              statsData={statsData}
+              roleName={roleName}
+              visibleQuickActions={visibleQuickActions}
+              employeesData={employeesData}
+              attendanceData={attendanceData}
+              holidaysData={holidaysData}
+              permissionsData={permissionsData}
+            />
+          ) : isAdminUser ? (
+            <AdminDashboard
+              statsData={statsData}
+              roleName={roleName}
+              visibleQuickActions={visibleQuickActions}
+              invoiceData={invoiceData}
+              paymentData={paymentData}
+              pendingEmployeesData={pendingEmployeesData}
+            />
+          ) : (
+            <CommonDashboard
+              statsData={statsData}
+              userRights={userRights}
+              roleName={roleName}
+              invoiceData={invoiceData}
+              paymentData={paymentData}
+              pendingEmployeesData={pendingEmployeesData}
+              attendanceData={attendanceData}
+              employeeStats={employeeStats}
+              visibleQuickActions={visibleQuickActions}
+            />
+          )}
         </div>
       </div>
     </div>

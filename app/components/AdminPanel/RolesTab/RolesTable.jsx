@@ -3,6 +3,8 @@
 import { Plus, SquarePen, Trash, X } from 'lucide-react';
 import { FaUserPlus } from 'react-icons/fa';
 import { useState } from 'react';
+import { useSelector } from 'react-redux';
+import { selectAuthUser } from '../../../../store/slices/authSlice';
 import AssignRoleModal from './AssignRoleModal';
 import RoleAssignmentsModal from './RoleAssignmentsModal';
 import CustomTable from '../../CustomTable';
@@ -24,7 +26,18 @@ export default function RolesTable({
   showAssignRoleButton = true,
   showAddRoleButton = true,
 }) {
+  const user = useSelector(selectAuthUser);
+  const userRole = user?.role?.name?.toUpperCase() || '';
+  const isSuperAdmin = userRole === 'SUPER_ADMIN';
+
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Filter out ADMIN and SUPER_ADMIN roles from selection if current user is only ADMIN
+  const assignableRoles = roles.filter((role) => {
+    if (isSuperAdmin) return true;
+    const name = (role.roleName || role.displayName || '').toUpperCase();
+    return name !== 'SUPER_ADMIN' && name !== 'ADMIN';
+  });
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedRole, setSelectedRole] = useState(null);
   const [isAssigningRole, setIsAssigningRole] = useState(false);
@@ -310,7 +323,7 @@ export default function RolesTable({
         }}
         onSubmit={handleAssignRoleSubmit}
         employees={employees}
-        roles={roles.map((r) => ({
+        roles={assignableRoles.map((r) => ({
           id: r.id,
           name: r.displayName || r.roleName,
         }))}

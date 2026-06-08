@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Loader from '../../Loader';
 import { SquarePen, Eye, Plus } from 'lucide-react';
 import CustomTable from '../../CustomTable';
@@ -9,12 +9,17 @@ import CustomAlertForm from '../../CustomAlertForm';
 import PrimaryButton from '../../Buttons/PrimaryButton';
 import IconButton from '../../Buttons/IconButton';
 import HyperlinkButton from '../../Buttons/HyperlinkButton';
+import Pagination from '../../Pagination';
 
 const SalarySetupTab = ({ isViewOnly = false }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isPayrollAdmin] = useState(true);
 
   const [employees, setEmployees] = useState([]);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10); // default to 10
 
   // Modal states
   const [modalOpen, setModalOpen] = useState(false);
@@ -55,6 +60,21 @@ const SalarySetupTab = ({ isViewOnly = false }) => {
 
     fetchEmployees();
   }, []);
+
+  // Reset pagination when employees data changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [employees.length]);
+
+  const handleItemsPerPageChange = (newItemsPerPage) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1);
+  };
+
+  const paginatedEmployees = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return employees.slice(startIndex, startIndex + itemsPerPage);
+  }, [employees, currentPage, itemsPerPage]);
 
   // Modal handlers
   const handleViewEmployee = (employee) => {
@@ -148,8 +168,6 @@ const SalarySetupTab = ({ isViewOnly = false }) => {
     0
   );
   const totalNetPay = employees.reduce((total, emp) => total + emp.netPay, 0);
-
-
 
   // Define table columns with Emp ID as hyperlink
   const columns = [
@@ -246,8 +264,8 @@ const SalarySetupTab = ({ isViewOnly = false }) => {
         </div>
       ) : (
         <>
-      <div className="mb-3 flex justify-end items-center">
-        {/* <div>
+          <div className="mb-3 flex justify-end items-center">
+            {/* <div>
           <h3 className="text-lg font-semibold text-gray-800">Salary Setup</h3>
           <div className="text-sm text-gray-600 mt-1">
             {isViewOnly
@@ -255,54 +273,62 @@ const SalarySetupTab = ({ isViewOnly = false }) => {
               : "Manage employee salary structures and components."}
           </div>
         </div> */}
-        {!isViewOnly && (
-          <PrimaryButton
-            onClick={handleAddEmployee}
-            className="flex items-center gap-2 p-2"
-          >
-            <Plus size={16} />
-            Add Salary Setup
-          </PrimaryButton>
-        )}
-      </div>
+            {!isViewOnly && (
+              <PrimaryButton
+                onClick={handleAddEmployee}
+                className="flex items-center gap-2 p-2"
+              >
+                <Plus size={16} />
+                Add Salary Setup
+              </PrimaryButton>
+            )}
+          </div>
 
-      {/* Custom Table */}
-      <div className="bg-white rounded-lg  overflow-hidden">
-        <CustomTable
-          columns={columns}
-          data={employees}
-          rowKey="empId"
-          actions={actions}
-          actionsHeader="Actions"
-          actionsAlign="right"
-          tableClassName="min-w-full divide-y divide-gray-200"
-          theadClassName="bg-gray-50"
-          tbodyClassName="bg-white divide-y divide-gray-200"
-        />
-      </div>
+          {/* Custom Table */}
+          <div className="bg-white rounded-lg  overflow-hidden">
+            <CustomTable
+              columns={columns}
+              data={paginatedEmployees}
+              rowKey="empId"
+              actions={actions}
+              actionsHeader="Actions"
+              actionsAlign="right"
+              tableClassName="min-w-full divide-y divide-gray-200"
+              theadClassName="bg-gray-50"
+              tbodyClassName="bg-white divide-y divide-gray-200"
+            />
+            <Pagination
+              currentPage={currentPage}
+              totalItems={employees.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={handleItemsPerPageChange}
+              rowsPerPageOptions={[5, 10, 20, 50, 100]}
+            />
+          </div>
 
-      {/* Salary Setup Modal */}
-      {modalOpen && (
-        <SalarySetupModal
-          mode={modalMode}
-          employeeData={selectedEmployee}
-          allEmployees={employees}
-          onClose={handleCloseModal}
-          onSubmit={handleModalSubmit}
-          onEdit={() => setModalMode('edit')}
-        />
-      )}
+          {/* Salary Setup Modal */}
+          {modalOpen && (
+            <SalarySetupModal
+              mode={modalMode}
+              employeeData={selectedEmployee}
+              allEmployees={employees}
+              onClose={handleCloseModal}
+              onSubmit={handleModalSubmit}
+              onEdit={() => setModalMode('edit')}
+            />
+          )}
 
-      <CustomAlertForm
-        isOpen={alertModal.isOpen}
-        onClose={closeAlert}
-        onConfirm={closeAlert}
-        title={alertModal.title}
-        message={alertModal.message}
-        type={alertModal.type}
-        confirmText="OK"
-        cancelText="Close"
-      />
+          <CustomAlertForm
+            isOpen={alertModal.isOpen}
+            onClose={closeAlert}
+            onConfirm={closeAlert}
+            title={alertModal.title}
+            message={alertModal.message}
+            type={alertModal.type}
+            confirmText="OK"
+            cancelText="Close"
+          />
         </>
       )}
     </div>

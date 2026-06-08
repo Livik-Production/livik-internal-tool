@@ -7,6 +7,7 @@ import {
   RefreshCcw,
   ChevronDown,
   Filter,
+  X,
 } from 'lucide-react';
 import PrimaryButton from '../Buttons/PrimaryButton';
 import CustomModalForm from '../CustomModalForm';
@@ -580,7 +581,6 @@ export default function BenchPortfolio({
   const [assignOpen, setAssignOpen] = useState(false);
   const [assignTarget, setAssignTarget] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(6);
@@ -832,7 +832,20 @@ export default function BenchPortfolio({
             {(activeFilters.skill ||
               activeFilters.experience ||
               activeFilters.department) && (
-              <span className="w-2 h-2 rounded-full bg-[#004475]"></span>
+              <span
+                className="flex items-center justify-center p-0.5 ml-1 bg-white/20 hover:bg-white/40 hover:text-red-100 rounded-full transition-colors cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveFilters({
+                    skill: '',
+                    experience: '',
+                    department: '',
+                  });
+                }}
+                title="Clear all filters"
+              >
+                <X size={14} />
+              </span>
             )}
           </PrimaryButton>
         </div>
@@ -863,19 +876,23 @@ export default function BenchPortfolio({
       {/* Filter Bar */}
 
       {/* Card Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pb-6">
-        {currentBenchItems.map((emp) => (
-          <TalentCard
-            key={emp.id}
-            emp={emp}
-            onView={openView}
-            onAssign={openAssign}
-            onViewSkills={openSkills}
-          />
-        ))}
-
-        {/* Onboard New Talent Placeholder */}
-      </div>
+      {currentBenchItems.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pb-6">
+          {currentBenchItems.map((emp) => (
+            <TalentCard
+              key={emp.id}
+              emp={emp}
+              onView={openView}
+              onAssign={openAssign}
+              onViewSkills={openSkills}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="text-center text-gray-500 text-sm py-20 select-none bg-gray-50 rounded-xl border border-dashed border-gray-300 w-full mb-6">
+          No matches found for your search or applied filters.
+        </div>
+      )}
 
       <div className="mt-auto pt-4 border-t border-gray-100">
         <Pagination

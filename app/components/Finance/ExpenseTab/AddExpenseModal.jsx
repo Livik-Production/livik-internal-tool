@@ -52,7 +52,7 @@ const AddExpenseModal = ({
     'Miscellaneous',
   ];
 
-  const paymentModes = [
+  const [paymentModes, setPaymentModes] = useState([
     { value: 'Credit Card', label: 'Credit Card', icon: '💳' },
     { value: 'Debit Card', label: 'Debit Card', icon: '💳' },
     { value: 'Bank Transfer', label: 'Bank Transfer', icon: '🏦' },
@@ -61,7 +61,89 @@ const AddExpenseModal = ({
     { value: 'Cheque', label: 'Cheque', icon: '📄' },
     { value: 'Digital Wallet', label: 'Digital Wallet', icon: '📱' },
     { value: 'Corporate Card', label: 'Corporate Card', icon: '💼' },
-  ];
+  ]);
+
+  useEffect(() => {
+    const fetchPaymentModes = async () => {
+      try {
+        const res = await fetch('/api/dropdowns?type=payment_type');
+        if (res.ok) {
+          const data = await res.json();
+          const active = (data.data || []).filter(
+            (item) => item.status !== 'inactive'
+          );
+          // Deduplicate active items by value to prevent duplicate React keys
+          const uniqueActive = [];
+          const seenValues = new Set();
+          for (const item of active) {
+            if (item.value && !seenValues.has(item.value)) {
+              seenValues.add(item.value);
+              uniqueActive.push(item);
+            }
+          }
+          if (uniqueActive.length > 0) {
+            const getPaymentIcon = (label) => {
+              const lower = label.toLowerCase();
+              if (lower.includes('credit') || lower.includes('card'))
+                return '💳';
+              if (lower.includes('bank') || lower.includes('transfer'))
+                return '🏦';
+              if (
+                lower.includes('petty') ||
+                lower.includes('cash') ||
+                lower.includes('💼')
+              )
+                return '💼';
+              if (lower.includes('cash')) return '💰';
+              if (lower.includes('cheque')) return '📄';
+              if (
+                lower.includes('wallet') ||
+                lower.includes('upi') ||
+                lower.includes('digital') ||
+                lower.includes('online')
+              )
+                return '📱';
+              return '💸';
+            };
+
+            let mapped = uniqueActive.map((item) => ({
+              value: item.value,
+              label: item.label,
+              icon: getPaymentIcon(item.label),
+            }));
+
+            // If editing and current paymentMode is not in active options, preserve it
+            if (
+              expenseData &&
+              (expenseData.paymentMode || expenseData.paymentMethod)
+            ) {
+              const currentModeVal =
+                expenseData.paymentMode || expenseData.paymentMethod;
+              const hasCurrent = uniqueActive.some(
+                (item) =>
+                  item.value === currentModeVal || item.label === currentModeVal
+              );
+              if (!hasCurrent) {
+                mapped.push({
+                  value: currentModeVal,
+                  label: currentModeVal,
+                  icon: getPaymentIcon(currentModeVal),
+                });
+              }
+            }
+
+            setPaymentModes(mapped);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch payment modes:', err);
+      }
+    };
+
+    if (isOpen) {
+      fetchPaymentModes();
+    }
+  }, [isOpen, expenseData]);
 
   const statusOptions = [
     {
@@ -145,7 +227,6 @@ const AddExpenseModal = ({
       ) {
         setShowCategoryDropdown(false);
       }
-
     };
 
     if (isOpen) {
@@ -573,9 +654,7 @@ const AddExpenseModal = ({
                   <div className="relative">
                     <select
                       value={formData.paymentMode}
-                      onChange={(e) =>
-                        handlePaymentModeSelect(e.target.value)
-                      }
+                      onChange={(e) => handlePaymentModeSelect(e.target.value)}
                       className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none ${
                         errors.paymentMode
                           ? 'border-red-500'
@@ -679,9 +758,7 @@ const AddExpenseModal = ({
                     value={formData.expenseDate}
                     onChange={handleChange}
                     className={`w-full px-4 py-2.5 border rounded-lg ${
-                      errors.expenseDate
-                        ? 'border-red-500'
-                        : 'border-gray-300'
+                      errors.expenseDate ? 'border-red-500' : 'border-gray-300'
                     } ${currentMode === 'view' ? 'bg-gray-50 cursor-default' : ''}`}
                     readOnly={currentMode === 'view'}
                     required

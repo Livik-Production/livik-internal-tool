@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import CustomAlertForm from '../CustomAlertForm';
 import Loader from '../Loader';
+import IconButton from '../Buttons/IconButton';
 
 // ─── Reusable inline-edit input ──────────────────────────────────────────────
 const InlineEditInput = ({
@@ -678,13 +679,13 @@ export default function LookupDataTab() {
                     <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-2">
                       {activeCount}/{totalCount} Active
                     </span>
-                    <button
+                    <IconButton
                       onClick={() => handleDeleteCategory(selectedCategory.id)}
-                      className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                      className="p-2 hover:bg-red-50 transition-all text-red-500"
                       title="Delete Category"
                     >
                       <Trash2 size={16} />
-                    </button>
+                    </IconButton>
                   </div>
                 </div>
 
@@ -817,13 +818,13 @@ export default function LookupDataTab() {
                             >
                               <SquarePen size={14} />
                             </button>
-                            <button
+                            <IconButton
                               onClick={() => handleDeleteValue(val.id)}
-                              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                              className="p-1.5 hover:bg-red-50 transition-colors text-red-500"
                               title="Delete"
                             >
                               <Trash2 size={14} />
-                            </button>
+                            </IconButton>
                           </div>
                         </div>
                       ))}

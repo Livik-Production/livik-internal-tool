@@ -1,14 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import {
-  CalendarDays,
-  SquarePen,
-  Trash,
-  AlertCircle,
-} from 'lucide-react';
+import { CalendarDays, SquarePen, Trash, AlertCircle } from 'lucide-react';
 import CustomTable from '../CustomTable';
 import { showSuccessToast, showErrorToast } from '../Toast';
+import IconButton from '../Buttons/IconButton';
 
 export default function HrModuleSettingsTab() {
   const [activeHrSubTab, setActiveHrSubTab] = useState('attendance');
@@ -190,13 +186,13 @@ export default function HrModuleSettingsTab() {
       >
         <SquarePen size={16} />
       </button>
-      <button
+      <IconButton
         onClick={() => handleDeletePayrollSetting(row.id)}
-        className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+        className="p-2 hover:bg-red-50 transition-colors"
         title="Delete Setting"
       >
         <Trash size={16} />
-      </button>
+      </IconButton>
     </div>
   );
 
@@ -415,8 +411,8 @@ export default function HrModuleSettingsTab() {
                         className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
                       />
                       <span className="text-sm font-medium text-gray-700 group-hover:text-slate-900 transition-colors">
-                        Notify the employee via email once the leave
-                        request is approved or rejected.
+                        Notify the employee via email once the leave request is
+                        approved or rejected.
                       </span>
                     </label>
                   </div>

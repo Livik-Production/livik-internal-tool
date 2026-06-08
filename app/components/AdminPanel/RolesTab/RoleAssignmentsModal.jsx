@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
+import { selectAuthUser } from '../../../../store/slices/authSlice';
 import { Trash, X, AlertCircle, Info } from 'lucide-react';
 import CustomAlertForm from '../../CustomAlertForm';
 import Loader from '../../Loader';
@@ -15,6 +17,14 @@ export default function RoleAssignmentsModal({
   roleName,
   roleId,
 }) {
+  const user = useSelector(selectAuthUser);
+  const userRole = (
+    user?.role?.roleName ||
+    user?.role?.name ||
+    ''
+  ).toUpperCase();
+  const isSuperAdmin = userRole === 'SUPER_ADMIN';
+
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -107,9 +117,7 @@ export default function RoleAssignmentsModal({
 
   const renderHeader = (
     <div className="flex items-center gap-4">
-      <h2 className="text-2xl font-bold text-gray-900">
-        Role Assignments
-      </h2>
+      <h2 className="text-2xl font-bold text-gray-900">Role Assignments</h2>
       <div className="flex items-center gap-2 text-sm">
         <span className="text-gray-500">Role:</span>
         <span className="font-medium text-gray-900">{roleName}</span>
@@ -117,9 +125,7 @@ export default function RoleAssignmentsModal({
         <span className="text-gray-500">ID:</span>
         <span className="font-medium text-blue-600">{roleId}</span>
         <span className="text-gray-400">•</span>
-        <span className="text-gray-500">
-          {assignments.length} assigned
-        </span>
+        <span className="text-gray-500">{assignments.length} assigned</span>
       </div>
     </div>
   );
@@ -178,8 +184,13 @@ export default function RoleAssignmentsModal({
                     <div className="flex justify-end">
                       <IconButton
                         onClick={() => handleRemoveAssignment(row)}
-                        title="Remove assignment"
+                        title={
+                          !isSuperAdmin
+                            ? 'Remove access restricted (Super Admin only)'
+                            : 'Remove assignment'
+                        }
                         variant="danger"
+                        disabled={!isSuperAdmin}
                       >
                         <Trash size={16} />
                       </IconButton>
@@ -202,14 +213,24 @@ export default function RoleAssignmentsModal({
                       <div className="w-2 h-2 rounded-full bg-green-500"></div>
                       <span className="text-sm text-gray-600">
                         Active:{' '}
-                        <span className="font-bold">{assignments.filter((a) => a.status === 'Active').length}</span>
+                        <span className="font-bold">
+                          {
+                            assignments.filter((a) => a.status === 'Active')
+                              .length
+                          }
+                        </span>
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
                       <span className="text-sm text-gray-600">
                         Inactive:{' '}
-                        <span className="font-bold">{assignments.filter((a) => a.status === 'Inactive').length}</span>
+                        <span className="font-bold">
+                          {
+                            assignments.filter((a) => a.status === 'Inactive')
+                              .length
+                          }
+                        </span>
                       </span>
                     </div>
                   </div>
@@ -233,7 +254,9 @@ export default function RoleAssignmentsModal({
         details={
           assignmentToRemove && (
             <div className="text-sm border-l-4 border-red-500 pl-3 py-1 bg-red-50 mt-2 rounded">
-              <p className="font-bold text-red-900">{assignmentToRemove.empId}</p>
+              <p className="font-bold text-red-900">
+                {assignmentToRemove.empId}
+              </p>
               <p className="text-red-700 text-xs mt-1">
                 Employee UUID: {assignmentToRemove.id}
               </p>

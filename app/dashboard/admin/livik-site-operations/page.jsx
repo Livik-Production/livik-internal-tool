@@ -2,15 +2,22 @@
 import { useState } from 'react';
 import { Globe } from 'lucide-react';
 import TabButton from '../../../components/Buttons/TabButton';
-import ContactSubmissionsTab from '../../../components/contact-submissions/ContactSubmissionsTab';
-import JobOpeningsTab from '../../../components/job-openings/JobOpeningsTab';
-import JobApplicationsTab from '../../../components/job-applications/JobApplicationsTab';
-import TalentCommunityTab from '../../../components/talent-community/TalentCommunityTab';
+import ContactSubmissionsTab from '../../../components/AdminPanel/WebsiteOperations/contact-submissions/ContactSubmissionsTab';
+import JobOpeningsTab from '../../../components/AdminPanel/WebsiteOperations/job-openings/JobOpeningsTab';
+import JobApplicationsTab from '../../../components/AdminPanel/WebsiteOperations/job-applications/JobApplicationsTab';
+import TalentCommunityTab from '../../../components/AdminPanel/WebsiteOperations/talent-community/TalentCommunityTab';
+import DashboardTab from '../../../components/AdminPanel/WebsiteOperations/dashboard/DashboardTab';
 
-const TABS = ['Job Openings', 'Client Enquiries'];
+const TABS = ['Dashboard', 'Job Openings', 'Client Enquiries'];
 
 export default function LivikSiteOperationsManagement() {
-  const [activeTab, setActiveTab] = useState('Job Openings');
+  const [activeTab, setActiveTab] = useState('Dashboard');
+  const [navigationState, setNavigationState] = useState(null);
+
+  const handleNavigate = (tab, payload) => {
+    setNavigationState(payload);
+    setActiveTab(tab);
+  };
 
   return (
     <div className="h-full flex flex-col space-y-1.5 min-h-0">
@@ -51,8 +58,21 @@ export default function LivikSiteOperationsManagement() {
         {/* ===== MAIN CONTENT AREA ===== */}
         <main className="flex-1 overflow-y-auto no-scrollbar p-3 min-h-0">
           <div className="w-full h-full">
-            {activeTab === 'Job Openings' && <JobOpeningsTab />}
-            {activeTab === 'Client Enquiries' && <ContactSubmissionsTab />}
+            {activeTab === 'Dashboard' && (
+              <DashboardTab onNavigate={handleNavigate} />
+            )}
+            {activeTab === 'Job Openings' && (
+              <JobOpeningsTab
+                navigationState={navigationState}
+                clearNavigationState={() => setNavigationState(null)}
+              />
+            )}
+            {activeTab === 'Client Enquiries' && (
+              <ContactSubmissionsTab
+                navigationState={navigationState}
+                clearNavigationState={() => setNavigationState(null)}
+              />
+            )}
           </div>
         </main>
       </div>

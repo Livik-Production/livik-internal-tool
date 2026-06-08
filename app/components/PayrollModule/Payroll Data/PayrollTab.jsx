@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Loader from '../../Loader';
 import {
   Trash,
@@ -22,6 +22,7 @@ import CustomAlertForm from '../../CustomAlertForm';
 import PrimaryButton from '../../Buttons/PrimaryButton';
 import IconButton from '../../Buttons/IconButton';
 import HyperlinkButton from '../../Buttons/HyperlinkButton';
+import Pagination from '../../Pagination';
 
 export default function PayrollTab({
   employees = [],
@@ -31,6 +32,10 @@ export default function PayrollTab({
   const [isLoading, setIsLoading] = useState(true);
   const [payrollData, setPayrollData] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10); // default to 10
   const [modalMode, setModalMode] = useState('add');
   const [selectedPayroll, setSelectedPayroll] = useState(null);
   const [currentCycle, setCurrentCycle] = useState(null);
@@ -158,6 +163,21 @@ export default function PayrollTab({
     fetchPayrollData();
     fetchSettings();
   }, []);
+
+  // Reset pagination when payroll data changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [payrollData.length]);
+
+  const handleItemsPerPageChange = (newItemsPerPage) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1);
+  };
+
+  const paginatedPayrollData = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return payrollData.slice(startIndex, startIndex + itemsPerPage);
+  }, [payrollData, currentPage, itemsPerPage]);
 
   // Handle payroll workflow actions
   const handleWorkflowAction = (payrollId, action) => {
@@ -436,8 +456,6 @@ export default function PayrollTab({
   const stats = calculateStats();
   const currentActions = getCurrentCycleActions();
 
-
-
   // Define table columns
   const columns = [
     {
@@ -579,170 +597,189 @@ export default function PayrollTab({
   };
 
   return (
-    <div
-      key={isLoading}
-      className="space-y-4 animate-dashboard-reveal"
-    >
+    <div key={isLoading} className="space-y-4 animate-dashboard-reveal">
       {isLoading ? (
         <div className="flex items-center justify-center min-h-[400px]">
-          <Loader label="Loading payroll data..." size="md" fullScreen={false} />
+          <Loader
+            label="Loading payroll data..."
+            size="md"
+            fullScreen={false}
+          />
         </div>
       ) : (
         <>
-      {/* Current Cycle Alert integrated into header below */}
+          {/* Current Cycle Alert integrated into header below */}
 
-      <div className="flex justify-between items-end mb-4 p-3">
-        <div className="flex items-center gap-4">
-          <h3 className="text-xl font-bold text-gray-900 whitespace-nowrap">
-            Payroll Cycles
-          </h3>
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-gray-500">
-              Current Payroll Cycle:
-            </span>
-            <span className="bg-[#1e40af] text-white px-3 py-1 rounded-full shadow-sm text-sm font-semibold">
-              {(() => {
-                const now = new Date();
-                return `${now.toLocaleString('default', { month: 'long' })} ${now.getFullYear()}`;
-              })()}
-            </span>
-            {currentCycle && (
-              <>
-                <StatusBadge
-                  status={currentCycle.status}
-                  payroll={currentCycle}
-                />
-                <div className="flex gap-2 ml-1">
-                  {currentActions?.map((action, index) => (
-                    <PrimaryButton
-                      key={index}
-                      onClick={() => !isViewOnly && action.action()}
-                      disabled={isViewOnly}
-                      className={`px-3 py-1 text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95 ${
-                        isViewOnly
-                          ? 'bg-gray-100 text-gray-400 border border-gray-200'
-                          : `${action.color} border border-transparent`
-                      }`}
-                    >
-                      {React.cloneElement(action.icon, { size: 14 })}
-                      {action.label}
-                    </PrimaryButton>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-        <div className="flex gap-3">
-          <PrimaryButton
-            onClick={() => !isViewOnly && setIsCreateModalOpen(true)}
-            disabled={isViewOnly}
-            className="flex items-center gap-2 p-2"
-          >
-            + Create New Payroll
-          </PrimaryButton>
-          <PrimaryButton
-            disabled={isViewOnly}
-            className="flex items-center gap-2 p-2 text-gray-700 border border-gray-300 "
-          >
-            <Download size={18} />
-            Export Summary
-          </PrimaryButton>
-        </div>
-      </div>
-
-      {/* Payroll Cycles Table */}
-      {payrollData.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="text-gray-400 mb-4">
-            <Calendar className="w-16 h-16 mx-auto" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">
-            No Payroll Records
-          </h3>
-          <p className="text-gray-500">
-            Create your first payroll cycle to get started.
-          </p>
-        </div>
-      ) : (
-        <CustomTable
-          columns={tableColumns}
-          data={payrollData}
-          rowKey="id"
-          rowClassName={(row) => {
-            const now = new Date();
-            const currentMonthStr = `${now.toLocaleString('default', { month: 'short' }).toUpperCase()}-${now.getFullYear()}`;
-            if (row.month === currentMonthStr) {
-              return 'bg-blue-50/70 border-l-4 border-blue-600 hover:bg-blue-100/70';
-            }
-            return 'hover:bg-gray-50';
-          }}
-          className="border border-gray-200 rounded-lg shadow-sm"
-          theadClassName="bg-gray-50/80"
-          tbodyClassName="bg-white divide-y divide-gray-200"
-        />
-      )}
-
-      {/* Process Payroll Modal */}
-      <CreatePayrollModal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setSelectedPayroll(null);
-        }}
-        mode={modalMode}
-        selectedData={selectedPayroll}
-        employees={employees}
-        onCreated={handleCreated}
-        settings={payrollSettings}
-      />
-
-      <CustomAlertForm
-        isOpen={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
-        onConfirm={confirmDeletePayroll}
-        title="Delete Payroll Cycle"
-        message={`Are you sure you want to delete the payroll cycle for "${payrollToDelete?.period}"? This action cannot be undone.`}
-        type="danger"
-        confirmText="Delete"
-        cancelText="Cancel"
-        details={
-          payrollToDelete && (
-            <div className="text-sm">
-              <p className="font-bold">Cycle ID: {payrollToDelete.cycleId}</p>
-              <p className="text-gray-500">Status: {payrollToDelete.status}</p>
+          <div className="flex justify-between items-end mb-4 p-3">
+            <div className="flex items-center gap-4">
+              <h3 className="text-xl font-bold text-gray-900 whitespace-nowrap">
+                Payroll Cycles
+              </h3>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-gray-500">
+                  Current Payroll Cycle:
+                </span>
+                <span className="bg-[#1e40af] text-white px-3 py-1 rounded-full shadow-sm text-sm font-semibold">
+                  {(() => {
+                    const now = new Date();
+                    return `${now.toLocaleString('default', { month: 'long' })} ${now.getFullYear()}`;
+                  })()}
+                </span>
+                {currentCycle && (
+                  <>
+                    <StatusBadge
+                      status={currentCycle.status}
+                      payroll={currentCycle}
+                    />
+                    <div className="flex gap-2 ml-1">
+                      {currentActions?.map((action, index) => (
+                        <PrimaryButton
+                          key={index}
+                          onClick={() => !isViewOnly && action.action()}
+                          disabled={isViewOnly}
+                          className={`px-3 py-1 text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95 ${
+                            isViewOnly
+                              ? 'bg-gray-100 text-gray-400 border border-gray-200'
+                              : `${action.color} border border-transparent`
+                          }`}
+                        >
+                          {React.cloneElement(action.icon, { size: 14 })}
+                          {action.label}
+                        </PrimaryButton>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
-          )
-        }
-      />
+            <div className="flex gap-3">
+              <PrimaryButton
+                onClick={() => !isViewOnly && setIsCreateModalOpen(true)}
+                disabled={isViewOnly}
+                className="flex items-center gap-2 p-2"
+              >
+                + Create New Payroll
+              </PrimaryButton>
+              <PrimaryButton
+                disabled={isViewOnly}
+                className="flex items-center gap-2 p-2 text-gray-700 border border-gray-300 "
+              >
+                <Download size={18} />
+                Export Summary
+              </PrimaryButton>
+            </div>
+          </div>
 
-      <CreatePayrollModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        employees={employees}
-        onCreated={handleCreated}
-        settings={payrollSettings}
-      />
+          {/* Payroll Cycles Table */}
+          {payrollData.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-gray-400 mb-4">
+                <Calendar className="w-16 h-16 mx-auto" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                No Payroll Records
+              </h3>
+              <p className="text-gray-500">
+                Create your first payroll cycle to get started.
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-4">
+              <CustomTable
+                columns={tableColumns}
+                data={paginatedPayrollData}
+                rowKey="id"
+                rowClassName={(row) => {
+                  const now = new Date();
+                  const currentMonthStr = `${now.toLocaleString('default', { month: 'short' }).toUpperCase()}-${now.getFullYear()}`;
+                  if (row.month === currentMonthStr) {
+                    return 'bg-blue-50/70 border-l-4 border-blue-600 hover:bg-blue-100/70';
+                  }
+                  return 'hover:bg-gray-50';
+                }}
+                className="border border-gray-200 rounded-lg shadow-sm"
+                theadClassName="bg-gray-50/80"
+                tbodyClassName="bg-white divide-y divide-gray-200"
+              />
+              <Pagination
+                currentPage={currentPage}
+                totalItems={payrollData.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={handleItemsPerPageChange}
+                rowsPerPageOptions={[5, 10, 20, 50, 100]}
+              />
+            </div>
+          )}
 
-      <CustomAlertForm
-        isOpen={alertConfig.isOpen}
-        onClose={() => setAlertConfig((prev) => ({ ...prev, isOpen: false }))}
-        onConfirm={() => setAlertConfig((prev) => ({ ...prev, isOpen: false }))}
-        title={alertConfig.title}
-        message={alertConfig.message}
-        type={alertConfig.type}
-        confirmText="OK"
-        cancelText="Close"
-      />
+          {/* Process Payroll Modal */}
+          <CreatePayrollModal
+            isOpen={isModalOpen}
+            onClose={() => {
+              setIsModalOpen(false);
+              setSelectedPayroll(null);
+            }}
+            mode={modalMode}
+            selectedData={selectedPayroll}
+            employees={employees}
+            onCreated={handleCreated}
+            settings={payrollSettings}
+          />
 
-      <CreatePayrollModal
-        isOpen={!!viewPayroll}
-        onClose={() => setViewPayroll(null)}
-        employees={employees}
-        settings={payrollSettings}
-        isViewOnly={true}
-        viewPayroll={viewPayroll}
-      />
+          <CustomAlertForm
+            isOpen={showDeleteConfirm}
+            onClose={() => setShowDeleteConfirm(false)}
+            onConfirm={confirmDeletePayroll}
+            title="Delete Payroll Cycle"
+            message={`Are you sure you want to delete the payroll cycle for "${payrollToDelete?.period}"? This action cannot be undone.`}
+            type="danger"
+            confirmText="Delete"
+            cancelText="Cancel"
+            details={
+              payrollToDelete && (
+                <div className="text-sm">
+                  <p className="font-bold">
+                    Cycle ID: {payrollToDelete.cycleId}
+                  </p>
+                  <p className="text-gray-500">
+                    Status: {payrollToDelete.status}
+                  </p>
+                </div>
+              )
+            }
+          />
+
+          <CreatePayrollModal
+            isOpen={isCreateModalOpen}
+            onClose={() => setIsCreateModalOpen(false)}
+            employees={employees}
+            onCreated={handleCreated}
+            settings={payrollSettings}
+          />
+
+          <CustomAlertForm
+            isOpen={alertConfig.isOpen}
+            onClose={() =>
+              setAlertConfig((prev) => ({ ...prev, isOpen: false }))
+            }
+            onConfirm={() =>
+              setAlertConfig((prev) => ({ ...prev, isOpen: false }))
+            }
+            title={alertConfig.title}
+            message={alertConfig.message}
+            type={alertConfig.type}
+            confirmText="OK"
+            cancelText="Close"
+          />
+
+          <CreatePayrollModal
+            isOpen={!!viewPayroll}
+            onClose={() => setViewPayroll(null)}
+            employees={employees}
+            settings={payrollSettings}
+            isViewOnly={true}
+            viewPayroll={viewPayroll}
+          />
         </>
       )}
     </div>

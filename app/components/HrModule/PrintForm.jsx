@@ -5,20 +5,7 @@ export const handlePrint = (type = 'offerLetter') => {
   let printContent;
   let htmlContent = '';
 
-  if (type === 'offerLetter') {
-    printContent = document.getElementById('offer-letter-print');
-    if (!printContent) {
-      // Try to find it in the modal
-      const modal = document.querySelector('[ref*="modalRef"]');
-      if (modal) {
-        printContent = modal.querySelector('#offer-letter-print');
-      }
-    }
-    if (!printContent) {
-      alert('Offer letter not found');
-      return;
-    }
-  } else if (type === 'payslip') {
+  if (type === 'payslip') {
     printContent = document.getElementById('payslip-print');
     if (!printContent) {
       // Try to find it in the payslip modal
@@ -38,8 +25,40 @@ export const handlePrint = (type = 'offerLetter') => {
       return;
     }
   } else {
-    alert('Invalid print type');
-    return;
+    // Attempt to find element by type-based ID (e.g. warningLetter -> warning-letter-print)
+    const canonicalId = type;
+    const kebab = canonicalId.replace(/([A-Z])/g, '-$1').toLowerCase();
+    const expectedId = `${kebab}-print`;
+    printContent = document.getElementById(expectedId);
+
+    if (!printContent) {
+      // Fallback checklist of all possible letter container IDs
+      const printIds = [
+        'offer-letter-print',
+        'warning-letter-print',
+        'termination-letter-print',
+        'appointment-letter-print',
+        'experience-letter-print',
+        'relieving-letter-print',
+      ];
+      for (const id of printIds) {
+        printContent = document.getElementById(id);
+        if (printContent) break;
+      }
+    }
+
+    if (!printContent) {
+      // Try to find it in the modal
+      const modal = document.querySelector('[ref*="modalRef"]');
+      if (modal) {
+        printContent = modal.querySelector('#offer-letter-print');
+      }
+    }
+
+    if (!printContent) {
+      alert('Letter content not found');
+      return;
+    }
   }
 
   // Clone the element to avoid any parent issues

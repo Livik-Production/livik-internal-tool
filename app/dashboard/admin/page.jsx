@@ -46,13 +46,17 @@ function AdminContent() {
       ? user.role
       : user?.role?.roleName || user?.role?.name || '';
 
-  const isAdmin =
-    roleName === 'Admin' ||
+  const roleUpper = roleName.toUpperCase();
+  const isSuperAdmin =
+    roleUpper === 'SUPER_ADMIN' ||
+    roleUpper === 'SUPER ADMIN' ||
+    roleUpper === 'SUPERADMIN' ||
+    roleUpper === 'ADMIN' ||
     rights.some((r) => r.toUpperCase() === 'ALL_ACCESS');
 
   // RBAC helpers
   const hasRight = (right) => {
-    if (isAdmin) return true;
+    if (isSuperAdmin) return true;
     const lowerRights = rights.map((r) => r.toLowerCase());
     return lowerRights.includes(right.toLowerCase());
   };

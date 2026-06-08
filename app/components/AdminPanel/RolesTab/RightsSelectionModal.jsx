@@ -26,6 +26,7 @@ export default function RightsSelectionModal({
 
   const {
     id = null,
+    displayName = '',
     roleName = '',
     selectedRights = [],
     effectiveDate = '',
@@ -33,7 +34,7 @@ export default function RightsSelectionModal({
   } = roleData;
 
   const [formData, setFormData] = useState({
-    roleName: roleName,
+    roleName: displayName || roleName,
     selectedRights: selectedRights,
     effectiveDate: effectiveDate,
     description: description,
@@ -45,12 +46,12 @@ export default function RightsSelectionModal({
 
   useEffect(() => {
     setFormData({
-      roleName: roleName,
+      roleName: displayName || roleName,
       selectedRights: selectedRights,
       effectiveDate: effectiveDate || getTodayDate(),
       description: description,
     });
-  }, [roleName, selectedRights, effectiveDate, description]);
+  }, [displayName, roleName, selectedRights, effectiveDate, description]);
 
   useEffect(() => {
     if (isOpen) {

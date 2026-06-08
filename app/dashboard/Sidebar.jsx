@@ -122,6 +122,59 @@ const settingsTab = {
   icon: <SettingsIcon size={20} />,
 };
 
+/* ===== GRANULAR RIGHTS HELPER ===== */
+const hasModuleRight = (itemId, userRights) => {
+  const rights = userRights || [];
+  if (rights.includes('ALL_ACCESS')) return true;
+
+  const lowerRights = rights.map((r) => r.toLowerCase());
+
+  switch (itemId) {
+    case 'index':
+      return (
+        lowerRights.includes('view_main_dashboard') ||
+        lowerRights.some((r) => r.includes('dashboard'))
+      );
+    case 'employee-portal':
+      return lowerRights.includes('employee_portal');
+    case 'hr':
+      return lowerRights.some(
+        (r) => r.includes('hr') || r.includes('staffing')
+      );
+    case 'hr-module':
+      return lowerRights.some((r) => r.includes('hr'));
+    case 'staffing':
+      return lowerRights.some((r) => r.includes('staffing'));
+    case 'payroll':
+      return lowerRights.some((r) => r.includes('payroll'));
+    case 'Finance':
+      return lowerRights.some((r) => r.includes('finance'));
+    case 'asset':
+      return lowerRights.some((r) => r.includes('asset'));
+    case 'admin':
+      return lowerRights.some(
+        (r) =>
+          r.includes('admin') ||
+          r.includes('website_ops') ||
+          r.includes('site_operations') ||
+          r.includes('livik_site')
+      );
+    case 'admin-panel':
+      return lowerRights.some((r) => r.includes('admin'));
+    case 'livik site operations':
+      return lowerRights.some(
+        (r) =>
+          r.includes('website_ops') ||
+          r.includes('site_operations') ||
+          r.includes('livik_site')
+      );
+    case 'settings':
+      return lowerRights.some((r) => r.includes('settings'));
+    default:
+      return false;
+  }
+};
+
 export default function Sidebar({ onLinkClick }) {
   const pathname = usePathname() || '';
   const router = useRouter();
@@ -135,7 +188,11 @@ export default function Sidebar({ onLinkClick }) {
   const authStatus = useSelector((state) => state.auth.status);
 
   const roleName = authUser?.role?.name?.toUpperCase() ?? null;
-  const isAdminUser = roleName === 'ADMIN' || roleName === 'SUPER_ADMIN';
+  const isAdminUser =
+    roleName === 'ADMIN' ||
+    roleName === 'SUPER_ADMIN' ||
+    roleName === 'SUPER ADMIN' ||
+    roleName === 'SUPERADMIN';
 
   const visibleNavItems = useMemo(() => {
     if (isAdminUser) return navItems;
@@ -145,22 +202,13 @@ export default function Sidebar({ onLinkClick }) {
     if (rights.includes('ALL_ACCESS')) return navItems;
 
     return navItems.filter((item) => {
-      if (item.id === 'index' || item.id === 'employee-portal') return true;
-      if (item.id === 'hr') {
-        return rights.some((r) => {
-          const lr = r.toLowerCase();
-          return lr.includes('hr') || lr.includes('staffing');
-        });
+      if (item.dropdown) {
+        const visibleDropdowns = item.dropdown.filter((sub) =>
+          hasModuleRight(sub.id, rights)
+        );
+        return visibleDropdowns.length > 0;
       }
-      if (item.id === 'admin') {
-        return rights.some((r) => {
-          const lr = r.toLowerCase();
-          return lr.includes('admin') || lr.includes('website');
-        });
-      }
-      return rights.some((r) =>
-        r.toLowerCase().includes(item.id.toLowerCase())
-      );
+      return hasModuleRight(item.id, rights);
     });
   }, [authUser, isAdminUser]);
 
@@ -205,38 +253,12 @@ export default function Sidebar({ onLinkClick }) {
 
     // Item WITH dropdown
     if (item.dropdown) {
-      const rights = authUser?.rights || [];
-      const roleName = authUser?.role?.name?.toUpperCase() ?? '';
-      const isFullAdmin = roleName === 'ADMIN' || roleName === 'SUPER_ADMIN' || rights.includes('ALL_ACCESS');
-
-      // Filter dropdown sub-items based on rights
-      const visibleDropdownItems = item.dropdown.filter((sub) => {
-        if (isFullAdmin) return true;
-        const normalizedRights = rights.map((r) => r.toLowerCase());
-        
-        if (sub.id === 'hr-module') {
-          return normalizedRights.some((r) => r.startsWith('hr_'));
-        }
-        if (sub.id === 'staffing') {
-          return normalizedRights.some((r) => r.startsWith('staffing_'));
-        }
-        if (sub.id === 'admin-panel') {
-          return normalizedRights.some((r) => r.startsWith('admin_'));
-        }
-        if (sub.id === 'livik site operations') {
-          return normalizedRights.some((r) => r.startsWith('website_'));
-        }
-        return true;
-      });
-
-      if (visibleDropdownItems.length === 0) return null;
-
-      const isDropdownActive = visibleDropdownItems.some(
+      const isDropdownActive = item.dropdown.some(
         (sub) => pathname === sub.href || pathname.startsWith(sub.href + '/')
       );
       const isOpen = openDropdown === item.id;
 
-      const matchingSubs = visibleDropdownItems.filter(
+      const matchingSubs = item.dropdown.filter(
         (s) => pathname === s.href || pathname.startsWith(s.href + '/')
       );
       const activeSubHref =
@@ -266,28 +288,33 @@ export default function Sidebar({ onLinkClick }) {
           {/* Dropdown sub-items */}
           {isOpen && (
             <div className="ml-3 mt-1 flex flex-col gap-1 border-l-2 border-blue-100 pl-3">
-              {visibleDropdownItems.map((sub) => {
-                const isSubActive = sub.href === activeSubHref;
-                return (
-                  <Link
-                    key={sub.id}
-                    href={sub.href}
-                    onClick={() => {
-                      onLinkClick?.();
-                    }}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm transition-colors duration-200 ${
-                      isSubActive
-                        ? 'bg-[#004475] text-white shadow-sm'
-                        : 'text-gray-600 hover:text-[#004475] hover:bg-blue-50'
-                    }`}
-                  >
-                    <span className="flex items-center justify-center">
-                      {sub.icon}
-                    </span>
-                    <span>{sub.title}</span>
-                  </Link>
-                );
-              })}
+              {item.dropdown
+                .filter(
+                  (sub) =>
+                    isAdminUser || hasModuleRight(sub.id, authUser?.rights)
+                )
+                .map((sub) => {
+                  const isSubActive = sub.href === activeSubHref;
+                  return (
+                    <Link
+                      key={sub.id}
+                      href={sub.href}
+                      onClick={() => {
+                        onLinkClick?.();
+                      }}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm transition-colors duration-200 ${
+                        isSubActive
+                          ? 'bg-[#004475] text-white shadow-sm'
+                          : 'text-gray-600 hover:text-[#004475] hover:bg-blue-50'
+                      }`}
+                    >
+                      <span className="flex items-center justify-center">
+                        {sub.icon}
+                      </span>
+                      <span>{sub.title}</span>
+                    </Link>
+                  );
+                })}
             </div>
           )}
         </div>
@@ -364,8 +391,8 @@ export default function Sidebar({ onLinkClick }) {
         </ul>
       </nav>
 
-      {/* Settings Tab - Only for Admin Users */}
-      {isAdminUser && (
+      {/* Settings Tab - Only for Admin/Super Admin or users with Settings rights */}
+      {(isAdminUser || hasModuleRight('settings', authUser?.rights)) && (
         <div className="mt-6 ml-1">
           <Link
             href={settingsTab.href}
