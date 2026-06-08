@@ -24,6 +24,8 @@ export default function JobApplicationsTab() {
   const [searchQuery, setSearchQuery] = useState('');
   const [jobs, setJobs] = useState([]);
   const [toast, setToast] = useState(null);
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -237,6 +239,20 @@ export default function JobApplicationsTab() {
   );
 
   const filtered = applications.filter((a) => {
+    // Date range filter
+    if (fromDate) {
+      const start = new Date(fromDate);
+      start.setHours(0, 0, 0, 0);
+      const appDate = new Date(a.createdAt);
+      if (appDate < start) return false;
+    }
+    if (toDate) {
+      const end = new Date(toDate);
+      end.setHours(23, 59, 59, 999);
+      const appDate = new Date(a.createdAt);
+      if (appDate > end) return false;
+    }
+
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return (
@@ -276,7 +292,7 @@ export default function JobApplicationsTab() {
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm flex flex-col shrink-0">
         {/* Table Header Controls */}
         <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50/50 rounded-t-xl">
-          <div className="flex gap-3 items-center">
+          <div className="flex gap-3 items-center flex-wrap">
             <div className="relative">
               <Search
                 size={16}
@@ -291,6 +307,31 @@ export default function JobApplicationsTab() {
                   setCurrentPage(1);
                 }}
                 className="pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004475]/20 focus:border-[#004475] w-64"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-gray-500">From:</span>
+              <input
+                type="date"
+                value={fromDate}
+                onChange={(e) => {
+                  setFromDate(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004475]/20 focus:border-[#004475] bg-white text-gray-700 font-sans"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-gray-500">To:</span>
+              <input
+                type="date"
+                value={toDate}
+                onChange={(e) => {
+                  setToDate(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004475]/20 focus:border-[#004475] bg-white text-gray-700 font-sans"
               />
             </div>
           </div>
