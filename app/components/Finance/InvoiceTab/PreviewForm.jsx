@@ -525,7 +525,7 @@ const PreviewForm = ({
                       {product.hsn || product.hsnCode || '12345'}
                     </div>
 
-                    <div className="w-28 p-1 pt-2 text-center text-[12px] font-bold text-[#111827] pr-4">
+                    <div className="w-28 p-1 pt-2 text-right text-[12px] font-bold text-[#111827] pr-4">
                       {Number(
                         product.price || product.amount || 0
                       ).toLocaleString('en-IN', {
@@ -561,7 +561,7 @@ const PreviewForm = ({
                     998313
                   </div>
 
-                  <div className="w-28 p-1 pt-2 text-center text-[12px] font-bold text-[#111827] pr-4">
+                  <div className="w-28 p-1 pt-2 text-right text-[12px] font-bold text-[#111827] pr-4">
                     1,08,000.00
                   </div>
                 </div>

@@ -379,22 +379,17 @@ const CustomerFormModal = ({
                 <label className="text-sm text-gray-600 flex items-center gap-1">
                   <CreditCard size={13} /> Preferred Payment Terms
                 </label>
-                <select
+                <input
+                  type="text"
                   name="preferredPaymentTerms"
                   value={formData.preferredPaymentTerms}
                   onChange={handleInputChange}
-                  disabled={type === 'view'}
-                  className={`w-full px-3 py-2 border border-gray-300 rounded-md text-sm outline-none focus:border-blue-400 ${
-                    type === 'view' ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'
-                  }`}
-                >
-                  <option value="">Select Terms</option>
-                  <option value="Net 15">Net 15</option>
-                  <option value="Net 30">Net 30</option>
-                  <option value="Net 45">Net 45</option>
-                  <option value="Net 60">Net 60</option>
-                  <option value="Due on Receipt">Due on Receipt</option>
-                </select>
+                  placeholder="e.g. Net 30"
+                  readOnly={type === 'view'}
+                  className={`w-full px-3 py-2 border rounded-md text-sm outline-none transition-all ${
+                    errors.preferredPaymentTerms ? 'border-red-300' : 'border-gray-300 focus:border-blue-400'
+                  } ${type === 'view' ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'}`}
+                />
               </div>
             </div>
           </div>
