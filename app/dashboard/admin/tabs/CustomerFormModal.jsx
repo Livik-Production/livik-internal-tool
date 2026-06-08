@@ -1,4 +1,5 @@
 'use client';
+// Force re-compilation to clear stale Next.js dev server cache
 
 import React, { useState, useEffect } from 'react';
 import Button from '../../../components/Buttons/Button';
