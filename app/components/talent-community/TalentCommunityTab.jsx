@@ -22,6 +22,7 @@ import Pagination from '../Pagination';
 import Loader from '../Loader';
 import CustomModalForm from '../CustomModalForm';
 import PrimaryButton from '../Buttons/PrimaryButton';
+import * as XLSX from 'xlsx';
 
 const DEFAULT_COLUMNS = {
   createdAt: false,
@@ -49,6 +50,8 @@ export default function TalentCommunityTab() {
   const [jobs, setJobs] = useState([]);
   const [toast, setToast] = useState(null);
   const [selectedEntry, setSelectedEntry] = useState(null);
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
 
   // Column selector state
   const [showColumnFilter, setShowColumnFilter] = useState(false);
@@ -315,6 +318,63 @@ export default function TalentCommunityTab() {
     }
   };
 
+  const exportToExcel = () => {
+    try {
+      const excelData = filtered.map((entry) => ({
+        'Date Submitted': new Date(entry.createdAt).toLocaleDateString(
+          'en-US',
+          {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          }
+        ),
+        'Applicant Name': entry.fullName || '',
+        'Email Address': entry.email || '',
+        'Phone Number': entry.phoneNumber || '',
+        Qualification: entry.qualification || '',
+        'Role Interested In': entry.roleApplyingFor || '',
+        'Experience Level':
+          experienceLabelMap[entry.experienceLevel] ||
+          entry.experienceLevel ||
+          '',
+        Location: entry.location || '',
+        'Portfolio / LinkedIn': entry.portfolioUrl || '',
+        'Skills / Stack': entry.skillset || '',
+        Message: entry.shortMessage || '',
+      }));
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(excelData);
+
+      const maxWidth = excelData.reduce((acc, row) => {
+        Object.keys(row).forEach((key) => {
+          const length = String(row[key] || '').length;
+          if (!acc[key] || length > acc[key]) {
+            acc[key] = length;
+          }
+        });
+        return acc;
+      }, {});
+
+      const wscols = Object.keys(maxWidth).map((key) => ({
+        wch: Math.min(Math.max(maxWidth[key] + 2, 10), 50),
+      }));
+
+      ws['!cols'] = wscols;
+
+      XLSX.utils.book_append_sheet(wb, ws, 'Open Applications');
+
+      const excelFileName = `Open_Applications_${
+        new Date().toISOString().split('T')[0]
+      }.xlsx`;
+      XLSX.writeFile(wb, excelFileName);
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      showToast('Failed to export to Excel', 'error');
+    }
+  };
+
   const actions = (row) => (
     <div className="flex gap-2 justify-center">
       <IconButton
@@ -361,7 +421,21 @@ export default function TalentCommunityTab() {
       return false;
     }
 
-    // 2. Search query filter
+    // 2. Date range filter
+    if (fromDate) {
+      const start = new Date(fromDate);
+      start.setHours(0, 0, 0, 0);
+      const entryDate = new Date(e.createdAt);
+      if (entryDate < start) return false;
+    }
+    if (toDate) {
+      const end = new Date(toDate);
+      end.setHours(23, 59, 59, 999);
+      const entryDate = new Date(e.createdAt);
+      if (entryDate > end) return false;
+    }
+
+    // 3. Search query filter
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return (
@@ -402,7 +476,7 @@ export default function TalentCommunityTab() {
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm flex flex-col shrink-0">
         {/* Table Header Controls */}
         <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50/50 rounded-t-xl">
-          <div className="flex gap-3 items-center">
+          <div className="flex gap-3 items-center flex-wrap">
             <div className="relative">
               <Search
                 size={16}
@@ -420,6 +494,31 @@ export default function TalentCommunityTab() {
               />
             </div>
 
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-gray-500">From:</span>
+              <input
+                type="date"
+                value={fromDate}
+                onChange={(e) => {
+                  setFromDate(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004475]/20 focus:border-[#004475] bg-white text-gray-700"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-gray-500">To:</span>
+              <input
+                type="date"
+                value={toDate}
+                onChange={(e) => {
+                  setToDate(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004475]/20 focus:border-[#004475] bg-white text-gray-700"
+              />
+            </div>
+
             {/* Column Filter Button (Right of Search) */}
             <PrimaryButton
               onClick={openColumnFilter}
@@ -430,10 +529,13 @@ export default function TalentCommunityTab() {
             </PrimaryButton>
           </div>
           <div className="flex gap-3 items-center">
-            <button className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-[#004475] hover:bg-blue-50 rounded-lg transition-colors cursor-pointer">
+            <PrimaryButton
+              onClick={exportToExcel}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-[#004475]  rounded-lg transition-colors cursor-pointer"
+            >
               <Download size={14} />
               <span>Export CSV</span>
-            </button>
+            </PrimaryButton>
           </div>
         </div>
 

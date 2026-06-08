@@ -164,7 +164,8 @@ const GSTCalculationModal = ({
         name: selectedClient?.name || 'Client Name',
         address: selectedClient?.address || 'No. 8 , Round Road',
         city: selectedClient?.city || 'Dindigul',
-        gstin: selectedClient?.gstin || selectedClient?.gst || '123456',
+        gst: selectedClient?.gstnNumber || selectedClient?.gst || selectedClient?.gstin || '',
+        cin: selectedClient?.cinNumber || selectedClient?.cin || '',
         state: selectedClient?.state || 'Tamil Nadu',
       },
       products: selectedProducts.map((product, index) => ({

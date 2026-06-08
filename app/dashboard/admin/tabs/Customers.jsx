@@ -75,6 +75,8 @@ const CustomersTable = () => {
     return (
       customer.name?.toLowerCase().includes(term) ||
       customer.email?.toLowerCase().includes(term) ||
+      customer.website?.toLowerCase().includes(term) ||
+      customer.cinNumber?.toLowerCase().includes(term) ||
       customer.mobile?.toLowerCase().includes(term) ||
       customer.id?.toLowerCase().includes(term) ||
       customer.city?.toLowerCase().includes(term) ||
@@ -208,12 +210,12 @@ const CustomersTable = () => {
     },
     {
       key: 'gstnNumber',
-      label: 'GSTN Number',
+      label: 'GSTN/CIN Number',
       className: 'text-center',
       render: (row) => (
         <div className="text-center">
           <div className="font-mono text-sm px-2 py-1 rounded">
-            {row.gstnNumber}
+            {row.gstnNumber || row.cinNumber}
           </div>
         </div>
       ),

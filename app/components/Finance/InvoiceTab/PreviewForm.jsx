@@ -61,6 +61,9 @@ const PreviewForm = ({
     notes,
   } = invoiceData || {};
 
+  const clientGst = client?.gstnNumber || client?.gstin || client?.gst || '';
+  const clientCin = client?.cinNumber || client?.cin || '';
+
   const isWithPad = letterPad === 'with';
 
   const primaryCurrency = products?.[0]?.currency || 'INR';
@@ -287,7 +290,7 @@ const PreviewForm = ({
               {/* Bottom Box: Buyer Info */}
 
               <div className="p-2 px-2.5 flex-1 space-y-0.5">
-                <p className="text-[12px] text-[#1f2937] mb-0.5 leading-tight">
+                <p className="text-[12px] text-[#1f2937] leading-tight">
                   Buyer (Bill to)
                 </p>
 
@@ -295,23 +298,17 @@ const PreviewForm = ({
                   {client?.name || 'Buyers Company Name'}
                 </h2>
 
-                <p className="w-[65%] text-[12px] text-[#374151] leading-tight mt-1 break-words">
+                <p className="w-[85%] text-[12px] text-[#374151] leading-tight mt-1 break-words">
                   {client?.address || 'No. 8, Round Road'}
                 </p>
 
                 {client?.address2 && (
-                  <p className="w-[65%] text-[12px] text-[#374151] leading-tight break-words">
+                  <p className="w-[85%] text-[12px] text-[#374151] leading-tight break-words">
                     {client.address2}
                   </p>
                 )}
 
-                <div className="mt-1">
-                  <p className="text-[12px] text-[#374151] leading-tight flex">
-                    <span className="w-20">GSTIN/UIN</span>
-
-                    <span>: {client?.gstin || client?.gst || '123456'}</span>
-                  </p>
-
+                <div className="">
                   <p className="text-[12px] text-[#374151] leading-tight flex py-1">
                     <span className="w-20">State Name</span>
 
@@ -320,6 +317,26 @@ const PreviewForm = ({
                       {client?.stateCode ? `, Code : ${client.stateCode}` : ''}
                     </span>
                   </p>
+                  {clientGst && (
+                    <p className="text-[12px] text-[#374151] leading-tight flex mb-1">
+                      <span className="w-20">GSTIN/UIN</span>
+                      <span>: {clientGst}</span>
+                    </p>
+                  )}
+
+                  {clientCin && (
+                    <p className="text-[12px] text-[#374151] leading-tight flex mb-0">
+                      <span className="w-7">CIN</span>
+                      <span>: {clientCin}</span>
+                    </p>
+                  )}
+
+                  {!clientGst && !clientCin && (
+                    <p className="text-[12px] text-[#374151] leading-tight flex mb-0">
+                      <span className="w-20">GSTIN/UIN</span>
+                      <span>: N/A</span>
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -508,7 +525,7 @@ const PreviewForm = ({
                       {product.hsn || product.hsnCode || '12345'}
                     </div>
 
-                    <div className="w-28 p-1 pt-2 text-center text-[12px] font-bold text-[#111827] pr-4">
+                    <div className="w-28 p-1 pt-2 text-right text-[12px] font-bold text-[#111827] pr-4">
                       {Number(
                         product.price || product.amount || 0
                       ).toLocaleString('en-IN', {
@@ -544,7 +561,7 @@ const PreviewForm = ({
                     998313
                   </div>
 
-                  <div className="w-28 p-1 pt-2 text-center text-[12px] font-bold text-[#111827] pr-4">
+                  <div className="w-28 p-1 pt-2 text-right text-[12px] font-bold text-[#111827] pr-4">
                     1,08,000.00
                   </div>
                 </div>

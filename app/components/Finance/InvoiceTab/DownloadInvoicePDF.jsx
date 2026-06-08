@@ -46,7 +46,7 @@ export const handleDownloadInvoicePDF = async (
       },
 
       html2canvas: {
-        scale: 8,
+        scale: 4,
 
         useCORS: true,
 
@@ -155,6 +155,7 @@ export const handleDownloadInvoicePDF = async (
             }
             #invoice-preview-print .space-y-0\\.5 > p.break-words {
               margin-bottom: 3px !important; /* Gap between address lines */
+              width: 85% !important;
             }
             #invoice-preview-print .space-y-0\\.5 > div.mt-1 {
               margin-top: 4px !important; /* Gap above GSTIN section */
@@ -202,7 +203,7 @@ export const handleDownloadInvoicePDF = async (
 
         orientation: 'portrait',
 
-        compress: false,
+        compress: true,
       },
     };
 
