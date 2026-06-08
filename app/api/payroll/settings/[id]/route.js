@@ -3,9 +3,16 @@ import { prisma } from '../../../../../lib/prisma';
 
 export async function PUT(req, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await req.json();
-    const { sunday, saturday, effectiveDate, companyHoliday } = body;
+    const {
+      sunday,
+      saturday,
+      effectiveDate,
+      companyHoliday,
+      basicPayPercent,
+      hraPercent,
+    } = body;
 
     const updated = await prisma.payrollSettings.update({
       where: { id },
@@ -14,6 +21,12 @@ export async function PUT(req, { params }) {
         saturday,
         effectiveDate: new Date(effectiveDate),
         companyHoliday,
+        basicPayPercent:
+          basicPayPercent !== undefined
+            ? parseFloat(basicPayPercent)
+            : undefined,
+        hraPercent:
+          hraPercent !== undefined ? parseFloat(hraPercent) : undefined,
       },
     });
 
@@ -32,7 +45,7 @@ export async function PUT(req, { params }) {
 
 export async function DELETE(req, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     // Don't delete if it's the only record (optional, but good for safety)
     const count = await prisma.payrollSettings.count();

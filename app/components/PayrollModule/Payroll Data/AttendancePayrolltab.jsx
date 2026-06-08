@@ -13,6 +13,7 @@ import Loader from '../../Loader';
 import { FileText } from 'lucide-react';
 import CustomAlertForm from '../../CustomAlertForm';
 import FilterDropdown from '../../Buttons/FilterDropdown';
+import IconButton from '../../Buttons/IconButton';
 
 export default function AttendanceTabContent({
   employees = [],
@@ -212,20 +213,16 @@ export default function AttendanceTabContent({
   const Actions = (row) => {
     return (
       <div className="flex justify-end gap-2">
-        <button
+        <IconButton
           onClick={() => handleDelete(row.id)}
-          className={`p-2 rounded-full transition-colors ${
-            !canControlAllEmployees
-              ? 'text-gray-400 cursor-not-allowed bg-gray-50'
-              : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
-          }`}
+          className="p-2 hover:bg-blue-50"
           title={
             !canControlAllEmployees ? 'Delete access required' : 'Delete Record'
           }
           disabled={!canControlAllEmployees}
         >
           <Trash size={16} color="#003273ff" />
-        </button>
+        </IconButton>
       </div>
     );
   };

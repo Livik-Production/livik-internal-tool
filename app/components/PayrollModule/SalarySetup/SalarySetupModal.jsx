@@ -11,7 +11,6 @@ import PrimaryButton from '../../Buttons/PrimaryButton';
 import IconButton from '../../Buttons/IconButton';
 import CustomModalForm from '../../CustomModalForm';
 
-
 const SalarySetupModal = ({
   mode = 'view', // "view", "edit", "add"
   employeeData = null,
@@ -28,6 +27,58 @@ const SalarySetupModal = ({
   const [employeeSearch, setEmployeeSearch] = useState('');
   const [showEmployeeDropdown, setShowEmployeeDropdown] = useState(false);
   const dropdownRef = useRef(null);
+
+  const [salaryRules, setSalaryRules] = useState({
+    basicPayPercent: 40.0,
+    hraPercent: 50.0,
+  });
+
+  useEffect(() => {
+    const fetchRules = async () => {
+      try {
+        const response = await fetch('/api/payroll/settings');
+        if (response.ok) {
+          const data = await response.json();
+          setSalaryRules({
+            basicPayPercent:
+              data.basicPayPercent !== undefined
+                ? Number(data.basicPayPercent)
+                : 40.0,
+            hraPercent:
+              data.hraPercent !== undefined ? Number(data.hraPercent) : 50.0,
+          });
+        }
+      } catch (error) {
+        console.error(
+          'Failed to fetch payroll rules from backend in SalarySetupModal:',
+          error
+        );
+        // Fallback to localStorage
+        const saved = localStorage.getItem('payroll_salary_rules');
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            setSalaryRules({
+              basicPayPercent:
+                parsed.basicPayPercent !== undefined
+                  ? Number(parsed.basicPayPercent)
+                  : 40.0,
+              hraPercent:
+                parsed.hraPercent !== undefined
+                  ? Number(parsed.hraPercent)
+                  : 50.0,
+            });
+          } catch (e) {
+            console.error(
+              'Failed to load payroll rules in SalarySetupModal:',
+              e
+            );
+          }
+        }
+      }
+    };
+    fetchRules();
+  }, []);
 
   // Alert/Confirm modal state
   const [alertModal, setAlertModal] = useState({
@@ -152,8 +203,8 @@ const SalarySetupModal = ({
   const calculateDerivedFields = () => {
     const ctc = Number(formData.ctc) || 0;
 
-    const basicPay = Math.round(ctc * 0.4);
-    const hra = Math.round(basicPay * 0.5);
+    const basicPay = Math.round(ctc * (salaryRules.basicPayPercent / 100));
+    const hra = Math.round(basicPay * (salaryRules.hraPercent / 100));
     const otherAllowances = ctc - (basicPay + hra);
 
     setFormData((prev) => ({
@@ -203,13 +254,17 @@ const SalarySetupModal = ({
     }
   }, [formData.basicPay, formData.hra, formData.ctc]);
 
-  // Calculate derived fields when CTC changes
+  const prevCtcRef = useRef(formData.ctc);
+
+  // Calculate derived fields when CTC changes or salary rules change
   useEffect(() => {
-    // Run for "add" mode, or if CTC is changed AFTER initialization in "edit" mode
-    if (mode === 'add' || (mode === 'edit' && isInitialized)) {
+    const ctcChanged = prevCtcRef.current !== formData.ctc;
+    prevCtcRef.current = formData.ctc;
+
+    if (mode === 'add' || (mode === 'edit' && isInitialized && ctcChanged)) {
       calculateDerivedFields();
     }
-  }, [formData.ctc, mode]);
+  }, [formData.ctc, mode, salaryRules, isInitialized]);
 
   // Set initialization flag after first render
   useEffect(() => {
@@ -530,25 +585,25 @@ const SalarySetupModal = ({
       field: 'basicPay',
       label: 'Basic Pay',
       value: formData.basicPay,
-      editable: true,
+      editable: false,
       showPercentage: true,
-      percentageEditable: true,
+      percentageEditable: false,
     },
     {
       field: 'hra',
       label: 'House Rent Allowance',
       value: formData.hra,
-      editable: true,
+      editable: false,
       showPercentage: true,
-      percentageEditable: true,
+      percentageEditable: false,
     },
     {
       field: 'otherAllowances',
       label: 'Other Allowances',
       value: formData.otherAllowances,
-      editable: true,
+      editable: false,
       showPercentage: true,
-      percentageEditable: true,
+      percentageEditable: false,
     },
     {
       field: 'grossSalary',
@@ -808,9 +863,10 @@ const SalarySetupModal = ({
                       <>
                         {' '}
                         When you enter CTC, the system automatically calculates:
-                        Basic Pay (40% of CTC), HRA (50% of Basic Pay), and
-                        Other Allowance as the remaining balance. Gross Salary
-                        will always be equal to CTC.
+                        Basic Pay ({salaryRules.basicPayPercent}% of CTC), HRA (
+                        {salaryRules.hraPercent}% of Basic Pay), and Other
+                        Allowance as the remaining balance. Gross Salary will
+                        always be equal to CTC.
                       </>
                     ) : (
                       ' Enter the Cost to Company (CTC) to automatically calculate salary components.'

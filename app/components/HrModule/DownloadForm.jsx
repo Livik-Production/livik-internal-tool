@@ -11,10 +11,25 @@ export const handleDownloadPDF = async (selectedEmployee, letterPadOption) => {
   // Ensure browser-only execution
   if (typeof window === 'undefined') return;
 
-  const element = document.getElementById('offer-letter-print');
+  let element = document.getElementById('offer-letter-print');
 
   if (!element) {
-    alert('Offer letter content not found');
+    // Check all possible letter print container IDs
+    const printIds = [
+      'warning-letter-print',
+      'termination-letter-print',
+      'appointment-letter-print',
+      'experience-letter-print',
+      'relieving-letter-print',
+    ];
+    for (const id of printIds) {
+      element = document.getElementById(id);
+      if (element) break;
+    }
+  }
+
+  if (!element) {
+    alert('Letter content not found');
     return;
   }
 

@@ -9,7 +9,13 @@ import ReviewSection from './sections/ReviewSection';
 import Payroll from '../../../app/components/EmployeeForm/Payroll';
 import BondDetails from '../../components/EmployeeForm/sections/BondDetails';
 import PhotoSection from '../../components/EmployeeForm/sections/PhotoSection';
-import { Loader2, Monitor, Calendar, Briefcase, IndianRupee } from 'lucide-react';
+import {
+  Loader2,
+  Monitor,
+  Calendar,
+  Briefcase,
+  IndianRupee,
+} from 'lucide-react';
 import PrimaryButton from '../Buttons/PrimaryButton';
 import { deleteEmployeeDocument } from '../../actions/deleteEmployeeDocument';
 
@@ -70,10 +76,11 @@ function TopTabs({ tabs, active, onChange }) {
             role="tab"
             aria-selected={isActive}
             onClick={() => onChange(t.id)}
-            className={`relative flex items-center gap-2 px-4 py-2 font-semibold text-sm transition rounded-t-xl ${isActive
-              ? 'bg-[#e7f0fa] text-[#173469] border-b-4 border-[#173469]'
-              : 'bg-transparent text-gray-500 border-b-4 border-transparent hover:text-[#173469] hover:bg-[#e7f0fa]'
-              }`}
+            className={`relative flex items-center gap-2 px-4 py-2 font-semibold text-sm transition rounded-t-xl ${
+              isActive
+                ? 'bg-[#e7f0fa] text-[#173469] border-b-4 border-[#173469]'
+                : 'bg-transparent text-gray-500 border-b-4 border-transparent hover:text-[#173469] hover:bg-[#e7f0fa]'
+            }`}
           >
             {t.label}
             {t.count ? (
@@ -181,11 +188,11 @@ export default function EmployeeForm({
 
     bondDuration: String(
       initialData.bondDuration ??
-      calculateBondDuration(
-        initialData.bondStartDate,
-        initialData.bondEndDate
-      ) ??
-      ''
+        calculateBondDuration(
+          initialData.bondStartDate,
+          initialData.bondEndDate
+        ) ??
+        ''
     ),
     documentsCollected:
       initialData.documentsCollected ?? reconstructDocuments(initialData),
@@ -195,21 +202,21 @@ export default function EmployeeForm({
   const [educations, setEducations] = useState(
     (initialData.educationDetails || initialData.education || []).length
       ? (initialData.educationDetails || initialData.education || []).map(
-        (e) => ({
-          university: e.university ?? '',
-          institution: e.institution ?? '',
-          qualification: e.qualification ?? '',
-          yearCompleted: e.yearCompleted ?? '',
-        })
-      )
+          (e) => ({
+            university: e.university ?? '',
+            institution: e.institution ?? '',
+            qualification: e.qualification ?? '',
+            yearCompleted: e.yearCompleted ?? '',
+          })
+        )
       : [
-        {
-          university: '',
-          institution: '',
-          qualification: '',
-          yearCompleted: '',
-        },
-      ]
+          {
+            university: '',
+            institution: '',
+            qualification: '',
+            yearCompleted: '',
+          },
+        ]
   );
 
   const [errors, setErrors] = useState({});
@@ -241,8 +248,18 @@ export default function EmployeeForm({
   const validators = {
     firstName: (v) => (!v || !v.trim() ? 'First name is required.' : null),
     lastName: (v) => (!v || !v.trim() ? 'Last name is required.' : null),
-    email: (v) => (!v || !v.trim() ? 'Email is required.' : (v && !emailRegex.test(v) ? 'Invalid email.' : null)),
-    phoneNumber: (v) => (!v || !v.replace(/\D/g, '').trim() ? 'Phone number is required.' : (v && !phoneRegex.test(v.replace(/\D/g, '')) ? 'Phone should be digits (10-14).' : null)),
+    email: (v) =>
+      !v || !v.trim()
+        ? 'Email is required.'
+        : v && !emailRegex.test(v)
+          ? 'Invalid email.'
+          : null,
+    phoneNumber: (v) =>
+      !v || !v.replace(/\D/g, '').trim()
+        ? 'Phone number is required.'
+        : v && !phoneRegex.test(v.replace(/\D/g, ''))
+          ? 'Phone should be digits (10-14).'
+          : null,
     aadhaarNumber: (v) =>
       v && !aadhaarRegex.test(v) ? 'Aadhaar must be 12 digits.' : null,
     panNumber: (v) =>
@@ -313,11 +330,7 @@ export default function EmployeeForm({
       });
     } else if (s === 1) {
     } else if (s === 2) {
-      [
-        'designation',
-        'department',
-        'dateOfJoining',
-      ].forEach((k) => {
+      ['designation', 'department', 'dateOfJoining'].forEach((k) => {
         const msg = validators[k]?.(form[k]);
         if (msg) newErrors[k] = msg;
       });
@@ -399,69 +412,69 @@ export default function EmployeeForm({
     payrollFromData?.history && payrollFromData.history.length
       ? payrollFromData.history
       : [
-        {
-          id: 'ver_2024_04',
-          effectiveYear: currentYear - 1,
-          effectiveMonth: 4,
-          components: [
-            {
-              id: 'basic',
-              group: 'Basic',
-              name: 'Basic Salary',
-              amount: 28000,
-            },
-            {
-              id: 'hra',
-              group: 'HRA',
-              name: 'House Rent Allowance',
-              amount: 7000,
-            },
-            {
-              id: 'allow1',
-              group: 'Allowances',
-              name: 'Conveyance',
-              amount: 800,
-            },
-            {
-              id: 'ded1',
-              group: 'Deductions',
-              name: 'Professional Tax',
-              amount: 200,
-            },
-          ],
-        },
-        {
-          id: 'ver_2025_01',
-          effectiveYear: currentYear,
-          effectiveMonth: 1, // Jan this year
-          components: [
-            {
-              id: 'basic',
-              group: 'Basic',
-              name: 'Basic Salary',
-              amount: 30000,
-            },
-            {
-              id: 'hra',
-              group: 'HRA',
-              name: 'House Rent Allowance',
-              amount: 8000,
-            },
-            {
-              id: 'allow1',
-              group: 'Allowances',
-              name: 'Conveyance',
-              amount: 900,
-            },
-            {
-              id: 'ded1',
-              group: 'Deductions',
-              name: 'Professional Tax',
-              amount: 250,
-            },
-          ],
-        },
-      ];
+          {
+            id: 'ver_2024_04',
+            effectiveYear: currentYear - 1,
+            effectiveMonth: 4,
+            components: [
+              {
+                id: 'basic',
+                group: 'Basic',
+                name: 'Basic Salary',
+                amount: 28000,
+              },
+              {
+                id: 'hra',
+                group: 'HRA',
+                name: 'House Rent Allowance',
+                amount: 7000,
+              },
+              {
+                id: 'allow1',
+                group: 'Allowances',
+                name: 'Conveyance',
+                amount: 800,
+              },
+              {
+                id: 'ded1',
+                group: 'Deductions',
+                name: 'Professional Tax',
+                amount: 200,
+              },
+            ],
+          },
+          {
+            id: 'ver_2025_01',
+            effectiveYear: currentYear,
+            effectiveMonth: 1, // Jan this year
+            components: [
+              {
+                id: 'basic',
+                group: 'Basic',
+                name: 'Basic Salary',
+                amount: 30000,
+              },
+              {
+                id: 'hra',
+                group: 'HRA',
+                name: 'House Rent Allowance',
+                amount: 8000,
+              },
+              {
+                id: 'allow1',
+                group: 'Allowances',
+                name: 'Conveyance',
+                amount: 900,
+              },
+              {
+                id: 'ded1',
+                group: 'Deductions',
+                name: 'Professional Tax',
+                amount: 250,
+              },
+            ],
+          },
+        ];
 
   // normalize history: sort by effective date ascending
   const historySorted = [...defaultHistory].sort((a, b) => {
@@ -612,7 +625,6 @@ export default function EmployeeForm({
       permanentAddress: form.permanentAddress?.trim() || undefined,
       designation: form.designation?.trim() || undefined,
       department: form.department?.trim() || undefined,
-      role: form.role?.trim() || undefined,
       dateOfJoining: toISODateIfValid(form.dateOfJoining),
       workLocation: form.workLocation?.trim() || undefined,
       bankName: form.bankName?.trim() || undefined,
@@ -655,15 +667,19 @@ export default function EmployeeForm({
           try {
             await deleteEmployeeDocument(deleteUrl);
           } catch (delErr) {
-            console.error('Failed to permanent delete blob:', deleteUrl, delErr);
+            console.error(
+              'Failed to permanent delete blob:',
+              deleteUrl,
+              delErr
+            );
           }
         }
       }
 
       return result;
     } catch (err) {
-      setErrors((p) => ({ ...p, submit: err?.message ?? 'Submit failed' }));
-      throw err;
+      // Error is already handled by toast in the parent component
+      // Do not re-throw to prevent Next.js Runtime Error overlay
     } finally {
       setSubmitting(false);
     }
@@ -686,17 +702,19 @@ export default function EmployeeForm({
                 type="button"
                 className={`
                   relative flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 whitespace-nowrap
-                  ${active
-                    ? 'bg-white text-blue-700 shadow-md transform scale-[1.02]'
-                    : done
-                      ? 'text-blue-600 hover:bg-white/50'
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/50'
+                  ${
+                    active
+                      ? 'bg-white text-blue-700 shadow-md transform scale-[1.02]'
+                      : done
+                        ? 'text-blue-600 hover:bg-white/50'
+                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/50'
                   }
                 `}
               >
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center border ${active ? 'bg-blue-100' : done ? 'bg-green-100' : 'bg-white'
-                    }`}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center border ${
+                    active ? 'bg-blue-100' : done ? 'bg-green-100' : 'bg-white'
+                  }`}
                 >
                   {done ? '✓' : i + 1}
                 </div>
@@ -732,7 +750,6 @@ export default function EmployeeForm({
                 errors={errors}
                 isView={isView}
               />
-
             </>
           )}
 
@@ -764,9 +781,7 @@ export default function EmployeeForm({
           )}
         </div>
 
-        {errors.submit && (
-          <div className="text-sm text-red-600">{errors.submit}</div>
-        )}
+        {/* Error message removed per user preference - relies on toast */}
         {errors.payroll && (
           <div className="text-sm text-red-600">{errors.payroll}</div>
         )}

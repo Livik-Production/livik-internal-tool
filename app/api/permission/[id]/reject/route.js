@@ -2,8 +2,9 @@
 import { NextResponse } from 'next/server';
 import { rejectPermissionRequest } from '../../../../../lib/permissionService.js';
 
-export async function POST(req, { params }) {
+export async function POST(req, context) {
   try {
+    const params = await context.params;
     const { id } = params;
     const { approverId, remarks } = await req.json();
 

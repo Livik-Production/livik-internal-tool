@@ -18,6 +18,21 @@ export default function RightsTab() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const canEdit = true; // Temporary fix for undefined variable
+  const [alertConfig, setAlertConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'success',
+  });
+
+  const showAlert = (title, message, type = 'success') => {
+    setAlertConfig({
+      isOpen: true,
+      title,
+      message,
+      type,
+    });
+  };
 
   useEffect(() => {
     fetchRights();
@@ -36,7 +51,11 @@ export default function RightsTab() {
       setRights(data);
     } catch (error) {
       console.error('Error fetching rights:', error);
-      alert('Failed to load rights. Please try again.');
+      showAlert(
+        'Failed to Load',
+        'Failed to load rights. Please try again.',
+        'danger'
+      );
     } finally {
       setLoading(false);
     }
@@ -71,7 +90,7 @@ export default function RightsTab() {
           throw new Error(result.error || 'Failed to add right');
         }
 
-        alert('Right added successfully!');
+        showAlert('Right Added', 'Right added successfully!', 'success');
       } else if (mode === 'edit' && rightId) {
         const response = await fetch(`/api/rights/${rightId}`, {
           method: 'PUT',
@@ -87,7 +106,7 @@ export default function RightsTab() {
           throw new Error(result.error || 'Failed to update right');
         }
 
-        alert('Right updated successfully!');
+        showAlert('Right Updated', 'Right updated successfully!', 'success');
       }
 
       await fetchRights();
@@ -131,21 +150,21 @@ export default function RightsTab() {
       setRightToDelete(null);
     } catch (error) {
       console.error('Error deleting right:', error);
-      alert(error.message || 'Failed to delete right. Please try again.');
+      showAlert(
+        'Delete Failed',
+        error.message || 'Failed to delete right. Please try again.',
+        'danger'
+      );
     } finally {
       setIsDeleting(false);
     }
   };
 
   const handleViewRight = (right) => {
-    alert(
-      `Viewing Right:\n\nID: ${right.id}\nModule: ${
-        right.module
-      }\nDisplay Name: ${right.displayName}\nRight Name: ${
-        right.rightName
-      }\nDescription: ${right.description}\nCreated: ${new Date(
-        right.createdAt
-      ).toLocaleDateString()}`
+    showAlert(
+      'Right Details',
+      `ID: ${right.id}\nModule: ${right.module}\nDisplay Name: ${right.displayName}\nRight Name: ${right.rightName}\nDescription: ${right.description}\nCreated: ${new Date(right.createdAt).toLocaleDateString()}`,
+      'info'
     );
   };
 
@@ -223,6 +242,17 @@ export default function RightsTab() {
             </div>
           )
         }
+      />
+
+      <CustomAlertForm
+        isOpen={alertConfig.isOpen}
+        onClose={() => setAlertConfig((prev) => ({ ...prev, isOpen: false }))}
+        onConfirm={() => setAlertConfig((prev) => ({ ...prev, isOpen: false }))}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+        confirmText="OK"
+        cancelText="Close"
       />
     </div>
   );

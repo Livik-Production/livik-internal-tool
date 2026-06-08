@@ -66,20 +66,20 @@ const ExpensesTable = ({
       selectedMonthNum === 'all' || expMonthNum === selectedMonthNum;
     const matchesYear = selectedYear === 'all' || expYear === selectedYear;
 
+    const searchLower = (searchQuery || '').toLowerCase();
     const matchesSearch =
       searchQuery === '' ||
-      (expense.expenseNumber &&
-        expense.expenseNumber
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase())) ||
-      (expense.category &&
-        expense.category.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (expense.description &&
-        expense.description
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase())) ||
-      (expense.vendor &&
-        expense.vendor.toLowerCase().includes(searchQuery.toLowerCase()));
+      expense.expenseNumber?.toLowerCase().includes(searchLower) ||
+      expense.category?.toLowerCase().includes(searchLower) ||
+      expense.description?.toLowerCase().includes(searchLower) ||
+      expense.vendor?.toLowerCase().includes(searchLower) ||
+      expense.itemName?.toLowerCase().includes(searchLower) ||
+      expense.remarks?.toLowerCase().includes(searchLower) ||
+      expense.paymentMode?.toLowerCase().includes(searchLower) ||
+      expense.paymentMethod?.toLowerCase().includes(searchLower) ||
+      String(expense.amount || '')
+        .toLowerCase()
+        .includes(searchLower);
 
     const matchesCategory =
       selectedCategory === 'all' || expense.category === selectedCategory;
@@ -99,8 +99,8 @@ const ExpensesTable = ({
       setIsLoading(true);
       try {
         const [expRes, pcRes] = await Promise.all([
-          fetch('/api/expense'),
-          fetch('/api/expense/petty-cash'),
+          fetch('/api/expense', { cache: 'no-store' }),
+          fetch('/api/expense/petty-cash', { cache: 'no-store' }),
         ]);
 
         if (!expRes.ok) throw new Error('Failed to fetch expenses');
@@ -219,8 +219,9 @@ const ExpensesTable = ({
 
         <div
           key={activeTab}
-          className={`transition-all duration-400 ${animating ? 'opacity-0 translate-y-4' : 'animate-dashboard-reveal'
-            }`}
+          className={`transition-all duration-400 ${
+            animating ? 'opacity-0 translate-y-4' : 'animate-dashboard-reveal'
+          }`}
         >
           {activeTab === 'dashboard' &&
             (isLoading || propIsLoading || loading ? (

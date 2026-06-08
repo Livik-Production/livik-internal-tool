@@ -2,8 +2,9 @@
 import { NextResponse } from 'next/server';
 import { confirmPermissionHours } from '../../../../../lib/permissionService';
 
-export async function POST(req, { params }) {
+export async function POST(req, context) {
   try {
+    const params = await context.params;
     const { id } = params;
     const { actualHours, confirmerId, remarks } = await req.json();
 

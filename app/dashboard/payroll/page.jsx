@@ -59,15 +59,18 @@ function PayrollContent() {
     const normalizedRights = rawRights.map((r) => String(r).toLowerCase());
 
     const roleName = (role?.name || role?.roleName || '').toUpperCase();
-    const isAdmin =
-      roleName === 'ADMIN' ||
+    const isSuperAdmin =
       roleName === 'SUPER_ADMIN' ||
+      roleName === 'SUPER ADMIN' ||
+      roleName === 'SUPERADMIN' ||
+      roleName === 'ADMIN' ||
       normalizedRights.includes('all_access');
 
     const checkRight = (r) => normalizedRights.includes(r.toLowerCase());
 
     // Backward compatibility for generic payroll rights
-    const hasGlobalPayrollControl = isAdmin || checkRight('payroll_control');
+    const hasGlobalPayrollControl =
+      isSuperAdmin || checkRight('payroll_control');
     const hasGlobalPayrollView =
       hasGlobalPayrollControl || checkRight('payroll_view');
 
@@ -98,7 +101,7 @@ function PayrollContent() {
     return {
       visibleTabs: tabs,
       isViewOnly: activeIsViewOnly,
-      isAdmin: isAdmin,
+      isAdmin: isSuperAdmin,
     };
   }, [authUser, activeTab]);
 
@@ -248,7 +251,9 @@ function PayrollContent() {
                   isAdmin={isAdmin}
                 />
               )}
-              {activeTab === 'setup' && <SalarySetupTab isViewOnly={isViewOnly} />}
+              {activeTab === 'setup' && (
+                <SalarySetupTab isViewOnly={isViewOnly} />
+              )}
             </motion.div>
           )}
         </AnimatePresence>

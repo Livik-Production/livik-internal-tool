@@ -18,6 +18,7 @@ export default function CompanyDetailsTab() {
     address: '',
     startedDate: new Date().toISOString().split('T')[0],
     bankName: '',
+    branchName: '',
     gstnNumber: '',
     panNumber: '',
     accountHolderName: '',
@@ -39,6 +40,7 @@ export default function CompanyDetailsTab() {
                 ? data.startedDate.split('T')[0]
                 : new Date().toISOString().split('T')[0],
               bankName: data.bankName || '',
+              branchName: data.branchName || '',
               gstnNumber: data.gstnNumber || '',
               companyEmail: data.companyEmail || '',
               companyPhone: data.companyPhone || '',
@@ -219,6 +221,18 @@ export default function CompanyDetailsTab() {
                 type="text"
                 name="bankName"
                 value={companyDetails.bankName}
+                onChange={handleCompanyDetailsChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-gray-700 block text-left">
+                Branch Name
+              </label>
+              <input
+                type="text"
+                name="branchName"
+                value={companyDetails.branchName}
                 onChange={handleCompanyDetailsChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
               />

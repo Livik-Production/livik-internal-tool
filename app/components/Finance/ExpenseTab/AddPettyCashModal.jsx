@@ -8,6 +8,7 @@ import Button from '../../Buttons/Button';
 import PrimaryButton from '../../Buttons/PrimaryButton';
 import CloseButton from '../../Buttons/CloseButton';
 import CustomModalForm from '../../CustomModalForm';
+import { toast } from 'react-toastify';
 
 const AddPettyCashModal = ({
   isOpen,
@@ -42,6 +43,55 @@ const AddPettyCashModal = ({
   const [openingBalance, setOpeningBalance] = useState(0);
   const [isLoadingBalance, setIsLoadingBalance] = useState(false);
   const [error, setError] = useState('');
+  const [paymentMethods, setPaymentMethods] = useState([
+    'Cash',
+    'Bank Transfer',
+    'Cheque',
+  ]);
+
+  useEffect(() => {
+    const fetchMethods = async () => {
+      try {
+        const res = await fetch('/api/dropdowns?type=payment_type');
+        if (res.ok) {
+          const data = await res.json();
+          let active = (data.data || [])
+            .filter((item) => item.status !== 'inactive')
+            .map((item) => item.label);
+          active = Array.from(new Set(active));
+          if (active.length > 0) {
+            if (
+              initialData?.paymentMethod &&
+              !active.includes(initialData.paymentMethod)
+            ) {
+              active = [...active, initialData.paymentMethod];
+            }
+            setPaymentMethods(active);
+            setFormData((prev) => {
+              if (mode === 'edit' && initialData) {
+                return {
+                  ...prev,
+                  paymentMethod: active.includes(initialData.paymentMethod)
+                    ? initialData.paymentMethod
+                    : active[0],
+                };
+              } else {
+                return {
+                  ...prev,
+                  paymentMethod: active.includes('Cash') ? 'Cash' : active[0],
+                };
+              }
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch petty cash payment methods:', err);
+      }
+    };
+    if (isOpen) {
+      fetchMethods();
+    }
+  }, [isOpen, mode, initialData]);
 
   const fetchOpeningBalance = async (date) => {
     if (!date) return;
@@ -65,17 +115,27 @@ const AddPettyCashModal = ({
   }, [isOpen, formData.receiveDate]);
 
   useEffect(() => {
-    if (initialData && mode === 'edit') {
-      setFormData({
-        receiveDate: new Date(initialData.receiveDate)
-          .toISOString()
-          .split('T')[0],
-        receiveFrom: initialData.receiveFrom,
-        receivedAmount: initialData.receivedAmount,
-        paymentMethod: initialData.paymentMethod,
-      });
+    if (isOpen) {
+      if (mode === 'edit' && initialData) {
+        setFormData({
+          receiveDate: new Date(initialData.receiveDate)
+            .toISOString()
+            .split('T')[0],
+          receiveFrom: initialData.receiveFrom,
+          receivedAmount: initialData.receivedAmount,
+          paymentMethod: initialData.paymentMethod,
+        });
+      } else if (mode === 'add') {
+        setFormData({
+          receiveDate: getLocalDateString(),
+          receiveFrom: '',
+          receivedAmount: '',
+          paymentMethod: 'Cash',
+        });
+      }
+      setError('');
     }
-  }, [initialData, mode]);
+  }, [isOpen, initialData, mode]);
 
   if (!isOpen || !mounted) return null;
 
@@ -107,6 +167,9 @@ const AddPettyCashModal = ({
         );
       }
 
+      toast.success(
+        `Successfully ${mode === 'edit' ? 'updated' : 'added'} petty cash record!`
+      );
       onSuccess();
       onClose();
       if (mode === 'add') {
@@ -119,6 +182,7 @@ const AddPettyCashModal = ({
       }
     } catch (err) {
       setError(err.message);
+      toast.error(err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -132,11 +196,20 @@ const AddPettyCashModal = ({
 
       <PrimaryButton
         type="submit"
+        form="add-petty-cash-form"
         disabled={isSubmitting}
-        className="h-[45px] px-6 shadow-lg flex justify-center items-center"
-        onClick={handleSubmit}
+        className="h-[45px] px-6 shadow-lg flex justify-center items-center gap-2"
       >
-        {isSubmitting ? <Loader size="sm" /> : 'Confirm Top Up'}
+        {isSubmitting ? (
+          <>
+            <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            <span>Processing...</span>
+          </>
+        ) : mode === 'edit' ? (
+          'Update Details'
+        ) : (
+          'Confirm Top Up'
+        )}
       </PrimaryButton>
     </>
   );
@@ -149,7 +222,11 @@ const AddPettyCashModal = ({
       widthClass="max-w-lg"
       footer={footer}
     >
-      <form onSubmit={handleSubmit} className="p-4 space-y-4">
+      <form
+        id="add-petty-cash-form"
+        onSubmit={handleSubmit}
+        className="p-4 space-y-4"
+      >
         {error && (
           <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm font-medium">
             {error}
@@ -222,9 +299,11 @@ const AddPettyCashModal = ({
                 setFormData({ ...formData, paymentMethod: e.target.value })
               }
             >
-              <option value="Cash">Cash</option>
-              <option value="Bank Transfer">Bank Transfer</option>
-              <option value="Cheque">Cheque</option>
+              {paymentMethods.map((method) => (
+                <option key={method} value={method}>
+                  {method}
+                </option>
+              ))}
             </select>
           </div>
         </div>

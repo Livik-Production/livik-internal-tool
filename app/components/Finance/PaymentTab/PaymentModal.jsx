@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import Button from '../../Buttons/Button';
 import PrimaryButton from '../../Buttons/PrimaryButton';
@@ -23,7 +23,7 @@ export default function PaymentModal({
     return `$${amount?.toLocaleString() || '0'}`;
   };
 
-  const paymentMethods = [
+  const [paymentMethods, setPaymentMethods] = useState([
     'Bank Transfer',
     'Credit Card',
     'Debit Card',
@@ -31,7 +31,34 @@ export default function PaymentModal({
     'Cheque',
     'Online Payment',
     'UPI',
-  ];
+  ]);
+
+  useEffect(() => {
+    const fetchMethods = async () => {
+      try {
+        const res = await fetch('/api/dropdowns?type=payment_type');
+        if (res.ok) {
+          const data = await res.json();
+          let active = (data.data || [])
+            .filter((item) => item.status !== 'inactive')
+            .map((item) => item.label);
+          active = Array.from(new Set(active));
+          if (active.length > 0) {
+            if (paymentMethod && !active.includes(paymentMethod)) {
+              active = [...active, paymentMethod];
+            }
+            setPaymentMethods(active);
+            if (!paymentMethod) {
+              setPaymentMethod(active[0]);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch payment types:', err);
+      }
+    };
+    fetchMethods();
+  }, []);
 
   const isPartial = invoice.paymentStatus === 'partial';
   const remainingAmount = invoice.remainingAmount || invoice.totalAmount;
@@ -176,4 +203,3 @@ export default function PaymentModal({
     </CustomModalForm>
   );
 }
-

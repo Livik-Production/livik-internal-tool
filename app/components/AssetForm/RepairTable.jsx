@@ -1,5 +1,7 @@
 'use client';
 
+import { toast } from 'react-toastify';
+
 import { useState, useMemo } from 'react';
 import RepairForm from './CreateRepairForm';
 import CustomAlertForm from '../CustomAlertForm';
@@ -8,13 +10,7 @@ import FilterDropdown from '../Buttons/FilterDropdown';
 import PrimaryButton from '../Buttons/PrimaryButton';
 import IconButton from '../Buttons/IconButton';
 import CustomTable from '../CustomTable';
-import {
-  CheckCircle,
-  Plus,
-  Search,
-  SquarePen,
-  Trash,
-} from 'lucide-react';
+import { CheckCircle, Plus, Search, SquarePen, Trash } from 'lucide-react';
 import HyperlinkButton from '../Buttons/HyperlinkButton';
 
 export default function RepairHistoryTable({
@@ -48,7 +44,10 @@ export default function RepairHistoryTable({
       ...repair,
       id: repair.id,
       requestId: repair.requestId || 'REP-???',
-      date: repair.dateOfGivingtoRepair || repair.date || new Date().toISOString().split('T')[0],
+      date:
+        repair.dateOfGivingtoRepair ||
+        repair.date ||
+        new Date().toISOString().split('T')[0],
       vendor: repair.vendorName || repair.vendor || 'Unknown Vendor',
       estimatedCost: repair.estimatedCost || 0,
       shortDescription: repair.description || 'Repair',
@@ -56,7 +55,10 @@ export default function RepairHistoryTable({
       status: repair.status || 'Reported',
       issueType: repair.issueType || 'Hardware',
       cost: repair.estimatedCost || 0,
-      reportDate: repair.dateOfGivingtoRepair || repair.date || new Date().toISOString().split('T')[0],
+      reportDate:
+        repair.dateOfGivingtoRepair ||
+        repair.date ||
+        new Date().toISOString().split('T')[0],
       completedDate: repair.completedOn || null,
       actualCost: repair.actualCost || null,
     }));
@@ -103,7 +105,7 @@ export default function RepairHistoryTable({
   const handleRepairSubmit = async (formData) => {
     try {
       setIsSubmitting(true);
-      
+
       let url = `/api/assets/${assetId}/repairs`;
       let method = 'POST';
 
@@ -120,9 +122,12 @@ export default function RepairHistoryTable({
         issueType: formData.issueType,
         estimatedCost: formData.cost,
         description: formData.issue,
-        status: repairFormMode === 'update' ? 'Completed' : (formData.status || 'Reported'),
+        status:
+          repairFormMode === 'update'
+            ? 'Completed'
+            : formData.status || 'Reported',
         completedOn: formData.completedDate,
-        actualCost: formData.actualCost
+        actualCost: formData.actualCost,
       };
 
       const response = await fetch(url, {
@@ -138,12 +143,17 @@ export default function RepairHistoryTable({
 
       if (onRepairUpdated) onRepairUpdated();
       if (repairFormMode === 'add' && onRepairAdded) onRepairAdded();
-      
+
+      toast.success(
+        repairFormMode === 'add'
+          ? 'Repair record created successfully!'
+          : 'Repair record updated successfully!'
+      );
       setShowRepairForm(false);
       setSelectedRepair(null);
     } catch (error) {
       console.error('Error saving repair:', error);
-      alert(error.message || 'Failed to save repair. Please try again.');
+      toast.error(error.message || 'Failed to save repair. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -164,10 +174,12 @@ export default function RepairHistoryTable({
 
       if (onRepairUpdated) onRepairUpdated();
       if (onDeleteRepair) onDeleteRepair(deletingRepair.id);
+
+      toast.success('Repair record deleted successfully!');
       setDeletingRepair(null);
     } catch (error) {
       console.error('Error deleting repair:', error);
-      alert('Failed to delete record. Please try again.');
+      toast.error('Failed to delete record. Please try again.');
     } finally {
       setIsDeleting(false);
     }
@@ -196,8 +208,6 @@ export default function RepairHistoryTable({
     setRepairFormMode('add');
     setShowRepairForm(true);
   };
-
-
 
   const formatCurrency = (amount) => {
     if (amount === null || amount === undefined) return '-';
@@ -334,7 +344,10 @@ export default function RepairHistoryTable({
           actionsAlign="center"
           actions={(repair) => (
             <div className="flex items-center justify-center gap-2">
-              <IconButton onClick={() => handleEdit(repair)} title="Edit Repair">
+              <IconButton
+                onClick={() => handleEdit(repair)}
+                title="Edit Repair"
+              >
                 <SquarePen size={16} />
               </IconButton>
               {repair.status !== 'Completed' && (

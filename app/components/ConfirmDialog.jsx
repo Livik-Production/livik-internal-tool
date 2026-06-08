@@ -42,7 +42,7 @@ export default function ConfirmDialog({
       widthClass="max-w-xl"
       icon={icon}
     >
-      <div className="space-y-4 p-3">
+      <div className="space-y-4 p-3 border border-gray-200 rounded-lg bg-gray-50">
         <div className="flex items-start gap-3">
           <div className="">
             <svg
@@ -84,7 +84,7 @@ export default function ConfirmDialog({
             type="button"
             onClick={handleClose}
             disabled={loading}
-            className="px-4 py-2 rounded-lg bg-white border text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 rounded-lg bg-white border text-sm font-medium hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer  "
           >
             {cancelLabel}
           </button>
@@ -95,9 +95,9 @@ export default function ConfirmDialog({
             disabled={loading}
             className={`px-4 py-2 rounded-lg text-sm font-medium border focus:outline-none flex items-center gap-2 ${
               destructive
-                ? 'bg-red-400 text-white hover:bg-red-600 border-red-600'
+                ? 'bg-red-600 text-white hover:bg-red-600 border-red-600 hover:scale-3d(1.05) transition-transform'
                 : 'bg-[#004475] text-white '
-            } disabled:opacity-70 disabled:cursor-not-allowed`}
+            } disabled:cursor-not-allowed cursor-pointer`}
             autoFocus
           >
             {loading && <Loader2 className="animate-spin" size={16} />}

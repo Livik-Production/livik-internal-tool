@@ -1,18 +1,10 @@
 'use client';
-// Force re-compilation to clear stale Next.js dev server cache
 
 import React, { useState, useEffect } from 'react';
 import Button from '../../../components/Buttons/Button';
 import PrimaryButton from '../../../components/Buttons/PrimaryButton';
 import CustomModalForm from '../../../components/CustomModalForm';
-import {
-  Phone,
-  Mail,
-  Hash,
-  CreditCard,
-  SquarePen,
-  Globe,
-} from 'lucide-react';
+import { Phone, Mail, Hash, CreditCard, SquarePen, Globe } from 'lucide-react';
 
 const CustomerFormModal = ({
   isOpen,
@@ -61,7 +53,8 @@ const CustomerFormModal = ({
         mobile: customer.mobile || '',
         email: customer.email || '',
         preferredPaymentMethod: customer.preferredPaymentMethod || '',
-        preferredPaymentTerms: customer.preferredPaymentTerms || customer.paymentTerms || '',
+        preferredPaymentTerms:
+          customer.preferredPaymentTerms || customer.paymentTerms || '',
         pincode: customer.pincode || '',
         remarks: customer.remarks || '',
       });
@@ -93,14 +86,17 @@ const CustomerFormModal = ({
     const newErrors = {};
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const mobileRegex = /^\d{10}$/;
-    const gstnRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/i;
+    const gstnRegex =
+      /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/i;
     const pincodeRegex = /^\d{6}$/;
 
-    const cinRegex = /^([LUu]{1})([0-9]{5})([A-Za-z]{2})([0-9]{4})([A-Za-z]{3})([0-9]{6})$/;
-    const urlRegex = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/i;
+    const cinRegex =
+      /^([LUu]{1})([0-9]{5})([A-Za-z]{2})([0-9]{4})([A-Za-z]{3})([0-9]{6})$/;
+    const urlRegex =
+      /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/i;
 
     if (!formData.name?.trim()) newErrors.name = 'Name is required';
-    
+
     if (formData.mobile?.trim() && !mobileRegex.test(formData.mobile.trim())) {
       newErrors.mobile = 'Mobile must be 10 digits';
     }
@@ -116,18 +112,24 @@ const CustomerFormModal = ({
     if (!formData.address1?.trim()) newErrors.address1 = 'Address is required';
     if (!formData.city?.trim()) newErrors.city = 'City is required';
     if (!formData.state?.trim()) newErrors.state = 'State is required';
-    
+
     if (!formData.pincode?.trim()) {
       newErrors.pincode = 'Pincode is required';
     } else if (!pincodeRegex.test(formData.pincode.trim())) {
       newErrors.pincode = 'Pincode must be 6 digits';
     }
 
-    if (formData.gstnNumber?.trim() && !gstnRegex.test(formData.gstnNumber.trim())) {
+    if (
+      formData.gstnNumber?.trim() &&
+      !gstnRegex.test(formData.gstnNumber.trim())
+    ) {
       newErrors.gstnNumber = 'Invalid GSTN format (e.g. 22AAAAA0000A1Z5)';
     }
 
-    if (formData.cinNumber?.trim() && !cinRegex.test(formData.cinNumber.trim())) {
+    if (
+      formData.cinNumber?.trim() &&
+      !cinRegex.test(formData.cinNumber.trim())
+    ) {
       newErrors.cinNumber = 'Invalid CIN format (21 alphanumeric characters)';
     }
 
@@ -185,7 +187,6 @@ const CustomerFormModal = ({
     }
   };
 
-
   const renderFooter = (
     <div className="flex items-center justify-between w-full">
       <Button onClick={handleClose} disabled={isSubmitting}>
@@ -208,16 +209,41 @@ const CustomerFormModal = ({
           >
             {isSubmitting ? (
               <>
-                <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                <svg
+                  className="animate-spin h-4 w-4 text-white"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
                 </svg>
                 {type === 'add' ? 'Saving...' : 'Updating...'}
               </>
             ) : (
               <>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
                 </svg>
                 {type === 'add' ? 'Add Customer' : 'Update Changes'}
               </>
@@ -232,18 +258,25 @@ const CustomerFormModal = ({
     <CustomModalForm
       open={isOpen}
       onClose={handleClose}
-      title={type === 'add' ? 'Add New Customer' : type === 'edit' ? 'Edit Customer' : 'Customer Details'}
+      title={
+        type === 'add'
+          ? 'Add New Customer'
+          : type === 'edit'
+            ? 'Edit Customer'
+            : 'Customer Details'
+      }
       footer={renderFooter}
       widthClass="max-w-2xl"
     >
       <div className="px-6 py-4">
         <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
-
           {/* Customer ID Row Removed */}
 
           {/* Personal Information */}
           <div className="space-y-4">
-            <h3 className="text-base font-bold text-gray-900">Personal Information</h3>
+            <h3 className="text-base font-bold text-gray-900">
+              Personal Information
+            </h3>
 
             {/* Row 1: Name + Mobile */}
             <div className="grid grid-cols-2 gap-4">
@@ -259,10 +292,14 @@ const CustomerFormModal = ({
                   placeholder=""
                   readOnly={type === 'view'}
                   className={`w-full px-3 py-2 border rounded-md text-sm outline-none transition-all ${
-                    errors.name ? 'border-red-300' : 'border-gray-300 focus:border-blue-400'
+                    errors.name
+                      ? 'border-red-300'
+                      : 'border-gray-300 focus:border-blue-400'
                   } ${type === 'view' ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : 'bg-white'}`}
                 />
-                {errors.name && <p className="text-xs text-red-500">{errors.name}</p>}
+                {errors.name && (
+                  <p className="text-xs text-red-500">{errors.name}</p>
+                )}
               </div>
               <div className="space-y-1">
                 <label className="text-sm text-gray-600 flex items-center gap-1">
@@ -275,10 +312,14 @@ const CustomerFormModal = ({
                   onChange={handleInputChange}
                   readOnly={type === 'view'}
                   className={`w-full px-3 py-2 border rounded-md text-sm outline-none transition-all ${
-                    errors.mobile ? 'border-red-300' : 'border-gray-300 focus:border-blue-400'
+                    errors.mobile
+                      ? 'border-red-300'
+                      : 'border-gray-300 focus:border-blue-400'
                   } ${type === 'view' ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'}`}
                 />
-                {errors.mobile && <p className="text-xs text-red-500">{errors.mobile}</p>}
+                {errors.mobile && (
+                  <p className="text-xs text-red-500">{errors.mobile}</p>
+                )}
               </div>
             </div>
 
@@ -295,10 +336,14 @@ const CustomerFormModal = ({
                   onChange={handleInputChange}
                   readOnly={type === 'view'}
                   className={`w-full px-3 py-2 border rounded-md text-sm outline-none transition-all ${
-                    errors.email ? 'border-red-300' : 'border-gray-300 focus:border-blue-400'
+                    errors.email
+                      ? 'border-red-300'
+                      : 'border-gray-300 focus:border-blue-400'
                   } ${type === 'view' ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'}`}
                 />
-                {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
+                {errors.email && (
+                  <p className="text-xs text-red-500">{errors.email}</p>
+                )}
               </div>
               <div className="space-y-1">
                 <label className="text-sm text-gray-600 flex items-center gap-1">
@@ -311,10 +356,14 @@ const CustomerFormModal = ({
                   onChange={handleInputChange}
                   readOnly={type === 'view'}
                   className={`w-full px-3 py-2 border rounded-md text-sm outline-none transition-all ${
-                    errors.website ? 'border-red-300' : 'border-gray-300 focus:border-blue-400'
+                    errors.website
+                      ? 'border-red-300'
+                      : 'border-gray-300 focus:border-blue-400'
                   } ${type === 'view' ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'}`}
                 />
-                {errors.website && <p className="text-xs text-red-500">{errors.website}</p>}
+                {errors.website && (
+                  <p className="text-xs text-red-500">{errors.website}</p>
+                )}
               </div>
               <div className="space-y-1">
                 <label className="text-sm text-gray-600 flex items-center gap-1">
@@ -327,10 +376,14 @@ const CustomerFormModal = ({
                   onChange={handleInputChange}
                   readOnly={type === 'view'}
                   className={`w-full px-3 py-2 border rounded-md text-sm uppercase font-mono outline-none transition-all ${
-                    errors.gstnNumber ? 'border-red-300' : 'border-gray-300 focus:border-blue-400'
+                    errors.gstnNumber
+                      ? 'border-red-300'
+                      : 'border-gray-300 focus:border-blue-400'
                   } ${type === 'view' ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'}`}
                 />
-                {errors.gstnNumber && <p className="text-xs text-red-500">{errors.gstnNumber}</p>}
+                {errors.gstnNumber && (
+                  <p className="text-xs text-red-500">{errors.gstnNumber}</p>
+                )}
               </div>
               <div className="space-y-1">
                 <label className="text-sm text-gray-600 flex items-center gap-1">
@@ -343,16 +396,19 @@ const CustomerFormModal = ({
                   onChange={handleInputChange}
                   readOnly={type === 'view'}
                   className={`w-full px-3 py-2 border rounded-md text-sm uppercase font-mono outline-none transition-all ${
-                    errors.cinNumber ? 'border-red-300' : 'border-gray-300 focus:border-blue-400'
+                    errors.cinNumber
+                      ? 'border-red-300'
+                      : 'border-gray-300 focus:border-blue-400'
                   } ${type === 'view' ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'}`}
                 />
-                {errors.cinNumber && <p className="text-xs text-red-500">{errors.cinNumber}</p>}
+                {errors.cinNumber && (
+                  <p className="text-xs text-red-500">{errors.cinNumber}</p>
+                )}
               </div>
             </div>
 
             {/* Row 3: Payment Method + Terms */}
             <div className="grid grid-cols-2 gap-4">
-             
               <div className="space-y-1">
                 <label className="text-sm text-gray-600 flex items-center gap-1">
                   <CreditCard size={13} /> Preferred Payment Method
@@ -363,7 +419,9 @@ const CustomerFormModal = ({
                   onChange={handleInputChange}
                   disabled={type === 'view'}
                   className={`w-full px-3 py-2 border border-gray-300 rounded-md text-sm outline-none focus:border-blue-400 ${
-                    type === 'view' ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'
+                    type === 'view'
+                      ? 'bg-gray-50 cursor-not-allowed'
+                      : 'bg-white'
                   }`}
                 >
                   <option value="">Select Method</option>
@@ -388,7 +446,9 @@ const CustomerFormModal = ({
                   placeholder="e.g. Net 30"
                   readOnly={type === 'view'}
                   className={`w-full px-3 py-2 border rounded-md text-sm outline-none transition-all ${
-                    errors.preferredPaymentTerms ? 'border-red-300' : 'border-gray-300 focus:border-blue-400'
+                    errors.preferredPaymentTerms
+                      ? 'border-red-300'
+                      : 'border-gray-300 focus:border-blue-400'
                   } ${type === 'view' ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'}`}
                 />
               </div>
@@ -397,7 +457,9 @@ const CustomerFormModal = ({
 
           {/* Address Information */}
           <div className="space-y-4">
-            <h3 className="text-base font-bold text-gray-900">Address Information</h3>
+            <h3 className="text-base font-bold text-gray-900">
+              Address Information
+            </h3>
 
             <div className="space-y-1">
               <label className="text-sm text-gray-600">
@@ -410,10 +472,14 @@ const CustomerFormModal = ({
                 onChange={handleInputChange}
                 readOnly={type === 'view'}
                 className={`w-full px-3 py-2 border rounded-md text-sm outline-none transition-all ${
-                  errors.address1 ? 'border-red-300' : 'border-gray-300 focus:border-blue-400'
+                  errors.address1
+                    ? 'border-red-300'
+                    : 'border-gray-300 focus:border-blue-400'
                 } ${type === 'view' ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'}`}
               />
-              {errors.address1 && <p className="text-xs text-red-500">{errors.address1}</p>}
+              {errors.address1 && (
+                <p className="text-xs text-red-500">{errors.address1}</p>
+              )}
             </div>
 
             <div className="space-y-1">
@@ -443,7 +509,9 @@ const CustomerFormModal = ({
                   onChange={handleInputChange}
                   readOnly={type === 'view'}
                   className={`w-full px-3 py-2 border rounded-md text-sm outline-none transition-all ${
-                    errors.city ? 'border-red-300' : 'border-gray-300 focus:border-blue-400'
+                    errors.city
+                      ? 'border-red-300'
+                      : 'border-gray-300 focus:border-blue-400'
                   } ${type === 'view' ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'}`}
                 />
                 <datalist id="city-options">
@@ -458,7 +526,9 @@ const CustomerFormModal = ({
                   <option value="Pune" />
                   <option value="Jaipur" />
                 </datalist>
-                {errors.city && <p className="text-xs text-red-500">{errors.city}</p>}
+                {errors.city && (
+                  <p className="text-xs text-red-500">{errors.city}</p>
+                )}
               </div>
               <div className="space-y-1">
                 <label className="text-sm text-gray-600">
@@ -471,10 +541,14 @@ const CustomerFormModal = ({
                   onChange={handleInputChange}
                   readOnly={type === 'view'}
                   className={`w-full px-3 py-2 border rounded-md text-sm outline-none transition-all ${
-                    errors.state ? 'border-red-300' : 'border-gray-300 focus:border-blue-400'
+                    errors.state
+                      ? 'border-red-300'
+                      : 'border-gray-300 focus:border-blue-400'
                   } ${type === 'view' ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'}`}
                 />
-                {errors.state && <p className="text-xs text-red-500">{errors.state}</p>}
+                {errors.state && (
+                  <p className="text-xs text-red-500">{errors.state}</p>
+                )}
               </div>
               <div className="space-y-1">
                 <label className="text-sm text-gray-600">
@@ -487,19 +561,27 @@ const CustomerFormModal = ({
                   onChange={handleInputChange}
                   readOnly={type === 'view'}
                   className={`w-full px-3 py-2 border rounded-md text-sm outline-none transition-all ${
-                    errors.pincode ? 'border-red-300' : 'border-gray-300 focus:border-blue-400'
+                    errors.pincode
+                      ? 'border-red-300'
+                      : 'border-gray-300 focus:border-blue-400'
                   } ${type === 'view' ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'}`}
                 />
-                {errors.pincode && <p className="text-xs text-red-500">{errors.pincode}</p>}
+                {errors.pincode && (
+                  <p className="text-xs text-red-500">{errors.pincode}</p>
+                )}
               </div>
             </div>
           </div>
 
           {/* Additional Remarks */}
           <div className="space-y-4">
-            <h3 className="text-base font-bold text-gray-900">Additional Remarks</h3>
+            <h3 className="text-base font-bold text-gray-900">
+              Additional Remarks
+            </h3>
             <div className="space-y-1">
-              <label className="text-sm text-gray-600">Remarks (Optional)</label>
+              <label className="text-sm text-gray-600">
+                Remarks (Optional)
+              </label>
               <textarea
                 name="remarks"
                 value={formData.remarks}

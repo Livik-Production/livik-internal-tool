@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { approveLeave } from '../../../../../lib/leaveService.js';
 
-export async function POST(req, { params }) {
+export async function POST(req, context) {
   try {
+    const params = await context.params;
     const { id } = params;
     const body = await req.json();
     const { approverId, remarks } = body;

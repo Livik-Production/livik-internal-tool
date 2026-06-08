@@ -41,6 +41,17 @@ export default function AddAssignForm({
   const [showAssignedAlert, setShowAssignedAlert] = useState(false);
   const [assignedEmployeeInfo, setAssignedEmployeeInfo] = useState(null);
 
+  const [assetSuggestions, setAssetSuggestions] = useState([]);
+  const [showAssetSuggestions, setShowAssetSuggestions] = useState(false);
+
+  const unassignedAssets = useMemo(() => {
+    return assets.filter(
+      (asset) =>
+        (asset.status === 'Unassigned' || !asset.assignedTo) &&
+        asset.status !== 'In Repair'
+    );
+  }, [assets]);
+
   // Get employees from Redux store
   const employeesFromRedux = useSelector(selectEmployeesItems);
 
@@ -226,8 +237,13 @@ export default function AddAssignForm({
           });
 
           // Check if asset is already assigned
-          const isDifferentAsset = mode === 'add' || (assignmentData && foundAsset.id !== assignmentData.assetId);
-          if (isDifferentAsset && (foundAsset.status === 'Assigned' || foundAsset.assignedTo)) {
+          const isDifferentAsset =
+            mode === 'add' ||
+            (assignmentData && foundAsset.id !== assignmentData.assetId);
+          if (
+            isDifferentAsset &&
+            (foundAsset.status === 'Assigned' || foundAsset.assignedTo)
+          ) {
             setAssignedEmployeeInfo(foundAsset.assignedTo);
             setShowAssignedAlert(true);
             setFormData((prev) => ({
@@ -253,7 +269,38 @@ export default function AddAssignForm({
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [formData.assetTag, assets, mode]);
+  }, [formData.assetTag, assets, mode, assignmentData]);
+
+  useEffect(() => {
+    if (mode !== 'view') {
+      if (formData.assetTag.trim()) {
+        const term = formData.assetTag.toLowerCase();
+        const filtered = unassignedAssets.filter(
+          (asset) =>
+            (asset.assetTag || asset.tag || '').toLowerCase().includes(term) ||
+            (asset.type || asset.deviceType || '').toLowerCase().includes(term)
+        );
+        setAssetSuggestions(filtered);
+      } else {
+        setAssetSuggestions(unassignedAssets);
+      }
+    }
+  }, [formData.assetTag, unassignedAssets, mode]);
+
+  const handleSelectAsset = (asset) => {
+    setFormData((prev) => ({
+      ...prev,
+      assetTag: asset.assetTag || asset.tag || '',
+      selectedAssetId: asset.id,
+    }));
+    setAssetDetails({
+      serialNo: asset.serialNumber || asset.serial || '',
+      productName: asset.modelName || asset.model || '',
+      modelName: asset.modelName || asset.model || '',
+    });
+    setShowAssetSuggestions(false);
+    if (errors.assetTag) setErrors((prev) => ({ ...prev, assetTag: '' }));
+  };
 
   const selectedAsset = assets.find(
     (asset) => asset.id === formData.selectedAssetId
@@ -304,21 +351,21 @@ export default function AddAssignForm({
     }
 
     setIsSubmitting(true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
 
-    if (onAssign) {
-      onAssign(
-        formData.selectedAssetId,
-        formData.selectedEmployeeDbId || formData.employeeId,
-        formData.employeeName,
-        formData.assignmentDate,
-        formData.assignmentNotes,
-        mode === 'edit' ? assignmentData?.id : null
-      );
+    try {
+      if (onAssign) {
+        await onAssign(
+          formData.selectedAssetId,
+          formData.selectedEmployeeDbId || formData.employeeId,
+          formData.employeeName,
+          formData.assignmentDate,
+          formData.assignmentNotes,
+          mode === 'edit' ? assignmentData?.id : null
+        );
+      }
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsSubmitting(false);
-    onClose();
   };
 
   const handleChange = (e) => {
@@ -377,7 +424,7 @@ export default function AddAssignForm({
   const renderForm = () => (
     <form id="assign-form" onSubmit={handleSubmit} className="space-y-6">
       {/* Asset Tag Input */}
-      <div>
+      <div className="relative">
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Asset Tag <span className="text-red-500">*</span>
         </label>
@@ -386,8 +433,11 @@ export default function AddAssignForm({
           name="assetTag"
           value={formData.assetTag}
           onChange={handleChange}
-          placeholder="Enter asset tag"
+          onFocus={() => setShowAssetSuggestions(true)}
+          onBlur={() => setTimeout(() => setShowAssetSuggestions(false), 200)}
+          placeholder="Select or enter asset tag"
           disabled={mode === 'view'}
+          autoComplete="off"
           className={`w-full px-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${
             errors.assetTag ? 'border-red-300' : 'border-gray-300'
           } ${
@@ -396,6 +446,30 @@ export default function AddAssignForm({
               : 'bg-white'
           }`}
         />
+
+        {/* Dropdown for Asset Tag */}
+        {showAssetSuggestions &&
+          assetSuggestions.length > 0 &&
+          mode !== 'view' && (
+            <div className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-[60] max-h-[260px] overflow-y-auto">
+              {assetSuggestions.map((asset) => (
+                <div
+                  key={asset.id}
+                  className="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-50 last:border-b-0"
+                  onClick={() => handleSelectAsset(asset)}
+                >
+                  <div className="text-sm font-semibold text-gray-800">
+                    {asset.assetTag || asset.tag}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {asset.type || asset.deviceType || 'Unknown Type'} •{' '}
+                    {asset.brand || ''} {asset.modelName || asset.model || ''}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
         {errors.assetTag && (
           <p className="mt-1 text-xs text-red-600">{errors.assetTag}</p>
         )}

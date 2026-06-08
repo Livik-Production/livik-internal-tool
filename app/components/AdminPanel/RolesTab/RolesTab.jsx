@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
+import { selectAuthUser } from '../../../../store/slices/authSlice';
 import RolesTable from './RolesTable';
 import AssignRoleModal from './AssignRoleModal';
 import RightsSelectionModal from './RightsSelectionModal';
@@ -9,7 +11,18 @@ import CustomAlertForm from '../../../components/CustomAlertForm';
 import { showSuccessToast, showErrorToast } from '../../Toast';
 
 export default function RolesTab() {
+  const user = useSelector(selectAuthUser);
+  const userRole = user?.role?.name?.toUpperCase() || '';
+  const isSuperAdmin = userRole === 'SUPER_ADMIN';
+
   const [roles, setRoles] = useState([]);
+
+  // Filter out ADMIN and SUPER_ADMIN roles from selection if current user is only ADMIN
+  const assignableRoles = roles.filter((role) => {
+    if (isSuperAdmin) return true;
+    const name = (role.roleName || role.displayName || '').toUpperCase();
+    return name !== 'SUPER_ADMIN' && name !== 'ADMIN';
+  });
   const [loading, setLoading] = useState(true);
   const [isAssigningRole, setIsAssigningRole] = useState(false);
   const [showAddRole, setShowAddRole] = useState(false);
@@ -61,6 +74,7 @@ export default function RolesTab() {
           `${emp.firstName || ''} ${emp.lastName || ''}`.trim() ||
           emp.name ||
           'Unknown',
+        role: emp.role,
       }));
 
       setEmployees(mapped);
@@ -114,7 +128,9 @@ export default function RolesTab() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to assign role');
+        const err = new Error(errorData.error || 'Failed to assign role');
+        err.status = response.status;
+        throw err;
       }
 
       const result = await response.json();
@@ -126,9 +142,20 @@ export default function RolesTab() {
 
       fetchRoles();
     } catch (error) {
-      showErrorToast(
-        error.message || 'Failed to assign role. Please try again.'
-      );
+      if (
+        error.status === 403 ||
+        (error.message && error.message.toLowerCase().includes('forbidden'))
+      ) {
+        showAlert(
+          'Forbidden',
+          error.message || 'You do not have permission for this operation.',
+          'danger'
+        );
+      } else {
+        showErrorToast(
+          error.message || 'Failed to assign role. Please try again.'
+        );
+      }
     } finally {
       setIsAssigningRole(false);
     }
@@ -375,7 +402,7 @@ export default function RolesTab() {
         onClose={() => setShowAssignRole(false)}
         onSubmit={handleAssignRole}
         employees={employees}
-        roles={roles}
+        roles={assignableRoles}
         isLoading={isAssigningRole}
       />
 

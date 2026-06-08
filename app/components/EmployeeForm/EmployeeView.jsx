@@ -29,8 +29,18 @@ function reconstructDocuments(data) {
   return docs;
 }
 
-export default function EmployeeView({ initialData = {}, onEdit, customUploadSection }) {
-  const [tilt, setTilt] = useState({ x: 0, y: 0, opacity: 0, glareX: 50, glareY: 50 });
+export default function EmployeeView({
+  initialData = {},
+  onEdit,
+  customUploadSection,
+}) {
+  const [tilt, setTilt] = useState({
+    x: 0,
+    y: 0,
+    opacity: 0,
+    glareX: 50,
+    glareY: 50,
+  });
 
   const handleMouseMove = (e) => {
     const card = e.currentTarget;
@@ -91,27 +101,43 @@ export default function EmployeeView({ initialData = {}, onEdit, customUploadSec
     ifscCode: initialData.ifscCode ?? '',
     bondDuration: String(
       initialData.bondDuration ??
-      calculateBondDuration(initialData.bondStartDate, initialData.bondEndDate) ??
-      ''
+        calculateBondDuration(
+          initialData.bondStartDate,
+          initialData.bondEndDate
+        ) ??
+        ''
     ),
     documentsCollected:
       initialData.documentsCollected ?? reconstructDocuments(initialData),
     bondRemarks: initialData.bondRemarks ?? '',
   };
 
-  const educations = (initialData.educationDetails || initialData.education || []).length
-    ? (initialData.educationDetails || initialData.education || []).map((e) => ({
-      university: e.university ?? '',
-      institution: e.institution ?? '',
-      qualification: e.qualification ?? '',
-      yearCompleted: e.yearCompleted ?? '',
-    }))
-    : [{ university: '', institution: '', qualification: '', yearCompleted: '' }];
+  const educations = (
+    initialData.educationDetails ||
+    initialData.education ||
+    []
+  ).length
+    ? (initialData.educationDetails || initialData.education || []).map(
+        (e) => ({
+          university: e.university ?? '',
+          institution: e.institution ?? '',
+          qualification: e.qualification ?? '',
+          yearCompleted: e.yearCompleted ?? '',
+        })
+      )
+    : [
+        {
+          university: '',
+          institution: '',
+          qualification: '',
+          yearCompleted: '',
+        },
+      ];
 
   const inputProps = (name, type = 'text', opts = {}) => ({
     name,
     value: form[name] ?? '',
-    onChange: () => { },
+    onChange: () => {},
     type,
     readOnly: true,
     disabled: true,
@@ -123,16 +149,22 @@ export default function EmployeeView({ initialData = {}, onEdit, customUploadSec
   return (
     <div className="flex flex-col lg:flex-row gap-8 px-2 py-1 h-full min-h-0">
       {/* Left Column: Profile Card */}
-      <div className="w-full lg:w-[320px] xl:w-[355px] shrink-0 h-fit mx-auto lg:mx-0" style={{ perspective: '1200px' }}>
+      <div
+        className="w-full lg:w-[320px] xl:w-[355px] shrink-0 h-fit mx-auto lg:mx-0"
+        style={{ perspective: '1200px' }}
+      >
         <div className="">
           <div
-            className="relative rounded-[2rem] p-3 mt-6.5 py-4 bg-transparent border border-gray-400 transition-all duration-200 ease-out antialiased"
+            className="relative rounded-[2rem] p-3 mt-4.5 py-5 bg-transparent border border-gray-400 transition-all duration-200 ease-out antialiased"
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
             style={{
               transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
               transformStyle: 'preserve-3d',
-              boxShadow: tilt.opacity > 0 ? '0 30px 60px rgba(0,0,0,0.15)' : '0 10px 40px rgba(0,0,0,0.08)',
+              boxShadow:
+                tilt.opacity > 0
+                  ? '0 30px 60px rgba(0,0,0,0.15)'
+                  : '0 10px 40px rgba(0,0,0,0.08)',
             }}
           >
             {/* Holographic glare overlay */}
@@ -170,9 +202,21 @@ export default function EmployeeView({ initialData = {}, onEdit, customUploadSec
                 type="button"
                 onClick={onEdit}
                 className="absolute top-6 right-6 text-[13px] font-bold text-gray-400 hover:text-[#003B6D] transition-all cursor-pointer flex items-center gap-1.5 z-[100] pointer-events-auto"
-                style={{ transform: tilt.opacity > 0 ? 'translateZ(50px)' : 'translateZ(10px)' }}
+                style={{
+                  transform:
+                    tilt.opacity > 0 ? 'translateZ(50px)' : 'translateZ(10px)',
+                }}
               >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
                 </svg>
                 Edit
@@ -182,22 +226,31 @@ export default function EmployeeView({ initialData = {}, onEdit, customUploadSec
             {/* Photo and Name Container */}
             <div
               className="relative z-10 flex flex-col items-center transition-transform duration-300 ease-out "
-              style={{ transform: tilt.opacity > 0 ? 'translateZ(40px)' : 'translateZ(0px)' }}
+              style={{
+                transform:
+                  tilt.opacity > 0 ? 'translateZ(40px)' : 'translateZ(0px)',
+              }}
             >
               <div className="w-32 h-32 rounded-2xl border-[4px] border-white bg-white overflow-hidden flex items-center justify-center shadow-[0_10px_25px_rgb(0,0,0,0.1)] mb-2">
                 {form.photo ? (
-                  <img src={form.photo} alt="Profile" className="w-full h-full object-cover" />
+                  <img
+                    src={form.photo}
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
-                  <span className="text-gray-400 font-bold text-sm tracking-wide">PHOTO</span>
+                  <span className="text-gray-400 font-bold text-sm tracking-wide">
+                    PHOTO
+                  </span>
                 )}
               </div>
 
               <div className="text-center">
-                <div className="font-bold text-2xl text-[#004475] tracking-tight">
+                <div className="font-bold text-2xl text-[#004475] tracking-tight mt-1.5">
                   {form.firstName} {form.lastName}
                 </div>
                 {form.designation && (
-                  <div className="text-[13px] font-bold text-gray-800 mt-1">
+                  <div className="text-[13px] font-bold text-gray-800 mt-0.5">
                     {form.designation}
                   </div>
                 )}
@@ -211,49 +264,98 @@ export default function EmployeeView({ initialData = {}, onEdit, customUploadSec
 
             <div
               className="space-y-2 text-[13px] text-gray-800 font-medium px-2 relative z-10 mt-6 mb-4 transition-transform duration-300 ease-out mx-auto w-fit"
-              style={{ transform: tilt.opacity > 0 ? 'translateZ(20px)' : 'translateZ(0px)' }}
+              style={{
+                transform:
+                  tilt.opacity > 0 ? 'translateZ(20px)' : 'translateZ(0px)',
+              }}
             >
               <div className="flex items-start">
-                <span className="w-[100px] shrink-0 text-black font-semibold uppercase text-[11px] tracking-wide">Date Of Birth</span>
+                <span className="w-[100px] shrink-0 text-black font-semibold uppercase text-[11px] tracking-wide">
+                  Date Of Birth
+                </span>
                 <span className="w-4 text-center shrink-0 text-black">:</span>
-                <span className="text-black font-bold flex-1 pl-2 break-all">{form.dateOfBirth || '-'}</span>
+                <span className="text-black font-bold flex-1 pl-2 break-all">
+                  {form.dateOfBirth || '-'}
+                </span>
               </div>
               <div className="flex items-start">
-                <span className="w-[100px] shrink-0 text-[#96cceb] font-semibold uppercase text-[11px] tracking-wide">Gender</span>
+                <span className="w-[100px] shrink-0 text-[#96cceb] font-semibold uppercase text-[11px] tracking-wide">
+                  Gender
+                </span>
                 <span className="w-4 text-center shrink-0 text-black">:</span>
-                <span className="text-black font-bold flex-1 pl-2 break-all">{form.gender || '-'}</span>
+                <span className="text-black font-bold flex-1 pl-2 break-all">
+                  {form.gender || '-'}
+                </span>
               </div>
               <div className="flex items-start">
-                <span className="w-[100px] shrink-0 text-[#96cceb] font-semibold uppercase text-[11px] tracking-wide">Blood group</span>
-                <span className="w-4 text-center shrink-0 text-white/50">:</span>
-                <span className="text-white font-bold flex-1 pl-2 break-all">{form.bloodGroup || '-'}</span>
+                <span className="w-[100px] shrink-0 text-[#96cceb] font-semibold uppercase text-[11px] tracking-wide">
+                  Blood group
+                </span>
+                <span className="w-4 text-center shrink-0 text-white/50">
+                  :
+                </span>
+                <span className="text-white font-bold flex-1 pl-2 break-all">
+                  {form.bloodGroup || '-'}
+                </span>
               </div>
               <div className="flex items-start">
-                <span className="w-[100px] shrink-0 text-[#96cceb] font-semibold uppercase text-[11px] tracking-wide">Phone</span>
-                <span className="w-4 text-center shrink-0 text-white/50">:</span>
-                <span className="text-white font-bold flex-1 pl-2 break-all">{form.phoneNumber || '-'}</span>
+                <span className="w-[100px] shrink-0 text-[#96cceb] font-semibold uppercase text-[11px] tracking-wide">
+                  Phone
+                </span>
+                <span className="w-4 text-center shrink-0 text-white/50">
+                  :
+                </span>
+                <span className="text-white font-bold flex-1 pl-2 break-all">
+                  {form.phoneNumber || '-'}
+                </span>
               </div>
               <div className="flex items-start">
-                <span className="w-[100px] shrink-0 text-[#96cceb] font-semibold uppercase text-[11px] tracking-wide">Email</span>
-                <span className="w-4 text-center shrink-0 text-white/50">:</span>
-                <span className="text-white font-bold flex-1 pl-2 break-all" title={form.email}>{form.email || '-'}</span>
+                <span className="w-[100px] shrink-0 text-[#96cceb] font-semibold uppercase text-[11px] tracking-wide">
+                  Email
+                </span>
+                <span className="w-4 text-center shrink-0 text-white/50">
+                  :
+                </span>
+                <span
+                  className="text-white font-bold flex-1 pl-2 break-all"
+                  title={form.email}
+                >
+                  {form.email || '-'}
+                </span>
               </div>
               <div className="flex items-start">
-                <span className="w-[100px] shrink-0 text-[#96cceb] font-semibold uppercase text-[11px] tracking-wide">Emergency</span>
-                <span className="w-4 text-center shrink-0 text-white/50">:</span>
-                <span className="text-white font-bold flex-1 pl-2 break-all">{form.emergencyContact || '-'}</span>
+                <span className="w-[100px] shrink-0 text-[#96cceb] font-semibold uppercase text-[11px] tracking-wide">
+                  Emergency
+                </span>
+                <span className="w-4 text-center shrink-0 text-white/50">
+                  :
+                </span>
+                <span className="text-white font-bold flex-1 pl-2 break-all">
+                  {form.emergencyContact || '-'}
+                </span>
               </div>
               <div className="flex items-start">
-                <span className="w-[100px] shrink-0 text-[#96cceb] font-semibold uppercase text-[11px] tracking-wide">Aadhaar No</span>
-                <span className="w-4 text-center shrink-0 text-white/50">:</span>
-                <span className="text-white font-bold flex-1 pl-2 break-all">{form.aadhaarNumber || '-'}</span>
+                <span className="w-[100px] shrink-0 text-[#96cceb] font-semibold uppercase text-[11px] tracking-wide">
+                  Aadhaar No
+                </span>
+                <span className="w-4 text-center shrink-0 text-white/50">
+                  :
+                </span>
+                <span className="text-white font-bold flex-1 pl-2 break-all">
+                  {form.aadhaarNumber || '-'}
+                </span>
               </div>
               <div className="flex items-start">
-                <span className="w-[100px] shrink-0 text-[#96cceb] font-semibold uppercase text-[11px] tracking-wide">PAN No</span>
-                <span className="w-4 text-center shrink-0 text-white/50">:</span>
-                <span className="text-white font-bold flex-1 pl-2 break-all">{form.panNumber || '-'}</span>
+                <span className="w-[100px] shrink-0 text-[#96cceb] font-semibold uppercase text-[11px] tracking-wide">
+                  PAN No
+                </span>
+                <span className="w-4 text-center shrink-0 text-white/50">
+                  :
+                </span>
+                <span className="text-white font-bold flex-1 pl-2 break-all">
+                  {form.panNumber || '-'}
+                </span>
               </div>
-
             </div>
           </div>
         </div>
@@ -264,9 +366,9 @@ export default function EmployeeView({ initialData = {}, onEdit, customUploadSec
         <div>
           <EducationSection
             educations={educations}
-            addEducation={() => { }}
-            updateEducation={() => { }}
-            removeEducation={() => { }}
+            addEducation={() => {}}
+            updateEducation={() => {}}
+            removeEducation={() => {}}
             errors={{}}
             isView={true}
           />
@@ -275,17 +377,19 @@ export default function EmployeeView({ initialData = {}, onEdit, customUploadSec
         <div>
           <AddressSection
             form={form}
-            setField={() => { }}
+            setField={() => {}}
             errors={{}}
             isView={true}
           />
         </div>
 
         <div>
-          <h3 className="font-bold text-lg text-gray-800 mb-4 border-b pb-2">Employment :</h3>
+          <h3 className="font-bold text-lg text-gray-800 mb-4 border-b pb-2">
+            Employment :
+          </h3>
           <EmploymentBankSection
             form={form}
-            setField={() => { }}
+            setField={() => {}}
             inputProps={inputProps}
             errors={{}}
             isView={true}
@@ -294,10 +398,12 @@ export default function EmployeeView({ initialData = {}, onEdit, customUploadSec
         </div>
 
         <div>
-          <h3 className="font-bold text-lg text-gray-800 mb-4 border-b pb-2">Bank Details :</h3>
+          <h3 className="font-bold text-lg text-gray-800 mb-4 border-b pb-2">
+            Bank Details :
+          </h3>
           <EmploymentBankSection
             form={form}
-            setField={() => { }}
+            setField={() => {}}
             inputProps={inputProps}
             errors={{}}
             isView={true}
@@ -306,9 +412,13 @@ export default function EmployeeView({ initialData = {}, onEdit, customUploadSec
         </div>
 
         <div>
-          <h3 className="font-bold text-lg text-gray-800 border-t py-5">Uploads Sections :</h3>
-          {customUploadSection ? customUploadSection : (
-            <PhotoSection form={form} setField={() => { }} isView={true} />
+          <h3 className="font-bold text-lg text-gray-800 border-t py-5">
+            Uploads Sections :
+          </h3>
+          {customUploadSection ? (
+            customUploadSection
+          ) : (
+            <PhotoSection form={form} setField={() => {}} isView={true} />
           )}
         </div>
 
@@ -316,7 +426,7 @@ export default function EmployeeView({ initialData = {}, onEdit, customUploadSec
           {/* <h3 className="font-bold text-lg text-gray-800 mb-4 border-b pb-2">Bond & Documents :</h3> */}
           <BondDetails
             form={form}
-            setField={() => { }}
+            setField={() => {}}
             errors={{}}
             isView={true}
           />

@@ -6,7 +6,15 @@ import Button from '../Buttons/Button';
 import { useSelector } from 'react-redux';
 import { uploadLeaveDocument } from '../../actions/uploadLeaveDocument';
 import ConfirmDialog from '../ConfirmDialog';
-import { Loader2, X, Clock, Calendar, FileText, AlertCircle, Info } from 'lucide-react';
+import {
+  Loader2,
+  X,
+  Clock,
+  Calendar,
+  FileText,
+  AlertCircle,
+  Info,
+} from 'lucide-react';
 import CloseButton from '../Buttons/CloseButton';
 import FilterDropdown from '../Buttons/FilterDropdown';
 import PrimaryButton from '../Buttons/PrimaryButton';
@@ -57,21 +65,85 @@ const LeaveRequestForm = ({
 
   const [isLoadingBalance, setIsLoadingBalance] = useState(false);
 
-  // Leave type options
-  const leaveTypes = [
-    {
-      value: 'sl',
-      label: 'SL',
-      fullLabel: 'Sick Leave',
-      balance: balanceLeaves.sl,
-    },
-    {
-      value: 'cl',
-      label: 'CL',
-      fullLabel: 'Casual Leave',
-      balance: balanceLeaves.cl,
-    },
-  ];
+  const [dbLeaveTypes, setDbLeaveTypes] = useState([
+    { label: 'Sick Leave', value: 'sl' },
+    { label: 'Casual Leave', value: 'cl' },
+  ]);
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchLeaveTypes = async () => {
+      try {
+        const res = await fetch('/api/dropdowns?type=leave_type');
+        if (res.ok) {
+          const data = await res.json();
+          const active = (data.data || []).filter(
+            (item) => item.status !== 'inactive'
+          );
+          if (mounted && active.length > 0) {
+            setDbLeaveTypes(
+              active.map((item) => ({
+                label: item.label,
+                value: item.value,
+              }))
+            );
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch leave types:', err);
+      }
+    };
+    fetchLeaveTypes();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const leaveTypes = React.useMemo(() => {
+    let list = [...dbLeaveTypes];
+
+    if (initialData?.type || initialData?.leaveType) {
+      const currentType = (initialData.type || initialData.leaveType)
+        .toLowerCase()
+        .replace(/-lop$/, '');
+      const hasCurrent = list.some(
+        (item) =>
+          item.value.toLowerCase() === currentType ||
+          item.label.toLowerCase() === currentType
+      );
+      if (!hasCurrent) {
+        const label =
+          currentType === 'sl'
+            ? 'Sick Leave'
+            : currentType === 'cl'
+              ? 'Casual Leave'
+              : currentType;
+        list.push({ label: label, value: currentType });
+      }
+    }
+
+    return list.map((item) => {
+      const val = item.value;
+      const lower = val.toLowerCase();
+      let balance = 0;
+      let canonValue = val;
+
+      if (lower.includes('sick') || lower === 'sl') {
+        balance = balanceLeaves.sl;
+        canonValue = 'sl';
+      } else if (lower.includes('casual') || lower === 'cl') {
+        balance = balanceLeaves.cl;
+        canonValue = 'cl';
+      }
+
+      return {
+        value: canonValue,
+        label: val === 'sl' ? 'SL' : val === 'cl' ? 'CL' : val,
+        fullLabel: item.label,
+        balance: balance,
+      };
+    });
+  }, [dbLeaveTypes, balanceLeaves, initialData]);
 
   // Duration options
   const durationOptions = [
@@ -682,7 +754,8 @@ const LeaveRequestForm = ({
         <h2 className="text-xl font-bold text-gray-900 leading-tight">
           {mode === 'add' && 'Apply for Leave'}
           {mode === 'edit' && 'Edit Leave Request'}
-          {mode === 'view' && (initialData?.employee || 'Leave Request Details')}
+          {mode === 'view' &&
+            (initialData?.employee || 'Leave Request Details')}
         </h2>
 
         <div className="flex flex-col gap-0.5 text-sm mt-1.5">
@@ -693,16 +766,17 @@ const LeaveRequestForm = ({
               </span>
             )}
 
-            {mode === 'view' && (formData.employeeDesignation || formData.employeeDepartment) && (
-              <>
-                <span className="text-gray-300">|</span>
-                <span className="font-medium text-gray-500">
-                  {[formData.employeeDesignation, formData.employeeDepartment]
-                    .filter(Boolean)
-                    .join(' — ')}
-                </span>
-              </>
-            )}
+            {mode === 'view' &&
+              (formData.employeeDesignation || formData.employeeDepartment) && (
+                <>
+                  <span className="text-gray-300">|</span>
+                  <span className="font-medium text-gray-500">
+                    {[formData.employeeDesignation, formData.employeeDepartment]
+                      .filter(Boolean)
+                      .join(' — ')}
+                  </span>
+                </>
+              )}
           </div>
 
           <div className="flex items-center gap-2 text-gray-600 mt-0.5">
@@ -719,7 +793,8 @@ const LeaveRequestForm = ({
 
             {!isLoadingBalance && (
               <div className="text-gray-500 text-xs flex items-center gap-1.5 border-l border-gray-300 pl-2">
-                SL : {Math.max(0, balanceLeaves.sl)} | CL : {Math.max(0, balanceLeaves.cl)}
+                SL : {Math.max(0, balanceLeaves.sl)} | CL :{' '}
+                {Math.max(0, balanceLeaves.cl)}
               </div>
             )}
           </div>
@@ -746,7 +821,9 @@ const LeaveRequestForm = ({
               />
             </svg>
             <p className="text-sm text-yellow-800">
-              <span className="font-semibold">Note:</span> If your leave request exceeds 2 days or more, please upload supporting documents (medical certificate, travel tickets, etc.).
+              <span className="font-semibold">Note:</span> If your leave request
+              exceeds 2 days or more, please upload supporting documents
+              (medical certificate, travel tickets, etc.).
             </p>
           </div>
         </div>
@@ -821,7 +898,9 @@ const LeaveRequestForm = ({
                     : 'bg-white text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300'
                 }`}
               >
-                {actionLoading === 'reject' && <Loader2 size={12} className="animate-spin" />}
+                {actionLoading === 'reject' && (
+                  <Loader2 size={12} className="animate-spin" />
+                )}
                 {actionLoading === 'reject' ? 'Rejecting...' : 'Reject'}
               </Button>
             )}
@@ -836,7 +915,9 @@ const LeaveRequestForm = ({
                     : 'bg-[#003273] text-white hover:bg-[#002657] hover:shadow'
                 }`}
               >
-                {actionLoading === 'approve' && <Loader2 size={12} className="animate-spin" />}
+                {actionLoading === 'approve' && (
+                  <Loader2 size={12} className="animate-spin" />
+                )}
                 {actionLoading === 'approve' ? 'Approving...' : 'Approve'}
               </PrimaryButton>
             )}
@@ -846,7 +927,6 @@ const LeaveRequestForm = ({
     </div>
   );
 
-
   return (
     <CustomModalForm
       open={true}
@@ -855,344 +935,243 @@ const LeaveRequestForm = ({
       footer={renderFooter}
       widthClass="max-w-2xl"
     >
-      <form id="leave-request-form" onSubmit={handleSubmit} className="px-3 py-2">
-          {/* Leave Type + Duration - Same Line */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Type of Leave *
-            </label>
-            <div className="flex items-center gap-4 flex-wrap">
-              {/* Leave Type Select */}
-              <FilterDropdown
-                value={formData.type}
-                onChange={(val) => {
-                  if (mode === 'view') return;
-                  setFormData((prev) => ({
-                    ...prev,
-                    type: val,
-                  }));
-                  if (errors.type) setErrors((prev) => ({ ...prev, type: '' }));
-                }}
-                disabled={mode === 'view'}
-                error={!!errors.type}
-                options={leaveTypes.map((type) => ({
-                  label: type.fullLabel,
-                  value: type.value,
-                }))}
-                placeholder="Select Leave Type"
-                className="min-w-[180px]"
-              />
+      <form
+        id="leave-request-form"
+        onSubmit={handleSubmit}
+        className="px-3 py-2"
+      >
+        {/* Leave Type + Duration - Same Line */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Type of Leave *
+          </label>
+          <div className="flex items-center gap-4 flex-wrap">
+            {/* Leave Type Select */}
+            <FilterDropdown
+              value={formData.type}
+              onChange={(val) => {
+                if (mode === 'view') return;
+                setFormData((prev) => ({
+                  ...prev,
+                  type: val,
+                }));
+                if (errors.type) setErrors((prev) => ({ ...prev, type: '' }));
+              }}
+              disabled={mode === 'view'}
+              error={!!errors.type}
+              options={leaveTypes.map((type) => ({
+                label: type.fullLabel,
+                value: type.value,
+              }))}
+              placeholder="Select Leave Type"
+              className="min-w-[180px]"
+            />
 
-              {/* Half Day Checkbox */}
-              {!(mode === 'view' && !isHalfDayType) && (
-                <label
-                  className={`flex items-center gap-2 px-4 py-2.5 border-2 rounded-lg cursor-pointer transition-all select-none ${
-                    isHalfDayType
-                      ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm'
-                      : 'border-gray-400 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50'
-                  } ${mode === 'view' ? 'pointer-events-none' : ''}`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={isHalfDayType}
-                    onChange={(e) => {
-                      if (mode === 'view') return;
-                      setFormData((prev) => ({
-                        ...prev,
-                        duration: e.target.checked ? 'half' : 'full',
-                        halfDayPeriod: e.target.checked
-                          ? prev.halfDayPeriod
-                          : '',
-                      }));
-                    }}
-                    disabled={mode === 'view'}
-                    className="w-4 h-4 accent-blue-600 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                  />
-                  <span className="font-semibold text-sm">Half Day</span>
-                </label>
-              )}
-
-              {/* Half Day Period Select - shown only when Half Day is checked */}
-              {isHalfDayType && (
-                <FilterDropdown
-                  value={formData.halfDayPeriod}
-                  onChange={(val) => {
-                    handleChange({
-                      target: { name: 'halfDayPeriod', value: val },
-                    });
+            {/* Half Day Checkbox */}
+            {!(mode === 'view' && !isHalfDayType) && (
+              <label
+                className={`flex items-center gap-2 px-4 py-2.5 border-2 rounded-lg cursor-pointer transition-all select-none ${
+                  isHalfDayType
+                    ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm'
+                    : 'border-gray-400 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                } ${mode === 'view' ? 'pointer-events-none' : ''}`}
+              >
+                <input
+                  type="checkbox"
+                  checked={isHalfDayType}
+                  onChange={(e) => {
+                    if (mode === 'view') return;
+                    setFormData((prev) => ({
+                      ...prev,
+                      duration: e.target.checked ? 'half' : 'full',
+                      halfDayPeriod: e.target.checked ? prev.halfDayPeriod : '',
+                    }));
                   }}
                   disabled={mode === 'view'}
-                  error={!!errors.halfDayPeriod}
-                  options={[
-                    { label: '1st Half', value: 'FIRST_HALF' },
-                    { label: '2nd Half', value: 'SECOND_HALF' },
-                  ]}
-                  placeholder="Select Half"
-                  className="min-w-[140px]"
+                  className="w-4 h-4 accent-blue-600 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
-              )}
-            </div>
-            {errors.type && (
-              <p className="mt-1 text-sm text-red-600">{errors.type}</p>
-            )}
-            {errors.halfDayPeriod && (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.halfDayPeriod}
-              </p>
-            )}
-          </div>
-
-          {/* Date Range - Single Line */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Date Range *
-            </label>
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  {/* FROM label above the date input */}
-                  <div className="text-sm text-gray-600 font-medium mb-1 px-2">
-                    From
-                  </div>
-                  <input
-                    type="date"
-                    name="from"
-                    value={formData.from}
-                    min={joiningDate || undefined}
-                    onChange={(e) => handleDateChange('from', e.target.value)}
-                    disabled={mode === 'view'}
-                    className={`w-full px-4 py-2.5 border rounded-lg transition-colors ${
-                      errors.from ? 'border-red-300' : 'border-gray-300'
-                    } ${
-                      mode === 'view' ? 'bg-gray-50 text-gray-600' : 'bg-white'
-                    }`}
-                  />
-                </div>
-                {errors.from && (
-                  <p className="mt-1 text-sm text-red-600">{errors.from}</p>
-                )}
-              </div>
-
-              {/* To date - always visible, greyed out for half-day */}
-              <div className="flex-1">
-                <div className="relative">
-                  <div className="text-sm text-gray-600 font-medium mb-1 px-2">
-                    To
-                  </div>
-                  <input
-                    type="date"
-                    name="to"
-                    value={isHalfDayType ? formData.from : formData.to}
-                    min={joiningDate || undefined}
-                    onChange={(e) => handleDateChange('to', e.target.value)}
-                    disabled={mode === 'view' || isHalfDayType}
-                    className={`w-full px-4 py-2.5 border rounded-lg transition-colors ${
-                      errors.to ? 'border-red-300' : 'border-gray-300'
-                    } ${
-                      mode === 'view' || isHalfDayType
-                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                        : 'bg-white'
-                    }`}
-                  />
-                </div>
-                {errors.to && (
-                  <p className="mt-1 text-sm text-red-600">{errors.to}</p>
-                )}
-              </div>
-
-              {/* Calculated Days Display */}
-              <div className="flex-1">
-                <div className="relative">
-                  <div className="text-sm text-gray-600 font-medium mb-1 px-2">
-                    Total days
-                  </div>
-                  <div className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 flex items-center gap-2">
-                    <span className="text-base font-bold text-blue-600">
-                      {calculatedDays}
-                    </span>
-                    <span className="text-sm text-gray-500">
-                      day{calculatedDays !== 1 ? 's' : ''}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Selected Dates Display */}
-            {formData.from && formData.to && (
-              <div className="mt-3">
-                <div className="text-sm text-gray-600">
-                  Selected: {formatDate(formData.from)} to{' '}
-                  {formatDate(formData.to)}
-                  {calculatedDays > 0 && (
-                    <span className="ml-2 font-medium">
-                      ({calculatedDays} working day
-                      {calculatedDays !== 1 ? 's' : ''})
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Overlap error display */}
-            {overlapError && (
-              <div className="mt-3 p-3 bg-red-50 border border-red-200 text-sm text-red-800 rounded-md">
-                {overlapError}
-              </div>
-            )}
-          </div>
-
-          {/* Reason Textarea */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Reason for Leave *
-            </label>
-            <textarea
-              name="reason"
-              value={formData.reason}
-              onChange={handleChange}
-              disabled={mode === 'view'}
-              rows="4"
-              placeholder="Please provide a detailed reason for your leave request..."
-              className={`w-full px-4 py-3 border rounded-lg transition-colors resize-none text-sm ${
-                errors.reason ? 'border-red-300' : 'border-gray-300'
-              } ${mode === 'view' ? 'bg-gray-50 text-gray-600' : 'bg-white'}`}
-            />
-            <div className="flex justify-between mt-1">
-              {errors.reason ? (
-                <p className="text-sm text-red-600">{errors.reason}</p>
-              ) : (
-                <p className="text-xs text-gray-500">
-                  Minimum 10 characters required
-                </p>
-              )}
-              <p className="text-xs text-gray-500">
-                {formData.reason.length}/500
-              </p>
-            </div>
-          </div>
-
-          {/* Document Upload (only for add/edit modes) */}
-          {mode !== 'view' && (
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Supporting Document{' '}
-                {formData.type === 'sl' && calculatedDays > 2 && (
-                  <span className="text-red-600 ml-1">*</span>
-                )}
+                <span className="font-semibold text-sm">Half Day</span>
               </label>
-              {errors.document && (
-                <p className="mt-1 mb-3 text-sm text-red-600">
-                  {errors.document}
-                </p>
-              )}
+            )}
 
-              {formData.document ? (
-                <div className="flex items-center justify-between p-3 border border-green-300 bg-green-50 rounded-lg">
-                  <div className="flex items-center">
-                    <svg
-                      className="w-5 h-3 text-green-600 mr-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                    <span className="text-sm text-gray-700">
-                      {formData.document.split('/').pop()}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setFormData((prev) => ({ ...prev, document: null }))
-                    }
-                    className="text-red-600 hover:text-red-800 text-sm font-medium"
-                  >
-                    Remove
-                  </button>
+            {/* Half Day Period Select - shown only when Half Day is checked */}
+            {isHalfDayType && (
+              <FilterDropdown
+                value={formData.halfDayPeriod}
+                onChange={(val) => {
+                  handleChange({
+                    target: { name: 'halfDayPeriod', value: val },
+                  });
+                }}
+                disabled={mode === 'view'}
+                error={!!errors.halfDayPeriod}
+                options={[
+                  { label: '1st Half', value: 'FIRST_HALF' },
+                  { label: '2nd Half', value: 'SECOND_HALF' },
+                ]}
+                placeholder="Select Half"
+                className="min-w-[140px]"
+              />
+            )}
+          </div>
+          {errors.type && (
+            <p className="mt-1 text-sm text-red-600">{errors.type}</p>
+          )}
+          {errors.halfDayPeriod && (
+            <p className="mt-1 text-sm text-red-600">{errors.halfDayPeriod}</p>
+          )}
+        </div>
+
+        {/* Date Range - Single Line */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Date Range *
+          </label>
+          <div className="flex gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                {/* FROM label above the date input */}
+                <div className="text-sm text-gray-600 font-medium mb-1 px-2">
+                  From
                 </div>
-              ) : (
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
-                  <input
-                    type="file"
-                    id="document-upload"
-                    onChange={handleFileChange}
-                    className="hidden"
-                    accept="application/pdf"
-                  />
-                  <label
-                    htmlFor="document-upload"
-                    className="cursor-pointer flex flex-col items-center"
-                  >
-                    <svg
-                      className="w-12 h-12 text-gray-400 mb-3"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="1.5"
-                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                      />
-                    </svg>
-                    <span className="text-sm text-gray-600">
-                      Click to upload document
-                    </span>
-                    <span className="text-xs text-gray-500 mt-1">
-                      PDF (Max 10MB)
-                    </span>
-                  </label>
-                </div>
+                <input
+                  type="date"
+                  name="from"
+                  value={formData.from}
+                  min={joiningDate || undefined}
+                  onChange={(e) => handleDateChange('from', e.target.value)}
+                  disabled={mode === 'view'}
+                  className={`w-full px-4 py-2.5 border rounded-lg transition-colors ${
+                    errors.from ? 'border-red-300' : 'border-gray-300'
+                  } ${
+                    mode === 'view' ? 'bg-gray-50 text-gray-600' : 'bg-white'
+                  }`}
+                />
+              </div>
+              {errors.from && (
+                <p className="mt-1 text-sm text-red-600">{errors.from}</p>
               )}
+            </div>
+
+            {/* To date - always visible, greyed out for half-day */}
+            <div className="flex-1">
+              <div className="relative">
+                <div className="text-sm text-gray-600 font-medium mb-1 px-2">
+                  To
+                </div>
+                <input
+                  type="date"
+                  name="to"
+                  value={isHalfDayType ? formData.from : formData.to}
+                  min={joiningDate || undefined}
+                  onChange={(e) => handleDateChange('to', e.target.value)}
+                  disabled={mode === 'view' || isHalfDayType}
+                  className={`w-full px-4 py-2.5 border rounded-lg transition-colors ${
+                    errors.to ? 'border-red-300' : 'border-gray-300'
+                  } ${
+                    mode === 'view' || isHalfDayType
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'bg-white'
+                  }`}
+                />
+              </div>
+              {errors.to && (
+                <p className="mt-1 text-sm text-red-600">{errors.to}</p>
+              )}
+            </div>
+
+            {/* Calculated Days Display */}
+            <div className="flex-1">
+              <div className="relative">
+                <div className="text-sm text-gray-600 font-medium mb-1 px-2">
+                  Total days
+                </div>
+                <div className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 flex items-center gap-2">
+                  <span className="text-base font-bold text-blue-600">
+                    {calculatedDays}
+                  </span>
+                  <span className="text-sm text-gray-500">
+                    day{calculatedDays !== 1 ? 's' : ''}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Selected Dates Display */}
+          {formData.from && formData.to && (
+            <div className="mt-3">
+              <div className="text-sm text-gray-600">
+                Selected: {formatDate(formData.from)} to{' '}
+                {formatDate(formData.to)}
+                {calculatedDays > 0 && (
+                  <span className="ml-2 font-medium">
+                    ({calculatedDays} working day
+                    {calculatedDays !== 1 ? 's' : ''})
+                  </span>
+                )}
+              </div>
             </div>
           )}
 
-          {mode === 'view' && formData.document && (
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Attached Document
-              </label>
-              <div className="flex items-center p-3 border border-gray-200 bg-gray-50 rounded-lg">
-                <svg
-                  className="w-5 h-5 text-gray-600 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
-                </svg>
-                <span className="text-sm text-gray-700 truncate max-w-[200px]">
-                  {typeof formData.document === 'string' &&
-                  formData.document.includes('blob.vercel-storage.com')
-                    ? formData.document
-                        .split('/')
-                        .pop()
-                        .split('-')
-                        .slice(1)
-                        .join('-')
-                    : 'leave_document.pdf'}
-                </span>
-                <a
-                  href={formData.document}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="ml-auto text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center"
-                >
+          {/* Overlap error display */}
+          {overlapError && (
+            <div className="mt-3 p-3 bg-red-50 border border-red-200 text-sm text-red-800 rounded-md">
+              {overlapError}
+            </div>
+          )}
+        </div>
+
+        {/* Reason Textarea */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Reason for Leave *
+          </label>
+          <textarea
+            name="reason"
+            value={formData.reason}
+            onChange={handleChange}
+            disabled={mode === 'view'}
+            rows="4"
+            placeholder="Please provide a detailed reason for your leave request..."
+            className={`w-full px-4 py-3 border rounded-lg transition-colors resize-none text-sm ${
+              errors.reason ? 'border-red-300' : 'border-gray-300'
+            } ${mode === 'view' ? 'bg-gray-50 text-gray-600' : 'bg-white'}`}
+          />
+          <div className="flex justify-between mt-1">
+            {errors.reason ? (
+              <p className="text-sm text-red-600">{errors.reason}</p>
+            ) : (
+              <p className="text-xs text-gray-500">
+                Minimum 10 characters required
+              </p>
+            )}
+            <p className="text-xs text-gray-500">
+              {formData.reason.length}/500
+            </p>
+          </div>
+        </div>
+
+        {/* Document Upload (only for add/edit modes) */}
+        {mode !== 'view' && (
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Supporting Document{' '}
+              {formData.type === 'sl' && calculatedDays > 2 && (
+                <span className="text-red-600 ml-1">*</span>
+              )}
+            </label>
+            {errors.document && (
+              <p className="mt-1 mb-3 text-sm text-red-600">
+                {errors.document}
+              </p>
+            )}
+
+            {formData.document ? (
+              <div className="flex items-center justify-between p-3 border border-green-300 bg-green-50 rounded-lg">
+                <div className="flex items-center">
                   <svg
-                    className="w-4 h-4 mr-1"
+                    className="w-5 h-3 text-green-600 mr-2"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -1201,15 +1180,116 @@ const LeaveRequestForm = ({
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth="2"
-                      d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg>
-                  View PDF
-                </a>
+                  <span className="text-sm text-gray-700">
+                    {formData.document.split('/').pop()}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setFormData((prev) => ({ ...prev, document: null }))
+                  }
+                  className="text-red-600 hover:text-red-800 text-sm font-medium"
+                >
+                  Remove
+                </button>
               </div>
+            ) : (
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
+                <input
+                  type="file"
+                  id="document-upload"
+                  onChange={handleFileChange}
+                  className="hidden"
+                  accept="application/pdf"
+                />
+                <label
+                  htmlFor="document-upload"
+                  className="cursor-pointer flex flex-col items-center"
+                >
+                  <svg
+                    className="w-12 h-12 text-gray-400 mb-3"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="1.5"
+                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                    />
+                  </svg>
+                  <span className="text-sm text-gray-600">
+                    Click to upload document
+                  </span>
+                  <span className="text-xs text-gray-500 mt-1">
+                    PDF (Max 10MB)
+                  </span>
+                </label>
+              </div>
+            )}
+          </div>
+        )}
+
+        {mode === 'view' && formData.document && (
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Attached Document
+            </label>
+            <div className="flex items-center p-3 border border-gray-200 bg-gray-50 rounded-lg">
+              <svg
+                className="w-5 h-5 text-gray-600 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+              <span className="text-sm text-gray-700 truncate max-w-[200px]">
+                {typeof formData.document === 'string' &&
+                formData.document.includes('blob.vercel-storage.com')
+                  ? formData.document
+                      .split('/')
+                      .pop()
+                      .split('-')
+                      .slice(1)
+                      .join('-')
+                  : 'leave_document.pdf'}
+              </span>
+              <a
+                href={formData.document}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ml-auto text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center"
+              >
+                <svg
+                  className="w-4 h-4 mr-1"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                  />
+                </svg>
+                View PDF
+              </a>
             </div>
-          )}
-        </form>
+          </div>
+        )}
+      </form>
 
       <ConfirmDialog
         open={confirmAction === 'approve'}

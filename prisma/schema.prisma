@@ -394,13 +394,15 @@ model LeaveBalanceHistory {
 }
 
 model PayrollSettings {
-  id             String   @id @default(cuid())
-  companyHoliday Boolean  @default(true) @map("company_holiday")
-  sunday         String   @default("Leave")
-  saturday       String   @default("Leave")
-  effectiveDate  DateTime @map("effective_date")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  id              String   @id @default(cuid())
+  companyHoliday  Boolean  @default(true) @map("company_holiday")
+  sunday          String   @default("Leave")
+  saturday        String   @default("Leave")
+  effectiveDate   DateTime @map("effective_date")
+  basicPayPercent Float    @default(40.0) @map("basic_pay_percent")
+  hraPercent      Float    @default(50.0) @map("hra_percent")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
   @@index([effectiveDate])
 }
@@ -567,6 +569,7 @@ model companyDetails {
   gstnNumber        String?
   panNumber         String?
   accountHolderName String?
+  branchName        String?
   accountNumber     String?
   ifscCode          String?
   swiftCode         String?

@@ -24,6 +24,7 @@ import TabButton from '../../components/Buttons/TabButton';
 import PrimaryButton from '../../components/Buttons/PrimaryButton';
 import Loader from '../../components/Loader';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'react-toastify';
 
 // Tab definitions with rights
 const TAB_CONFIG = [
@@ -68,19 +69,21 @@ export default function AssetPage() {
     const normalizedRights = rawRights.map((r) => String(r).toLowerCase());
 
     const roleName = (role?.name || role?.roleName || '').toUpperCase();
-    const isAdmin =
-      roleName === 'ADMIN' ||
+    const isSuperAdmin =
       roleName === 'SUPER_ADMIN' ||
+      roleName === 'SUPER ADMIN' ||
+      roleName === 'SUPERADMIN' ||
+      roleName === 'ADMIN' ||
       normalizedRights.includes('all_access');
 
     const checkRight = (r) => normalizedRights.includes(r.toLowerCase());
 
     // Legacy/Module-level checks
     const hasModuleAccess =
-      isAdmin ||
+      isSuperAdmin ||
       checkRight('asset_module') ||
       checkRight('asset_module_access');
-    const hasGlobalControl = isAdmin || checkRight('asset_control_all');
+    const hasGlobalControl = isSuperAdmin || checkRight('asset_control_all');
 
     // Filter tabs based on granular or global rights
     const tabs = TAB_CONFIG.filter((tab) => {
@@ -103,7 +106,11 @@ export default function AssetPage() {
       }
     }
 
-    return { visibleTabs: tabs, isViewOnly: activeIsViewOnly, isAdmin };
+    return {
+      visibleTabs: tabs,
+      isViewOnly: activeIsViewOnly,
+      isAdmin: isSuperAdmin,
+    };
   }, [authUser, activeTab]);
 
   const canEditAllAssets = !isViewOnly;
@@ -125,6 +132,9 @@ export default function AssetPage() {
 
   // Edit Completion State
   const [editCompleted, setEditCompleted] = useState(false);
+
+  // Loading state for form submission
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // New Category State
   const [showNewCategoryForm, setShowNewCategoryForm] = useState(false);
@@ -296,6 +306,7 @@ export default function AssetPage() {
 
   // Handle Asset Form Submission (Add new asset)
   const handleAssetSubmit = async (formData) => {
+    setIsSubmitting(true);
     try {
       const categoryId = getCategoryIdByName(selectedAssetType);
 
@@ -350,15 +361,19 @@ export default function AssetPage() {
 
       dispatch(addAsset(formattedAsset));
       closeAdd();
+      toast.success('Asset added successfully!');
     } catch (error) {
       console.error('Error creating asset:', error);
-      alert('Failed to create asset. Please try again.');
+      toast.error('Failed to create asset. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleAssetUpdate = async (formData) => {
     if (!selectedAsset) return;
 
+    setIsSubmitting(true);
     try {
       const response = await fetch(`/api/assets/${selectedAsset.id}`, {
         method: 'PUT',
@@ -414,16 +429,14 @@ export default function AssetPage() {
       // Dispatch to Redux store
       dispatch(updateAsset(formattedAsset));
 
-      // Show success message
-      setEditCompleted(true);
+      setSelectedAsset(updatedAsset);
 
-      // Close modal after 1.5 seconds
-      setTimeout(() => {
-        closeModal();
-      }, 1500);
+      toast.success('Asset updated successfully!');
     } catch (error) {
       console.error('Error updating asset:', error);
-      alert('Failed to update asset. Please try again.');
+      toast.error('Failed to update asset. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -453,8 +466,6 @@ export default function AssetPage() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Delete asset? This cannot be undone.')) return;
-
     try {
       const response = await fetch(`/api/assets/${id}`, {
         method: 'DELETE',
@@ -470,9 +481,10 @@ export default function AssetPage() {
       if (selectedAsset && selectedAsset.id === id) {
         closeModal();
       }
+      toast.success('Asset deleted successfully');
     } catch (error) {
       console.error('Error deleting asset:', error);
-      alert('Failed to delete asset. Please try again.');
+      toast.error('Failed to delete asset. Please try again.');
     }
   };
 
@@ -498,9 +510,10 @@ export default function AssetPage() {
 
       // Refresh assets list
       dispatch(fetchAssets());
+      toast.success('Asset assigned successfully!');
     } catch (error) {
       console.error('Error assigning asset:', error);
-      alert(error.message || 'Failed to assign asset. Please try again.');
+      throw error;
     }
   };
 
@@ -524,17 +537,18 @@ export default function AssetPage() {
 
       // Refresh assets list
       dispatch(fetchAssets());
+      toast.success('Asset unassigned successfully!');
     } catch (error) {
       console.error('Error unassigning asset:', error);
-      alert(error.message || 'Failed to unassign asset. Please try again.');
+      throw error;
     }
   };
 
-  // Handle Create Repair
-  const handleCreateRepair = async (repairData) => {
+  // Handle Repair Changes (Create, Edit, Delete)
+  const handleRepairChange = async () => {
     try {
-      // The API call is already handled in the CreateRepairForm component
-      // We just need to refresh the asset data to show the new repair
+      // The API call is already handled in the component
+      // We just need to refresh the asset data to show the changes
       dispatch(fetchAssets());
 
       // Also update the selected asset if it's currently open
@@ -548,21 +562,7 @@ export default function AssetPage() {
 
       setShowRepairForm(false);
     } catch (error) {
-      console.error('Error handling repair creation:', error);
-    }
-  };
-
-  // Handle Edit Repair
-  const handleEditRepair = (repair) => {
-    // Implement edit repair functionality here
-    alert(`Edit repair ${repair.requestId} - This would open edit form`);
-  };
-
-  // Handle Delete Repair
-  const handleDeleteRepair = (repairId) => {
-    // Implement delete repair functionality here
-    if (confirm('Are you sure you want to delete this repair record?')) {
-      // Add actual delete logic here
+      console.error('Error handling repair changes:', error);
     }
   };
 
@@ -631,10 +631,11 @@ export default function AssetPage() {
           <button
             onClick={handleNextToForm}
             disabled={!selectedAssetType}
-            className={`mt-6 px-6 py-3 rounded-lg font-medium transition-colors ${selectedAssetType
-              ? 'bg-[#1E90FF] text-white hover:bg-[#1873cc]'
-              : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-              }`}
+            className={`mt-6 px-6 py-3 rounded-lg font-medium transition-colors ${
+              selectedAssetType
+                ? 'bg-[#1E90FF] text-white hover:bg-[#1873cc]'
+                : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+            }`}
           >
             Next
           </button>
@@ -819,54 +820,7 @@ export default function AssetPage() {
             }
           >
             <div className="p-6">
-              {/* Edit Mode */}
-              {modalMode === 'edit' && selectedAsset && (
-                <>
-                  {editCompleted ? (
-                    <div className="text-center py-8">
-                      <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
-                        <svg
-                          className="h-6 w-6 text-green-600"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M5 13l4 4L19 7"
-                          />
-                        </svg>
-                      </div>
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">
-                        Asset Updated Successfully!
-                      </h3>
-                      <p className="text-gray-600">
-                        Your changes have been saved.
-                      </p>
-                      <p className="text-sm text-gray-500 mt-2">
-                        Closing automatically...
-                      </p>
-                    </div>
-                  ) : (
-                    <AssetForm
-                      assetType={
-                        selectedAsset?.deviceType || selectedAsset?.type
-                      }
-                      onSubmit={handleAssetUpdate}
-                      onCancel={closeModal}
-                      onBack={null}
-                      isViewMode={false}
-                      initialData={formatDataForAssetForm(selectedAsset)}
-                      existingAssets={assets}
-                    />
-                  )}
-                </>
-              )}
-
-              {/* View Mode - Show Tab Content */}
-              {modalMode === 'view' && selectedAsset && (
+              {selectedAsset && (
                 <div key={activeModalTab} className="animate-dashboard-reveal">
                   {activeModalTab === 'details' && (
                     <div>
@@ -874,13 +828,20 @@ export default function AssetPage() {
                         assetType={
                           selectedAsset?.deviceType || selectedAsset?.type
                         }
-                        onSubmit={null}
+                        onSubmit={
+                          modalMode === 'edit' ? handleAssetUpdate : null
+                        }
                         onCancel={closeModal}
-                        onEdit={!isViewOnly ? () => setModalMode('edit') : null}
+                        onEdit={
+                          modalMode === 'view' && !isViewOnly
+                            ? () => setModalMode('edit')
+                            : null
+                        }
                         onBack={null}
-                        isViewMode={true}
+                        isViewMode={modalMode === 'view'}
                         initialData={formatDataForAssetForm(selectedAsset)}
                         existingAssets={assets}
+                        isSubmitting={isSubmitting}
                       />
                     </div>
                   )}
@@ -891,7 +852,7 @@ export default function AssetPage() {
                         Assignment History
                       </h3>
                       {selectedAsset.assignments &&
-                        selectedAsset.assignments.length > 0 ? (
+                      selectedAsset.assignments.length > 0 ? (
                         <div className="space-y-3">
                           {selectedAsset.assignments.map(
                             (assignment, index) => (
@@ -947,10 +908,10 @@ export default function AssetPage() {
                         assetModel={
                           selectedAsset.modelName || selectedAsset.model
                         }
-                        onEditRepair={handleEditRepair}
-                        onDeleteRepair={handleDeleteRepair}
-                        onRepairAdded={handleCreateRepair}
-                        onRepairUpdated={handleCreateRepair}
+                        onEditRepair={null}
+                        onDeleteRepair={handleRepairChange}
+                        onRepairAdded={handleRepairChange}
+                        onRepairUpdated={handleRepairChange}
                         canEdit={canEditAllAssets}
                       />
                     </div>
@@ -1032,10 +993,11 @@ export default function AssetPage() {
                                 disabled={
                                   isCreatingCategory || !newCategoryName.trim()
                                 }
-                                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${newCategoryName.trim()
-                                  ? 'bg-[#004475] text-white  shadow-sm'
-                                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                                  }`}
+                                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                                  newCategoryName.trim()
+                                    ? 'bg-[#004475] text-white  shadow-sm'
+                                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                }`}
                               >
                                 {isCreatingCategory ? '...' : 'Create'}
                               </button>
@@ -1130,6 +1092,7 @@ export default function AssetPage() {
                       isViewMode={false}
                       initialData={null}
                       existingAssets={assets}
+                      isSubmitting={isSubmitting}
                     />
                   </div>
                 </div>

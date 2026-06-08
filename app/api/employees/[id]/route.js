@@ -4,6 +4,7 @@ import {
   getEmployeeById,
   updateEmployee,
   deleteEmployee,
+  checkRoleAssignmentPermission,
 } from '../../../../lib/employeeService';
 import { cookies } from 'next/headers';
 import { createDocumentRequest } from '../../../../lib/documentService';
@@ -46,12 +47,35 @@ export async function PUT(req, context) {
       } catch (err) {}
     }
 
+    // Check if roleId or role is being modified in PUT request
+    if (body.roleId !== undefined || body.role !== undefined) {
+      const requesterId = currentUser?.employeeId;
+      if (!requesterId) {
+        return NextResponse.json(
+          { error: 'Unauthorized: Missing employee ID in session' },
+          { status: 401 }
+        );
+      }
+      try {
+        const newRoleId = body.roleId || body.role || null;
+        await checkRoleAssignmentPermission(requesterId, id, newRoleId);
+      } catch (permError) {
+        return NextResponse.json(
+          { error: permError.message || 'Forbidden' },
+          { status: 403 }
+        );
+      }
+    }
+
     const userRole = (currentUser?.roleName || '').toUpperCase();
     const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
     const isHrAdmin = userRole === 'HR_ADMIN';
     // Regular HR roles that need approval/restriction
-    const isRestrictedHr = (userRole === 'HR' || userRole === 'HR_EXECUTIVE') && !isAdmin && !isHrAdmin;
-    
+    const isRestrictedHr =
+      (userRole === 'HR' || userRole === 'HR_EXECUTIVE') &&
+      !isAdmin &&
+      !isHrAdmin;
+
     // Check if documents are being updated for an active employee
     if (isRestrictedHr) {
       const existing = await getEmployeeById(id);
@@ -66,7 +90,7 @@ export async function PUT(req, context) {
                 documentType: field,
                 documentUrl: body[field],
                 requestedById: currentUser.employeeId,
-                requestedByRole: 'HR'
+                requestedByRole: 'HR',
               });
               delete body[field]; // Remove from direct update
             } else {
@@ -75,15 +99,20 @@ export async function PUT(req, context) {
             }
           }
         }
-        
+
         // Handle proofs (array)
-        if (body.proofs && JSON.stringify(body.proofs) !== JSON.stringify(existing.proofs)) {
-          const existingUrls = (existing.proofs || []).map(p => p.url);
-          const currentUrls = (body.proofs || []).map(p => p.url);
-          
+        if (
+          body.proofs &&
+          JSON.stringify(body.proofs) !== JSON.stringify(existing.proofs)
+        ) {
+          const existingUrls = (existing.proofs || []).map((p) => p.url);
+          const currentUrls = (body.proofs || []).map((p) => p.url);
+
           // Identify new proofs added
-          const newProofs = (body.proofs || []).filter(p => !existingUrls.includes(p.url));
-          
+          const newProofs = (body.proofs || []).filter(
+            (p) => !existingUrls.includes(p.url)
+          );
+
           for (const proof of newProofs) {
             await createDocumentRequest({
               employeeId: id,
@@ -91,10 +120,10 @@ export async function PUT(req, context) {
               proofLabel: proof.label,
               documentUrl: proof.url,
               requestedById: currentUser.employeeId,
-              requestedByRole: 'HR'
+              requestedByRole: 'HR',
             });
           }
-          
+
           // Restore old proofs (blocks both direct additions and ANY removals for restricted HR)
           body.proofs = existing.proofs;
         }

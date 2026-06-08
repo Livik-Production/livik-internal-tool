@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import CustomModalForm from '../../CustomModalForm';
 import Button from '../../Buttons/Button';
 import PrimaryButton from '../../Buttons/PrimaryButton';
+import IconButton from '../../Buttons/IconButton';
 import {
   Calendar,
   Clock,
@@ -249,15 +250,15 @@ export default function FollowUpModal({
                             <SquarePen size={15} />
                           </button>
                           {onDeleteFollowUp && (
-                            <button
+                            <IconButton
                               onClick={() =>
                                 onDeleteFollowUp(invoice.id, log.id)
                               }
-                              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all scale-95"
+                              className="p-1.5 hover:bg-red-50 scale-95 text-red-500"
                               title="Delete log"
                             >
                               <Trash2 size={16} />
-                            </button>
+                            </IconButton>
                           )}
                         </div>
                       </div>

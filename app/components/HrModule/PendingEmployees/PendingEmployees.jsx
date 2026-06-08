@@ -5,10 +5,12 @@ import IconButton from '../../Buttons/IconButton';
 import CloseButton from '../../Buttons/CloseButton';
 import HyperlinkButton from '../../Buttons/HyperlinkButton';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import CustomTable from '../../CustomTable';
+import Pagination from '../../Pagination';
 import { SquarePen, Trash, CheckCircle } from 'lucide-react';
 import ConfirmDialog from '../../ConfirmDialog';
+import CustomAlertForm from '../../CustomAlertForm';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   fetchEmployees,
@@ -31,6 +33,10 @@ export default function PendingEmployees({
   const dispatch = useDispatch();
   const allEmployees = useSelector(selectEmployeesItems);
   const employeeStatus = useSelector(selectEmployeesStatus);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10); // default to 10
 
   // Filter only pending employees
   let employees = allEmployees.filter(
@@ -55,10 +61,47 @@ export default function PendingEmployees({
     }
   }, [dispatch, employeeStatus]);
 
+  // Reset pagination when search query changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  const handleItemsPerPageChange = (newItemsPerPage) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1);
+  };
+
+  const paginatedEmployees = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return employees.slice(startIndex, startIndex + itemsPerPage);
+  }, [employees, currentPage, itemsPerPage]);
+
   // State for confirmation dialog
   const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [isUpdating, setIsUpdating] = useState(false);
+
+  // State for alerts and bulk approval confirmation
+  const [alertConfig, setAlertConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'success',
+  });
+  const [isApproveAllDialogOpen, setIsApproveAllDialogOpen] = useState(false);
+
+  const showAlert = (title, message, type = 'success') => {
+    setAlertConfig({
+      isOpen: true,
+      title,
+      message,
+      type,
+    });
+  };
+
+  const closeAlert = () => {
+    setAlertConfig((prev) => ({ ...prev, isOpen: false }));
+  };
 
   // StatusBadge component
   const StatusBadge = ({ status = 'pending' }) => {
@@ -140,53 +183,66 @@ export default function PendingEmployees({
 
       dispatch(updateEmployeeAction(uiRow));
 
-      alert(`${employee.name} has been approved and activated!`);
+      showAlert(
+        'Success',
+        `${employee.name} has been approved and activated!`,
+        'success'
+      );
 
       // Close the dialog
       setIsApproveDialogOpen(false);
       setSelectedEmployee(null);
     } catch (error) {
       console.error('Error updating employee status:', error);
-      alert('Failed to update status. Please try again.');
+      showAlert(
+        'Error',
+        'Failed to update status. Please try again.',
+        'danger'
+      );
     } finally {
       setIsUpdating(false);
     }
   };
 
-  const handleApproveAll = async () => {
+  const handleApproveAllClick = () => {
     if (canApprove && employees.length > 0) {
-      if (
-        window.confirm(
-          `Are you sure you want to approve all ${employees.length} employees?`
-        )
-      ) {
-        setIsUpdating(true);
-        try {
-          for (const emp of employees) {
-            const serverId = emp.__raw?.id || emp.id;
-            const res = await fetch(`/api/employees/${serverId}`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ status: 'Active' }),
-            });
-            if (res.ok) {
-              const updated = await res.json();
-              dispatch(
-                updateEmployeeAction({
-                  ...emp,
-                  status: 'Active',
-                  __raw: { ...emp.__raw, ...updated },
-                })
-              );
-            }
-          }
-          alert(`Approved all ${employees.length} employees`);
-        } catch (error) {
-          alert('Some approvals might have failed.');
-        } finally {
-          setIsUpdating(false);
+      setIsApproveAllDialogOpen(true);
+    }
+  };
+
+  const handleApproveAllConfirm = async () => {
+    setIsApproveAllDialogOpen(false);
+    setIsUpdating(true);
+    try {
+      let approvedCount = 0;
+      for (const emp of employees) {
+        const serverId = emp.__raw?.id || emp.id;
+        const res = await fetch(`/api/employees/${serverId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'Active' }),
+        });
+        if (res.ok) {
+          const updated = await res.json();
+          dispatch(
+            updateEmployeeAction({
+              ...emp,
+              status: 'Active',
+              __raw: { ...emp.__raw, ...updated },
+            })
+          );
+          approvedCount++;
         }
       }
+      showAlert(
+        'Success',
+        `Approved all ${approvedCount} employees`,
+        'success'
+      );
+    } catch (error) {
+      showAlert('Error', 'Some approvals might have failed.', 'danger');
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -273,7 +329,7 @@ export default function PendingEmployees({
           {searchElement && <div>{searchElement}</div>}
           {employees.length > 0 && (
             <PrimaryButton
-              onClick={handleApproveAll}
+              onClick={handleApproveAllClick}
               disabled={!canApprove || isUpdating}
               className="px-4 py-2 m-2 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               title={!canApprove ? 'Approve access restricted' : 'Approve All'}
@@ -287,11 +343,23 @@ export default function PendingEmployees({
         <div className="bg-white rounded-xl shadow-lg border border-gray-200">
           <CustomTable
             columns={columns}
-            data={employees}
+            data={paginatedEmployees}
             rowKey="id"
             actions={tableActions}
             actionsHeader="Actions"
             actionsAlign="center"
+          />
+        </div>
+
+        {/* Footer */}
+        <div className="mt-4">
+          <Pagination
+            currentPage={currentPage}
+            totalItems={employees.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={handleItemsPerPageChange}
+            rowsPerPageOptions={[5, 10, 20, 50, 100]}
           />
         </div>
       </div>
@@ -337,6 +405,30 @@ export default function PendingEmployees({
           setIsApproveDialogOpen(false);
           setSelectedEmployee(null);
         }}
+      />
+
+      {/* Approve All Confirmation Dialog */}
+      <ConfirmDialog
+        open={isApproveAllDialogOpen}
+        onClose={() => setIsApproveAllDialogOpen(false)}
+        title="Approve All Employees"
+        description={`Are you sure you want to approve all ${employees.length} pending employees? This will activate their accounts and grant them access.`}
+        confirmLabel="Yes, Approve All"
+        cancelLabel="Cancel"
+        destructive={false}
+        onConfirm={handleApproveAllConfirm}
+      />
+
+      {/* Custom Alert Dialog */}
+      <CustomAlertForm
+        isOpen={alertConfig.isOpen}
+        onClose={closeAlert}
+        onConfirm={closeAlert}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+        confirmText="OK"
+        cancelText="Close"
       />
     </>
   );
