@@ -22,6 +22,7 @@ import Pagination from '../Pagination';
 import Loader from '../Loader';
 import CustomModalForm from '../CustomModalForm';
 import PrimaryButton from '../Buttons/PrimaryButton';
+import * as XLSX from 'xlsx';
 
 const DEFAULT_COLUMNS = {
   createdAt: false,
@@ -315,6 +316,63 @@ export default function TalentCommunityTab() {
     }
   };
 
+  const exportToExcel = () => {
+    try {
+      const excelData = filtered.map((entry) => ({
+        'Date Submitted': new Date(entry.createdAt).toLocaleDateString(
+          'en-US',
+          {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          }
+        ),
+        'Applicant Name': entry.fullName || '',
+        'Email Address': entry.email || '',
+        'Phone Number': entry.phoneNumber || '',
+        Qualification: entry.qualification || '',
+        'Role Interested In': entry.roleApplyingFor || '',
+        'Experience Level':
+          experienceLabelMap[entry.experienceLevel] ||
+          entry.experienceLevel ||
+          '',
+        Location: entry.location || '',
+        'Portfolio / LinkedIn': entry.portfolioUrl || '',
+        'Skills / Stack': entry.skillset || '',
+        Message: entry.shortMessage || '',
+      }));
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(excelData);
+
+      const maxWidth = excelData.reduce((acc, row) => {
+        Object.keys(row).forEach((key) => {
+          const length = String(row[key] || '').length;
+          if (!acc[key] || length > acc[key]) {
+            acc[key] = length;
+          }
+        });
+        return acc;
+      }, {});
+
+      const wscols = Object.keys(maxWidth).map((key) => ({
+        wch: Math.min(Math.max(maxWidth[key] + 2, 10), 50),
+      }));
+
+      ws['!cols'] = wscols;
+
+      XLSX.utils.book_append_sheet(wb, ws, 'Open Applications');
+
+      const excelFileName = `Open_Applications_${
+        new Date().toISOString().split('T')[0]
+      }.xlsx`;
+      XLSX.writeFile(wb, excelFileName);
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      showToast('Failed to export to Excel', 'error');
+    }
+  };
+
   const actions = (row) => (
     <div className="flex gap-2 justify-center">
       <IconButton
@@ -430,10 +488,13 @@ export default function TalentCommunityTab() {
             </PrimaryButton>
           </div>
           <div className="flex gap-3 items-center">
-            <button className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-[#004475] hover:bg-blue-50 rounded-lg transition-colors cursor-pointer">
+            <PrimaryButton
+              onClick={exportToExcel}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-[#004475]  rounded-lg transition-colors cursor-pointer"
+            >
               <Download size={14} />
               <span>Export CSV</span>
-            </button>
+            </PrimaryButton>
           </div>
         </div>
 

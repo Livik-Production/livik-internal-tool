@@ -16,6 +16,7 @@ import CustomTable from '../CustomTable';
 import IconButton from '../Buttons/IconButton';
 import Pagination from '../Pagination';
 import Loader from '../Loader';
+import * as XLSX from 'xlsx';
 
 export default function JobApplicationsTab() {
   const [applications, setApplications] = useState([]);
@@ -163,6 +164,55 @@ export default function JobApplicationsTab() {
     }
   };
 
+  const exportToExcel = () => {
+    try {
+      const excelData = filtered.map((app) => ({
+        'Date Applied': new Date(app.createdAt).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        }),
+        'Applicant Name': app.fullName || '',
+        'Email Address': app.email || '',
+        'Phone Number': app.phoneNumber || '',
+        'Applied Position': app.appliedPosition || '',
+        'Experience': app.experience || '',
+        'Location': app.location || '',
+        'Skills': app.skillset || '',
+        'Resume Link': app.resume || '',
+      }));
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(excelData);
+
+      const maxWidth = excelData.reduce((acc, row) => {
+        Object.keys(row).forEach((key) => {
+          const length = String(row[key] || '').length;
+          if (!acc[key] || length > acc[key]) {
+            acc[key] = length;
+          }
+        });
+        return acc;
+      }, {});
+
+      const wscols = Object.keys(maxWidth).map((key) => ({
+        wch: Math.min(Math.max(maxWidth[key] + 2, 10), 50),
+      }));
+
+      ws['!cols'] = wscols;
+
+      XLSX.utils.book_append_sheet(wb, ws, 'Role Applications');
+
+      const excelFileName = `Role_Applications_${
+        new Date().toISOString().split('T')[0]
+      }.xlsx`;
+      XLSX.writeFile(wb, excelFileName);
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      showToast('Failed to export to Excel', 'error');
+    }
+  };
+
   const actions = (row) => (
     <div className="flex gap-2 justify-center">
       <IconButton title="View Details">
@@ -244,7 +294,10 @@ export default function JobApplicationsTab() {
               />
             </div>
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-[#004475] hover:bg-blue-50 rounded-lg transition-colors">
+          <button
+            onClick={exportToExcel}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-[#004475] hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+          >
             <Download size={14} />
             <span>Export CSV</span>
           </button>
