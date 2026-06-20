@@ -678,6 +678,48 @@ function FinanceContent() {
                       {selectedRecord.department || 'General'}
                     </div>
                   </div>
+                  {selectedRecord.createdAt && (
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">
+                        Created At
+                      </label>
+                      <div className="text-gray-900 font-medium">
+                        {new Date(selectedRecord.createdAt).toLocaleDateString('en-IN', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                        })}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-0.5">
+                        {new Date(selectedRecord.createdAt).toLocaleTimeString('en-IN', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: true,
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  {selectedRecord.updatedAt && (
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">
+                        Last Updated
+                      </label>
+                      <div className="text-gray-900 font-medium">
+                        {new Date(selectedRecord.updatedAt).toLocaleDateString('en-IN', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                        })}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-0.5">
+                        {new Date(selectedRecord.updatedAt).toLocaleTimeString('en-IN', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: true,
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
