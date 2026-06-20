@@ -397,15 +397,6 @@ const AddExpenseModal = ({
 
   const footer = (
     <>
-      <Button
-        type="button"
-        onClick={handleClose}
-        disabled={isSubmitting}
-        className="px-5 py-2.5"
-      >
-        {currentMode === 'view' ? 'Close' : 'Cancel'}
-      </Button>
-
       {currentMode === 'view' && (
         <PrimaryButton
           type="button"
@@ -801,6 +792,72 @@ const AddExpenseModal = ({
                 readOnly={currentMode === 'view'}
               />
             </div>
+
+            {/* Record Info - shown only in view mode */}
+            {currentMode === 'view' &&
+              (expenseData?.createdAt || expenseData?.updatedAt) && (
+                <div className="pt-4 border-t border-gray-100">
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
+                    Record Info
+                  </label>
+                  <div className="grid grid-cols-2 gap-4">
+                    {expenseData?.createdAt && (
+                      <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                        <div className="text-xs text-gray-400 mb-1">
+                          Created At
+                        </div>
+                        <div className="text-sm font-medium text-gray-800">
+                          {new Date(expenseData.createdAt).toLocaleDateString(
+                            'en-IN',
+                            {
+                              day: '2-digit',
+                              month: 'short',
+                              year: 'numeric',
+                            }
+                          )}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-0.5">
+                          {new Date(expenseData.createdAt).toLocaleTimeString(
+                            'en-IN',
+                            {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              hour12: true,
+                            }
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    {expenseData?.updatedAt && (
+                      <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                        <div className="text-xs text-gray-400 mb-1">
+                          Last Updated
+                        </div>
+                        <div className="text-sm font-medium text-gray-800">
+                          {new Date(expenseData.updatedAt).toLocaleDateString(
+                            'en-IN',
+                            {
+                              day: '2-digit',
+                              month: 'short',
+                              year: 'numeric',
+                            }
+                          )}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-0.5">
+                          {new Date(expenseData.updatedAt).toLocaleTimeString(
+                            'en-IN',
+                            {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              hour12: true,
+                            }
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
           </div>
         </div>
       </form>

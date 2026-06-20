@@ -7,6 +7,7 @@ import { X } from 'lucide-react';
 import Button from '../../Buttons/Button';
 import CloseButton from '../../Buttons/CloseButton';
 import CustomModalForm from '../../CustomModalForm';
+import PrimaryButton from '../../Buttons/PrimaryButton';
 
 const CashFlowModal = ({ isOpen, onClose, inflowId }) => {
   const [loading, setLoading] = useState(true);
@@ -41,9 +42,12 @@ const CashFlowModal = ({ isOpen, onClose, inflowId }) => {
   if (!isOpen || !mounted) return null;
 
   const footer = (
-    <Button onClick={onClose} className="px-6 py-2">
+    <PrimaryButton
+      onClick={onClose}
+      className="px-6 py-2 border border-gray-300"
+    >
       Close Breakdown
-    </Button>
+    </PrimaryButton>
   );
 
   return (
@@ -107,9 +111,7 @@ const CashFlowModal = ({ isOpen, onClose, inflowId }) => {
             <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                 <div className="flex items-center">
-                  <span className="text-sm text-gray-500">
-                    Transaction ID:
-                  </span>
+                  <span className="text-sm text-gray-500">Transaction ID:</span>
                   <span className="text-sm font-mono font-bold text-gray-900 ml-2">
                     {data.id}
                   </span>
@@ -117,10 +119,9 @@ const CashFlowModal = ({ isOpen, onClose, inflowId }) => {
                 <div className="flex items-center">
                   <span className="text-sm text-gray-500">Received On:</span>
                   <span className="text-sm font-medium text-gray-900 ml-2">
-                    {new Date(data.receiveDate).toLocaleDateString(
-                      undefined,
-                      { dateStyle: 'long' }
-                    )}
+                    {new Date(data.receiveDate).toLocaleDateString(undefined, {
+                      dateStyle: 'long',
+                    })}
                   </span>
                 </div>
               </div>
@@ -227,6 +228,59 @@ const CashFlowModal = ({ isOpen, onClose, inflowId }) => {
                 </table>
               </div>
             </div>
+
+            {/* Record Info */}
+            {(data.createdAt || data.updatedAt) && (
+              <div className="pt-2 border-t border-gray-100">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
+                  Record Info
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  {data.createdAt && (
+                    <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                      <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
+                        Created At
+                      </div>
+                      <div className="text-sm font-medium text-gray-800">
+                        {new Date(data.createdAt).toLocaleDateString('en-IN', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                        })}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-0.5">
+                        {new Date(data.createdAt).toLocaleTimeString('en-IN', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: true,
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  {data.updatedAt && (
+                    <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                      <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
+                        Last Updated
+                      </div>
+                      <div className="text-sm font-medium text-gray-800">
+                        {new Date(data.updatedAt).toLocaleDateString('en-IN', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                        })}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-0.5">
+                        {new Date(data.updatedAt).toLocaleTimeString('en-IN', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: true,
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
