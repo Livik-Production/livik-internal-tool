@@ -1,0 +1,163 @@
+// ======================
+// 1️⃣ Datasource
+// ======================
+datasource db {
+  provider = "postgresql"
+}
+
+// ======================
+// 2️⃣ Prisma Client
+// ======================
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "library"
+}
+
+// ======================
+// 3️⃣ Employee Model
+// ======================
+model Employee {
+  id                String     @id @default(cuid())
+  empId             String     @unique
+  firstName         String
+  lastName          String
+  dateOfBirth       DateTime?
+  gender            String?
+  aadhaarNumber     String?
+  panNumber         String?
+  email             String?    @unique
+  phoneNumber       String?
+  emergencyContact  String?
+  photo             String?
+  bloodGroup        String?
+  presentAddress    String?
+  permanentAddress  String?
+  role              String?
+  designation       String?
+  department        String?
+  dateOfJoining     DateTime?
+  workLocation      String?
+  bankName          String?
+  accountNumber     String?
+  ifscCode          String?
+  password          String?     // hashed later
+  createdAt         DateTime    @default(now()) @map("created_at")
+  updatedAt         DateTime    @updatedAt @map("updated_at")
+
+  // 🔥 Relation fields
+  educationDetails  Education[]
+  assetAssignments  AssetAssignment[]   // <— Added this
+}
+
+// ======================
+// 4️⃣ Education
+// ======================
+model Education {
+  id             String   @id @default(cuid())
+  university     String
+  institution    String
+  qualification  String
+  yearCompleted  String
+  employeeId     String   @map("employee_id")
+  employee       Employee @relation(fields:[employeeId], references:[id], onDelete: Cascade)
+}
+
+// ======================
+// 5️⃣ Roles & Rights
+// ======================
+model Rights {
+  id          String       @id @default(cuid())
+  module      String
+  displayName String       @map("display_name")
+  rightName   String       @unique @map("right_name")
+  description String?      @map("description")
+
+  roles       RoleRights[]
+}
+
+model Role {
+  id          String       @id @default(cuid())
+  displayName String       @map("display_name")
+  roleName    String       @unique @map("role_name")
+  description String?      @map("description")
+
+  rights      RoleRights[]
+}
+
+model RoleRights {
+  id      String @id @default(cuid())
+  roleId  String @map("role_id")
+  rightId String @map("right_id")
+
+  role    Role   @relation(fields:[roleId], references:[id], onDelete: Cascade)
+  right   Rights @relation(fields:[rightId], references:[id], onDelete: Cascade)
+}
+
+// ======================
+// 6️⃣ Asset Category
+// ======================
+model AssetCategory {
+  id     String  @id @default(cuid())
+  name   String  @unique
+
+  assets Asset[]
+}
+
+// ======================
+// 7️⃣ Asset Table
+// ======================
+model Asset {
+  id              String        @id @default(cuid())
+  assetTag        String        @unique @map("asset_tag")
+
+  categoryId      String        @map("category_id")
+  category        AssetCategory @relation(fields:[categoryId], references:[id])
+
+  deviceType      String?       @map("device_type")
+  brand           String?
+  modelName       String?       @map("model_name")
+  serialNumber    String?       @map("serial_number")
+  vendor          String?
+  purchaseDate    DateTime?     @map("purchase_date")
+  purchaseCost    Float?        @map("purchase_cost")
+  warrantyUntil   DateTime?     @map("warranty_until")
+  invoiceFile     String?       @map("invoice_file")
+  warrantyFile    String?       @map("warranty_file")
+  notes           String?
+  specs           Json?
+
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  // 🔥 Relation Fix
+  assignments     AssetAssignment[]
+}
+
+// ======================
+// 8️⃣ Asset Assignment
+// ======================
+model AssetAssignment {
+  id              String            @id @default(cuid())
+
+  assetId         String            @map("asset_id")
+  asset           Asset             @relation(fields:[assetId], references:[id])
+
+  employeeId      String            @map("employee_id")
+  employee        Employee          @relation(fields:[employeeId], references:[id])
+
+  assignedDate    DateTime          @default(now())
+  returnDate      DateTime?
+  status          AssignmentStatus  @default(ASSIGNED)
+
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+}
+
+// ======================
+// 9️⃣ Enum for assignment status
+// ======================
+enum AssignmentStatus {
+  ASSIGNED
+  RETURNED
+  UNASSIGNED
+}

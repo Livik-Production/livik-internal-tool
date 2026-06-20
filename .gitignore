@@ -1,0 +1,15 @@
+# dependencies
+node_modules/
+
+# next.js build output
+.next/
+out/
+
+# prisma generated
+/lib/generated/prisma
+
+# env files
+.env
+
+
+.next/
