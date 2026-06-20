@@ -7,7 +7,7 @@ import {
 
 export async function GET(req, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const right = await getRightById(id);
     if (!right)
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -23,7 +23,7 @@ export async function GET(req, { params }) {
 
 export async function PUT(req, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const data = await req.json();
     const updated = await updateRight(id, data);
     return NextResponse.json(JSON.parse(JSON.stringify(updated)));
@@ -44,7 +44,7 @@ export async function PUT(req, { params }) {
 
 export async function DELETE(req, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const deleted = await deleteRight(id);
     return NextResponse.json(JSON.parse(JSON.stringify(deleted)));
   } catch (error) {

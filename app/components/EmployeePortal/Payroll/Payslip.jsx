@@ -101,6 +101,43 @@ const EmployeePayslipTab = ({
     onYearChange?.(val);
   };
 
+  const filteredMonthOptions = useMemo(() => {
+    const d = new Date();
+    const currentYear = d.getFullYear();
+    const currentMonthNum = d.getMonth() + 1;
+
+    let availableMonths = [...months];
+
+    if (selectedYear !== 'All Years') {
+      const yearNum = Number(selectedYear);
+
+      if (yearNum === currentYear) {
+        availableMonths = availableMonths.filter(
+          (_, idx) => idx === 0 || idx <= currentMonthNum
+        );
+      } else if (yearNum === 2025) {
+        availableMonths = availableMonths.filter(
+          (_, idx) => idx === 0 || idx >= 9
+        );
+      }
+    }
+
+    return availableMonths.map((m) => ({ label: m, value: m }));
+  }, [selectedYear]);
+
+  // Ensure selected month is valid for the newly selected year
+  useEffect(() => {
+    const isAvailable = filteredMonthOptions.some(
+      (m) => m.value === selectedMonth
+    );
+    if (!isAvailable && filteredMonthOptions.length > 0) {
+      // Default to the most recent available month if the current selection is invalid
+      setSelectedMonth(
+        filteredMonthOptions[filteredMonthOptions.length - 1].value
+      );
+    }
+  }, [filteredMonthOptions, selectedMonth]);
+
   // Sample payslip data
   const payslips = useMemo(() => {
     const list = processedMonths.map((monthStr) => {
@@ -314,7 +351,7 @@ const EmployeePayslipTab = ({
                   <FilterDropdown
                     value={selectedMonth}
                     onChange={setSelectedMonth}
-                    options={months.map((m) => ({ label: m, value: m }))}
+                    options={filteredMonthOptions}
                     placeholder="Month"
                     className="min-w-[160px]"
                   />

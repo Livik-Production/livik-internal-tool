@@ -1,13 +1,46 @@
 'use client';
 
+import { useEffect, useMemo } from 'react';
+
 export default function Pagination({
   currentPage,
   totalItems,
   itemsPerPage,
   onPageChange,
-  rowsPerPageOptions = [5, 10, 15, 25, 50, 100],
+  rowsPerPageOptions, // ignored to enforce global pagination rules
   onItemsPerPageChange,
 }) {
+  const options = useMemo(() => {
+    const opts = [];
+    if (totalItems > 7) {
+      opts.push(10);
+    }
+    if (totalItems > 20) {
+      opts.push(20);
+    }
+    if (totalItems > 50) {
+      opts.push(50);
+    }
+    if (totalItems > 100) {
+      opts.push(100);
+    }
+    return opts;
+  }, [totalItems]);
+
+  useEffect(() => {
+    if (
+      totalItems > 7 &&
+      options.length > 0 &&
+      !options.includes(itemsPerPage)
+    ) {
+      onItemsPerPageChange?.(options[0]);
+    }
+  }, [totalItems, itemsPerPage, options, onItemsPerPageChange]);
+
+  if (totalItems <= 7) {
+    return null;
+  }
+
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   const handlePrevious = () => {
@@ -70,7 +103,7 @@ export default function Pagination({
           onChange={(e) => onItemsPerPageChange?.(Number(e.target.value))}
           className="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-0.5 transition-colors cursor-pointer"
         >
-          {rowsPerPageOptions.map((option) => (
+          {options.map((option) => (
             <option key={option} value={option}>
               {option}
             </option>
@@ -91,10 +124,11 @@ export default function Pagination({
           <button
             onClick={handlePrevious}
             disabled={currentPage === 1}
-            className={`relative inline-flex items-center rounded-l-md px-1 py-1 text-gray-500 ring-1 ring-inset ring-gray-300 border border-gray-300 ${currentPage === 1
-              ? 'cursor-not-allowed opacity-50'
-              : 'hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
-              }`}
+            className={`relative inline-flex items-center rounded-l-md px-1 py-1 text-gray-500 ring-1 ring-inset ring-gray-300 border border-gray-300 ${
+              currentPage === 1
+                ? 'cursor-not-allowed opacity-50'
+                : 'hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
+            }`}
           >
             <span className="sr-only">Previous</span>
             <svg
@@ -123,10 +157,11 @@ export default function Pagination({
               <button
                 key={pageNumber}
                 onClick={() => onPageChange(pageNumber)}
-                className={`relative inline-flex items-center px-2 py-1 text-sm font-semibold transition-all duration-200 ${currentPage === pageNumber
-                  ? 'z-10 bg-[#004475] text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
-                  : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
-                  }`}
+                className={`relative inline-flex items-center px-2 py-1 text-sm font-semibold transition-all duration-200 ${
+                  currentPage === pageNumber
+                    ? 'z-10 bg-[#004475] text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
+                    : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
+                }`}
               >
                 {pageNumber}
               </button>
@@ -136,10 +171,11 @@ export default function Pagination({
           <button
             onClick={handleNext}
             disabled={currentPage === totalPages || totalPages === 0}
-            className={`relative inline-flex items-center rounded-r-md px-1 py-1 text-gray-500 ring-1 ring-inset ring-gray-300 border border-gray-300${currentPage === totalPages || totalPages === 0
-              ? 'cursor-not-allowed opacity-50'
-              : 'hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
-              }`}
+            className={`relative inline-flex items-center rounded-r-md px-1 py-1 text-gray-500 ring-1 ring-inset ring-gray-300 border border-gray-300${
+              currentPage === totalPages || totalPages === 0
+                ? 'cursor-not-allowed opacity-50'
+                : 'hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
+            }`}
           >
             <span className="sr-only">Next</span>
             <svg

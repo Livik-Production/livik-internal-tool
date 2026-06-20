@@ -1,40 +1,34 @@
-'use server';
-
-import { put } from '@vercel/blob';
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // Increased to 5MB for documents
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
-
-export async function uploadEmployeeDocument(arg1, folder = 'employee-documents') {
-  let file = arg1;
-  // Handle FormData input
-  if (arg1 instanceof FormData) {
-    file = arg1.get('file');
-  }
-
+/**
+ * Uploads an employee document to S3 via the API route.
+ * Called directly from client components — no server action needed.
+ *
+ * @param {File} file           - The File object from the form input.
+ * @param {string} empId        - The employee's empId (e.g. "LK001").
+ * @param {string} documentType - "AADHAR" | "PAN" | "PROFILE_PHOTO"
+ * @returns {Promise<{ key: string, url: string }>}
+ */
+export async function uploadEmployeeDocument(file, empId, documentType) {
   if (!file) throw new Error('No file provided');
+  if (!empId) throw new Error('Employee ID is required');
+  if (!documentType) throw new Error('Document type is required');
 
-  // 🔐 Type validation
-  const fileType = file.type || '';
-  if (!ALLOWED_TYPES.includes(fileType)) {
-    throw new Error(`Invalid file type (${fileType}). Only JPG, PNG, WEBP and PDF allowed.`);
-  }
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('documentType', documentType);
 
-  // 🔐 Size validation
-  if (file.size > MAX_FILE_SIZE) {
-    throw new Error('File too large (max 5MB)');
-  }
-
-  const safeFileName = file.name.replace(/\s+/g, '-');
-
-  const blob = await put(
-    `${folder}/${crypto.randomUUID()}-${safeFileName}`,
-    file,
+  const res = await fetch(
+    `/api/employees/${encodeURIComponent(empId)}/documents`,
     {
-      access: 'public',
-      addRandomSuffix: false,
+      method: 'POST',
+      body: formData,
     }
   );
 
-  return blob.url;
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || `Upload failed (${res.status})`);
+  }
+
+  const json = await res.json();
+  return json.data; // { key, url }
 }

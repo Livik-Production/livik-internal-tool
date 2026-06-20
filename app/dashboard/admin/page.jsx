@@ -9,8 +9,9 @@ import Loader from '../../components/Loader'; // Adjust the path as needed
 import Dashboard from './tabs/Dashboard';
 import Customers from './tabs/Customers';
 import Roles from './tabs/Roles';
-import { Shield } from 'lucide-react';
+import { Shield, Bell, UserPlus } from 'lucide-react';
 import TabButton from '../../components/Buttons/TabButton';
+import NotificationBell from '../../components/NotificationBell';
 
 /* ================= TABS CONFIG ================= */
 const TABS = [
@@ -87,15 +88,11 @@ function AdminContent() {
 
   // set initial active tab based on visible tabs
   useEffect(() => {
-    if (visibleTabs.length > 0) {
+    if (visibleTabs.length > 0 && !activeTab) {
       const urlTab = searchParams.get('tab');
-      if (
-        urlTab &&
-        visibleTabs.some((t) => t.id === urlTab) &&
-        activeTab !== urlTab
-      ) {
+      if (urlTab && visibleTabs.some((t) => t.id === urlTab)) {
         setActiveTab(urlTab);
-      } else if (!activeTab) {
+      } else {
         const preferred =
           visibleTabs.find((t) => t.id === 'dashboard') || visibleTabs[0];
         setActiveTab(preferred.id);
@@ -127,7 +124,7 @@ function AdminContent() {
   return (
     <div className="h-full flex flex-col space-y-1.5 min-h-0">
       {/* ===== HEADER CARD ===== */}
-      <div className="bg-white shadow-sm rounded-2xl px-4 py-3 m-0.5">
+      <div className="bg-white shadow-sm rounded-2xl px-4 py-3 m-0.5 flex justify-between items-center">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-blue-50 text-[#33a8d9] rounded-xl">
             <Shield size={30} />
@@ -140,6 +137,9 @@ function AdminContent() {
             </p>
           </div>
         </div>
+
+        {/* ===== NOTIFICATIONS ===== */}
+        <NotificationBell />
       </div>
 
       {/* ===== CONTENT CARD (TABS + CONTENT) ===== */}

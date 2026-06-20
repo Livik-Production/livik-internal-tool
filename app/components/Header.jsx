@@ -3,6 +3,7 @@
 import React from 'react';
 import PrimaryButton from './Buttons/PrimaryButton';
 import { Icon, UserPlus, UsersIcon } from 'lucide-react';
+import NotificationBell from './NotificationBell';
 export default function Header({ employeeCount, onAdd }) {
   return (
     <header className="bg-white rounded-xl shadow-md p-2  m-0.5 border border-gray-200">
@@ -33,6 +34,8 @@ export default function Header({ employeeCount, onAdd }) {
             <UserPlus size={17} />
             Add Employee
           </PrimaryButton>
+
+          <NotificationBell />
         </div>
       </div>
     </header>

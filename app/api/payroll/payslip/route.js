@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
+import { NotificationService } from '../../../../services/notification.service.js';
 
 export async function GET() {
   return NextResponse.json({ message: 'Payslip API is ready (POST required)' });
@@ -125,6 +126,13 @@ export async function POST(req) {
       totalDeductions: totalDeductions,
       netSalary: netSalary,
     };
+
+    // 5. Send Notification
+    await NotificationService.createBulkNotifications([employeeId], {
+      title: 'Payslip Generated',
+      message: `Your payslip for ${month} ${year} has been generated. You can download it now.`,
+      type: 'PAYROLL',
+    });
 
     return NextResponse.json(responseData);
   } catch (error) {

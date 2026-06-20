@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import BasicInfo from './sections/BasicInfo';
 import AddressSection from './sections/AddressSection';
 import EducationSection from './sections/EducationSection';
@@ -8,6 +9,7 @@ import EmploymentBankSection from './sections/EmploymentBankSection';
 import ReviewSection from './sections/ReviewSection';
 import BondDetails from '../../components/EmployeeForm/sections/BondDetails';
 import PhotoSection from '../../components/EmployeeForm/sections/PhotoSection';
+import PrimaryButton from '../Buttons/PrimaryButton';
 
 function calculateBondDuration(start, end) {
   if (!start || !end) return '';
@@ -41,6 +43,37 @@ export default function EmployeeView({
     glareX: 50,
     glareY: 50,
   });
+
+  const router = useRouter();
+  const [status, setStatus] = useState(
+    initialData.status === 'Inactive'
+      ? 'Inactive'
+      : initialData.status === 'PENDING' ||
+          initialData.status === 'PENDING_ADMIN'
+        ? 'Pending'
+        : 'Active'
+  );
+
+  const handleStatusChange = async (e) => {
+    const newStatus = e.target.value;
+    setStatus(newStatus);
+
+    if (newStatus !== 'Inactive') {
+      try {
+        const dbStatus = newStatus === 'Pending' ? 'PENDING' : 'Active';
+        const res = await fetch(`/api/employees/${initialData.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: dbStatus }),
+        });
+        if (!res.ok) throw new Error('Failed to update status');
+        alert(`Employee status updated to ${newStatus}`);
+      } catch (err) {
+        console.error(err);
+        alert('Failed to update employee status');
+      }
+    }
+  };
 
   const handleMouseMove = (e) => {
     const card = e.currentTarget;
@@ -182,19 +215,6 @@ export default function EmployeeView({
               <div className="absolute w-[180%] h-[120%] bg-[#BEE5FA] left-[-30%] top-[-60%] rounded-[0_0_50%_50%] transform -rotate-[5deg]" />
               <div className="absolute w-[200%] h-[120.5%] bg-white left-[-50%] top-[-65%] rounded-[0_0_50%_50%] transform rotate-[3deg]" />
             </div>
-
-            {/* Livic Logo */}
-            {/* <div
-              className="absolute top-6 left-6 flex items-center gap-2 z-10 transition-transform duration-300 ease-out"
-              style={{ transform: tilt.opacity > 0 ? 'translateZ(30px)' : 'translateZ(0px)' }}
-            >
-              <div className="w-7 h-7 bg-[#003B6D] rounded-[6px] flex items-center justify-center">
-                <svg width="12" height="14" viewBox="0 0 14 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M7 0L0 3V7.5C0 11.5 3 15 7 16C11 15 14 11.5 14 7.5V3L7 0ZM7 13.5C4.5 12.5 2 10 2 7.5V4.5L7 2.5L12 4.5V7.5C12 10 9.5 12.5 7 13.5ZM7 4C5.5 4 4.5 5 4.5 6.5C4.5 8 5.5 9 7 9C8.5 9 9.5 8 9.5 6.5C9.5 5 8.5 4 7 4ZM7 7.5C6.5 7.5 6 7 6 6.5C6 6 6.5 5.5 7 5.5C7.5 5.5 8 6 8 6.5C8 7 7.5 7.5 7 7.5Z" fill="white" />
-                </svg>
-              </div>
-              <span className="font-extrabold text-[18px] text-[#003B6D] tracking-tight">Livic</span>
-            </div> */}
 
             {/* Edit Button */}
             {onEdit && (
@@ -363,6 +383,33 @@ export default function EmployeeView({
 
       {/* Right Column: Other Sections */}
       <div className="w-full lg:w-2/3 space-y-5 overflow-y-auto no-scroll h-full py-5">
+        <div className="flex justify-between items-center pb-2 border-b">
+          <div />
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                Status:
+              </label>
+              <select
+                value={status}
+                onChange={handleStatusChange}
+                className="px-3 py-1.5 mr-2 border border-gray-300 rounded-xl text-sm bg-white text-gray-800 font-semibold cursor-pointer"
+              >
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+            </div>
+            {status === 'Inactive' && (
+              <PrimaryButton
+                onClick={() =>
+                  router.push(`/dashboard/hr/exit/${initialData.id}`)
+                }
+              >
+                Exit Employee
+              </PrimaryButton>
+            )}
+          </div>
+        </div>
         <div>
           <EducationSection
             educations={educations}
@@ -418,7 +465,12 @@ export default function EmployeeView({
           {customUploadSection ? (
             customUploadSection
           ) : (
-            <PhotoSection form={form} setField={() => {}} isView={true} />
+            <PhotoSection
+              form={form}
+              setField={() => {}}
+              isView={true}
+              empId={form.empId}
+            />
           )}
         </div>
 

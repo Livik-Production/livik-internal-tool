@@ -113,6 +113,18 @@ export default function PaymentTabs({
     );
   }, [filteredCompletedInvoices, currentPage, itemsPerPage]);
 
+  // Filter for partial payments
+  const partialInvoices = actualPendingInvoices.filter(
+    (invoice) => invoice.paymentStatus === 'partial'
+  );
+
+  const partialPaymentsCount = partialInvoices.length;
+
+  const paginatedPartialInvoices = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return partialInvoices.slice(startIndex, startIndex + itemsPerPage);
+  }, [partialInvoices, currentPage, itemsPerPage]);
+
   // Pending Payments Table Columns
   const pendingColumns = [
     {
@@ -226,12 +238,90 @@ export default function PaymentTabs({
                     : 'bg-blue-100 text-blue-800 border border-blue-200'
               }`}
             >
-              {isPartial
-                ? `Partial (${Math.round(
-                    (invoice.partialAmount / invoice.totalAmount) * 100
-                  )}%)`
-                : 'Pending'}
+              {isPartial ? `Partial ` : 'Pending'}
             </span>
+          </div>
+        );
+      },
+    },
+  ];
+
+  // Partial Payments Table Columns
+  const partialColumns = [
+    {
+      key: 'invoice',
+      label: 'Invoice',
+      render: (invoice) => (
+        <HyperlinkButton
+          onClick={() => handleInvoiceDetailClick(invoice)}
+          className="font-medium text-[#33a8d9] cursor-pointer hover:underline text-left flex flex-col items-start disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={showLoading}
+        >
+          <span className="text-sm font-semibold">{invoice.invoiceNumber}</span>
+          <span className="text-xs text-gray-500 mt-0.5">
+            {formatDate(invoice.date)}
+          </span>
+        </HyperlinkButton>
+      ),
+    },
+    {
+      key: 'client',
+      label: 'Client Name',
+      render: (invoice) => (
+        <div className="text-center">
+          <div className="font-medium text-gray-900">
+            {invoice.client || invoice.customer?.name || 'Unknown Client'}
+          </div>
+          <div className="text-sm text-gray-500 mt-0.5">
+            {getClientCity(invoice)}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'totalAmount',
+      label: 'Total Amount',
+      render: (invoice) => (
+        <div className="text-center">
+          <div className="font-semibold text-gray-900">
+            ₹{invoice.totalAmount || invoice.amount || 0}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'partialAmount',
+      label: 'Paid Amount',
+      render: (invoice) => (
+        <div className="text-center">
+          <div className="font-semibold text-green-600">
+            ₹{invoice.partialAmount || 0}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'remainingAmount',
+      label: 'Remaining Balance',
+      render: (invoice) => (
+        <div className="text-center">
+          <div className="font-semibold text-red-600">
+            ₹{invoice.remainingAmount || 0}
+          </div>
+        </div>
+      ),
+    },
+
+    {
+      key: 'dueDate',
+      label: 'Due Date',
+      render: (invoice) => {
+        const dueStatus = getDueDateStatus(invoice.dueDate);
+        return (
+          <div className="text-center">
+            <div className={`font-medium ${dueStatus.color} text-sm`}>
+              {formatDate(invoice.dueDate)}
+            </div>
           </div>
         );
       },
@@ -435,6 +525,17 @@ export default function PaymentTabs({
         </TabButton>
 
         <TabButton
+          isActive={activeTab === 'partial'}
+          onClick={() => {
+            setActiveTab('partial');
+            setSearchQuery('');
+          }}
+          disabled={showLoading}
+        >
+          Partial Payments ({partialPaymentsCount})
+        </TabButton>
+
+        <TabButton
           isActive={activeTab === 'completed'}
           onClick={() => {
             setActiveTab('completed');
@@ -530,6 +631,72 @@ export default function PaymentTabs({
                   <Pagination
                     currentPage={currentPage}
                     totalItems={actualPendingInvoices.length}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={setCurrentPage}
+                    onItemsPerPageChange={handleItemsPerPageChange}
+                    rowsPerPageOptions={[5, 10, 20, 50, 100]}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Partial Payments Table */}
+      {activeTab === 'partial' && (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+          {partialInvoices.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16">
+              <svg
+                className="w-16 h-16 text-gray-300 mb-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="1.5"
+                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                />
+              </svg>
+              <p className="text-lg font-medium text-gray-700 mb-2">
+                {searchQuery
+                  ? 'No matching partial payments found'
+                  : 'No partial payments'}
+              </p>
+              <p className="text-sm text-gray-500">
+                {searchQuery
+                  ? 'Try a different search term'
+                  : 'Invoices with partial payments will appear here'}
+              </p>
+            </div>
+          ) : (
+            <>
+              <CustomTable
+                columns={partialColumns}
+                data={paginatedPartialInvoices}
+                actions={pendingActions}
+                actionsHeader="Update"
+                className="max-h-[60vh]"
+                tableClassName="min-w-full divide-y divide-gray-200"
+                theadClassName="bg-gray-50"
+                tbodyClassName="bg-white divide-y divide-gray-200"
+                rowClassName="hover:bg-gray-50/50 transition-colors duration-150"
+              />
+              <div className="px-6 py-4 bg-gray-50/80 border-t border-gray-200">
+                <div className="flex justify-between items-center mb-4">
+                  <div className="text-sm text-gray-600">
+                    {partialPaymentsCount} partial payment
+                    {partialPaymentsCount !== 1 ? 's' : ''} found
+                    {searchQuery && ` matching "${searchQuery}"`}
+                  </div>
+                </div>
+                <div className="border-t border-gray-200/80 pt-4 mt-2">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalItems={partialInvoices.length}
                     itemsPerPage={itemsPerPage}
                     onPageChange={setCurrentPage}
                     onItemsPerPageChange={handleItemsPerPageChange}

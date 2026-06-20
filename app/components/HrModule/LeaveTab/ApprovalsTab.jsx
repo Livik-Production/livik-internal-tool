@@ -8,6 +8,7 @@ import CustomTable from '../../CustomTable';
 import Loader from '../../Loader';
 import FilterDropdown from '../../Buttons/FilterDropdown';
 import IconButton from '../../Buttons/IconButton';
+import Pagination from '../../Pagination';
 
 const ApprovalsTab = ({ onViewLeaveDetails }) => {
   const [approvalsData, setApprovalsData] = useState([]);
@@ -19,6 +20,8 @@ const ApprovalsTab = ({ onViewLeaveDetails }) => {
   // Local state for filters
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const fetchLeaves = async () => {
     setLoading(true);
@@ -156,10 +159,15 @@ const ApprovalsTab = ({ onViewLeaveDetails }) => {
     }
 
     setFilteredData(filtered);
+    setCurrentPage(1);
   }, [searchQuery, statusFilter, approvalsData]);
 
-  // Calculate counts
+  // Calculate counts and pagination
   const totalCount = approvalsData.length;
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const endIndex = startIndex + rowsPerPage;
+  const paginatedData = filteredData.slice(startIndex, endIndex);
+  const totalPages = Math.ceil(filteredData.length / rowsPerPage);
 
   // Handle opening Leave Request Form
   const handleOpenLeaveForm = (row) => {
@@ -335,37 +343,22 @@ const ApprovalsTab = ({ onViewLeaveDetails }) => {
               </p>
             </div>
           ) : (
-            <CustomTable
-              columns={columns}
-              data={filteredData}
-              rowKey="id"
-            />
+            <CustomTable columns={columns} data={paginatedData} rowKey="id" />
           )}
         </div>
         {!loading && !error && filteredData.length > 0 && (
-          <div className="p-4 bg-gray-50 border-t border-gray-200 text-xs text-gray-500">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-4"></div>
-              <div className="text-left">
-                <p className="text-xs">
-                  Showing{' '}
-                  <span className="font-medium">{filteredData.length}</span> of{' '}
-                  <span className="font-medium">{totalCount}</span> requests
-                  {searchQuery && (
-                    <span className="ml-2">
-                      • Search:{' '}
-                      <span className="font-medium">"{searchQuery}"</span>
-                    </span>
-                  )}
-                  {statusFilter !== 'all' && (
-                    <span className="ml-2">
-                      • Filter:{' '}
-                      <span className="font-medium">{statusFilter}</span>
-                    </span>
-                  )}
-                </p>
-              </div>
-            </div>
+          <div className="bg-gray-50 border-t border-gray-200 py-2">
+            <Pagination
+              currentPage={currentPage}
+              totalItems={filteredData.length}
+              itemsPerPage={rowsPerPage}
+              onPageChange={(page) => setCurrentPage(page)}
+              onItemsPerPageChange={(limit) => {
+                setRowsPerPage(limit);
+                setCurrentPage(1);
+              }}
+              rowsPerPageOptions={[5, 10, 20, 50]}
+            />
           </div>
         )}
       </section>

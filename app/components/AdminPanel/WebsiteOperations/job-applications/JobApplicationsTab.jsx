@@ -15,7 +15,6 @@ import CustomTable from '../../../CustomTable';
 import IconButton from '../../../Buttons/IconButton';
 import Pagination from '../../../Pagination';
 import Loader from '../../../Loader';
-import * as XLSX from 'xlsx';
 
 export default function JobApplicationsTab({
   navigationState,

@@ -224,6 +224,18 @@ async function seedPermissions() {
       rightName: 'hr_module_view_pending_employees',
       description: 'Can view pending employees',
     },
+    {
+      module: 'HR',
+      displayName: 'HR Module View Contract Employees',
+      rightName: 'hr_module_view_contract_employees',
+      description: 'Can view contract employees',
+    },
+    {
+      module: 'HR',
+      displayName: 'HR Module Control Contract Employees',
+      rightName: 'hr_module_control_contract_employees',
+      description: 'Can create, update, and delete contract employees',
+    },
 
     // Employee Portal - 1 right
     {
@@ -459,7 +471,7 @@ async function seedEmployees() {
 
   // Seed Naveen - Employee (LK002)
   await prisma.employee.upsert({
-    where: { email: '.naveen.v@liviktech.com' },
+    where: { email: 'naveen.v@liviktech.com' },
     update: {
       status: 'Active',
     },

@@ -27,7 +27,7 @@ export default function AssetsForm({
   const [assetToDelete, setAssetToDelete] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  // Pagination State
+  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 

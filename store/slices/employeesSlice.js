@@ -93,6 +93,9 @@ const employeesSlice = createSlice({
     setEmployees: (state, action) => {
       state.items = action.payload;
     },
+    resetStatus: (state) => {
+      state.status = 'idle';
+    },
   },
   extraReducers(builder) {
     builder
@@ -111,8 +114,13 @@ const employeesSlice = createSlice({
   },
 });
 
-export const { addEmployee, deleteEmployee, updateEmployee, setEmployees } =
-  employeesSlice.actions;
+export const {
+  addEmployee,
+  deleteEmployee,
+  updateEmployee,
+  setEmployees,
+  resetStatus,
+} = employeesSlice.actions;
 
 export const selectEmployeesItems = (state) => state.employees.items;
 export const selectEmployeesStatus = (state) => state.employees.status;

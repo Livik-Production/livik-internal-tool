@@ -1,17 +1,12 @@
 'use client';
 
-import { useState } from 'react';
-import {
-  CreditCard,
-  Users,
-  Hash,
-  CheckCircle2,
-  AlertCircle,
-} from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { CreditCard, Users, Package } from 'lucide-react';
 import { showSuccessToast, showErrorToast } from '../Toast';
 
 export default function NumberFormatsTab() {
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // State for Invoice formats
   const [invoiceConfig, setInvoiceConfig] = useState({
@@ -28,6 +23,40 @@ export default function NumberFormatsTab() {
     padding: 3,
     suffix: '',
   });
+
+  // State for Contract Employee ID formats
+  const [contractEmployeeConfig, setContractEmployeeConfig] = useState({
+    prefix: 'LKC',
+    nextNumber: '101',
+    padding: 3,
+    suffix: '',
+  });
+
+  // Fetch saved configurations from DB
+  useEffect(() => {
+    const fetchFormats = async () => {
+      try {
+        const res = await fetch('/api/number-formats');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.invoice) {
+            setInvoiceConfig(data.invoice);
+          }
+          if (data.employee) {
+            setEmployeeConfig(data.employee);
+          }
+          if (data.contract_employee) {
+            setContractEmployeeConfig(data.contract_employee);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load number formats:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchFormats();
+  }, []);
 
   // Generate live preview helper
   const getFormattedNumber = (config) => {
@@ -50,13 +79,34 @@ export default function NumberFormatsTab() {
     }));
   };
 
+  const handleContractEmployeeChange = (field, value) => {
+    setContractEmployeeConfig((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
     setIsSaving(true);
 
     try {
-      // Simulate API call saving settings
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      const res = await fetch('/api/number-formats', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          invoice: invoiceConfig,
+          employee: employeeConfig,
+          contract_employee: contractEmployeeConfig,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to update number formats');
+      }
+
       showSuccessToast('Number formats updated successfully!');
     } catch (error) {
       console.error(error);
@@ -65,6 +115,14 @@ export default function NumberFormatsTab() {
       setIsSaving(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <div className="h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-5xl mx-2 p-1">
@@ -285,6 +343,116 @@ export default function NumberFormatsTab() {
               </div>
             </div>
           </div>
+
+          {/* ================= CONTRACT EMPLOYEE ID FORMAT CARD ================= */}
+          <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
+                <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
+                  <Users size={20} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-800 text-sm">
+                    Contract Employee ID Format
+                  </h3>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {/* Prefix */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                    Prefix
+                  </label>
+                  <input
+                    type="text"
+                    value={contractEmployeeConfig.prefix}
+                    onChange={(e) =>
+                      handleContractEmployeeChange('prefix', e.target.value)
+                    }
+                    placeholder="e.g. LKC"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-50/50 focus:border-blue-400 outline-none transition-all font-mono"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Next Sequence Number */}
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                      Next Number
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={contractEmployeeConfig.nextNumber}
+                      onChange={(e) =>
+                        handleContractEmployeeChange(
+                          'nextNumber',
+                          e.target.value
+                        )
+                      }
+                      placeholder="e.g. 101"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-50/50 focus:border-blue-400 outline-none transition-all font-mono"
+                    />
+                  </div>
+
+                  {/* Padding */}
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                      Number Padding
+                    </label>
+                    <select
+                      value={contractEmployeeConfig.padding}
+                      onChange={(e) =>
+                        handleContractEmployeeChange(
+                          'padding',
+                          parseInt(e.target.value, 10)
+                        )
+                      }
+                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-50/50 focus:border-blue-400 outline-none transition-all bg-white font-mono"
+                    >
+                      <option value={2}>2 Digits (e.g. 01)</option>
+                      <option value={3}>3 Digits (e.g. 001)</option>
+                      <option value={4}>4 Digits (e.g. 0001)</option>
+                      <option value={5}>5 Digits (e.g. 00001)</option>
+                      <option value={6}>6 Digits (e.g. 000001)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Suffix */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                    Suffix
+                  </label>
+                  <input
+                    type="text"
+                    value={contractEmployeeConfig.suffix}
+                    onChange={(e) =>
+                      handleContractEmployeeChange('suffix', e.target.value)
+                    }
+                    placeholder="e.g. -C"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-50/50 focus:border-blue-400 outline-none transition-all font-mono"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Live Preview Block */}
+            <div className="mt-6 pt-5 border-t border-gray-100">
+              <span className="text-[10px] uppercase tracking-wider font-bold text-gray-400 block mb-2">
+                Live Format Preview
+              </span>
+              <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-3.5 flex items-center justify-between">
+                <span className="text-xs font-medium text-blue-800">
+                  Generated Contract Employee ID:
+                </span>
+                <span className="font-mono text-sm font-bold text-blue-700 bg-blue-100 px-3 py-1 rounded-lg">
+                  {getFormattedNumber(contractEmployeeConfig)}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Action Buttons */}
@@ -300,6 +468,12 @@ export default function NumberFormatsTab() {
               });
               setEmployeeConfig({
                 prefix: 'LK',
+                nextNumber: '101',
+                padding: 3,
+                suffix: '',
+              });
+              setContractEmployeeConfig({
+                prefix: 'LKC',
                 nextNumber: '101',
                 padding: 3,
                 suffix: '',

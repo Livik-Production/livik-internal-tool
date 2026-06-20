@@ -13,26 +13,22 @@ import Pagination from '../../../components/Pagination';
 import FilterDropdown from '../../Buttons/FilterDropdown';
 import HyperlinkButton from '../../Buttons/HyperlinkButton';
 import { toast } from 'react-toastify';
+import Loader from '../../Loader';
 
-const MONTH_OPTIONS = [
-  { value: 'all', label: 'All Months' },
-  { value: '01', label: 'January' },
-  { value: '02', label: 'February' },
-  { value: '03', label: 'March' },
-  { value: '04', label: 'April' },
-  { value: '05', label: 'May' },
-  { value: '06', label: 'June' },
-  { value: '07', label: 'July' },
-  { value: '08', label: 'August' },
-  { value: '09', label: 'September' },
-  { value: '10', label: 'October' },
-  { value: '11', label: 'November' },
-  { value: '12', label: 'December' },
-];
-
-const CashFlowTab = ({ inflows = [], expenses = [], onView, onRefresh }) => {
+const CashFlowTab = ({
+  inflows = [],
+  expenses = [],
+  onView,
+  onRefresh,
+  isLoading = false,
+  selectedMonthNum,
+  setSelectedMonthNum,
+  selectedYear,
+  setSelectedYear,
+  monthOptions = [],
+  yearOptions = [],
+}) => {
   const [paymentModeFilter, setPaymentModeFilter] = useState('all');
-  const [selectedMonth, setSelectedMonth] = useState('all');
   const [filteredData, setFilteredData] = useState([]);
   const [deletingId, setDeletingId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -132,19 +128,29 @@ const CashFlowTab = ({ inflows = [], expenses = [], onView, onRefresh }) => {
       );
     }
 
-    if (selectedMonth !== 'all') {
+    if (selectedMonthNum && selectedMonthNum !== 'all') {
       filtered = filtered.filter((item) => {
         if (!item.receiveDate) return false;
         const itemDate = new Date(item.receiveDate);
         if (isNaN(itemDate.getTime())) return false;
         const itemMonth = (itemDate.getMonth() + 1).toString().padStart(2, '0');
-        return itemMonth === selectedMonth;
+        return itemMonth === selectedMonthNum;
+      });
+    }
+
+    if (selectedYear && selectedYear !== 'all') {
+      filtered = filtered.filter((item) => {
+        if (!item.receiveDate) return false;
+        const itemDate = new Date(item.receiveDate);
+        if (isNaN(itemDate.getTime())) return false;
+        const itemYear = itemDate.getFullYear().toString();
+        return itemYear === selectedYear;
       });
     }
 
     setFilteredData(filtered);
     setCurrentPage(1); // Reset to first page on filter change
-  }, [inflows, expenses, paymentModeFilter, selectedMonth]);
+  }, [inflows, expenses, paymentModeFilter, selectedMonthNum, selectedYear]);
 
   // Pagination Logic
   const totalItems = filteredData.length;
@@ -323,32 +329,50 @@ const CashFlowTab = ({ inflows = [], expenses = [], onView, onRefresh }) => {
             className="w-full md:w-auto"
           />
           <FilterDropdown
-            options={MONTH_OPTIONS}
-            value={selectedMonth}
-            onChange={setSelectedMonth}
+            options={[{ value: 'all', label: 'All Months' }, ...monthOptions]}
+            value={selectedMonthNum}
+            onChange={setSelectedMonthNum}
             placeholder="Month"
+            className="w-full md:w-auto"
+          />
+          <FilterDropdown
+            options={[
+              { value: 'all', label: 'All Years' },
+              ...yearOptions.map((y) => ({ value: y, label: y })),
+            ]}
+            value={selectedYear}
+            onChange={setSelectedYear}
+            placeholder="Year"
             className="w-full md:w-auto"
           />
         </div>
       </div>
 
-      <CustomTable
-        columns={columns}
-        data={currentData}
-        rowKey="id"
-        className="border border-gray-100 rounded-xl overflow-hidden shadow-sm"
-        maxHeight="60vh"
-      />
+      {isLoading ? (
+        <div className="flex justify-center items-center py-16 bg-white rounded-lg border border-gray-100 shadow-sm min-h-[400px]">
+          <Loader label="Loading cash flow..." size="md" fullScreen={false} />
+        </div>
+      ) : (
+        <>
+          <CustomTable
+            columns={columns}
+            data={currentData}
+            rowKey="id"
+            className="border border-gray-100 rounded-xl overflow-hidden shadow-sm"
+            maxHeight="60vh"
+          />
 
-      <div className="mt-4">
-        <Pagination
-          currentPage={currentPage}
-          totalItems={totalItems}
-          itemsPerPage={itemsPerPage}
-          onPageChange={setCurrentPage}
-          onItemsPerPageChange={handleItemsPerPageChange}
-        />
-      </div>
+          <div className="mt-4">
+            <Pagination
+              currentPage={currentPage}
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={handleItemsPerPageChange}
+            />
+          </div>
+        </>
+      )}
 
       <CashFlowModal
         isOpen={isModalOpen}

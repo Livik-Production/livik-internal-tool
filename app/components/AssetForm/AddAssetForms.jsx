@@ -1,9 +1,17 @@
 'use client';
 
-import { SquarePen } from 'lucide-react';
+import {
+  SquarePen,
+  UploadCloud,
+  FileText,
+  Loader2,
+  Trash2,
+} from 'lucide-react';
 import { useState, useEffect } from 'react';
 import Button from '../Buttons/Button';
 import PrimaryButton from '../Buttons/PrimaryButton';
+import { uploadAssetDocument } from '../../actions/uploadAssetDocument';
+import { toast } from 'react-toastify';
 
 const assetTypeConfigs = {
   Laptop: {
@@ -239,34 +247,168 @@ const assetTypeConfigs = {
 };
 
 const generateAssetTag = (assetType, existingAssets = []) => {
-  const config = assetTypeConfigs[assetType];
-  if (!config) return 'OTH-0001-25';
+  const config = assetTypeConfigs[assetType] || assetTypeConfigs['Other'];
+  const prefix = `${config.keyword}-`;
+  const padding = 3;
+  const yearSuffix = String(new Date().getFullYear()).slice(-2);
+  const suffix = `-${yearSuffix}`;
 
-  const keyword = config.keyword;
-  const currentYear = new Date().getFullYear().toString().slice(-2);
+  const relevantAssets = existingAssets.filter((asset) => {
+    const tag = asset.assetTag || asset.tag;
+    return tag && tag.startsWith(prefix) && tag.endsWith(suffix);
+  });
 
-  const sameTypeAssets = existingAssets.filter(
-    (asset) => asset.deviceType === assetType || asset.type === assetType
-  );
+  if (relevantAssets.length === 0) {
+    return `${prefix}${String(1).padStart(padding, '0')}${suffix}`;
+  }
 
-  let maxSequence = 0;
-  sameTypeAssets.forEach((asset) => {
-    const assetTag = asset.assetTag || asset.tag;
-    if (assetTag) {
-      const match = assetTag.match(new RegExp(`^${keyword}-(\\d{4})-\\d{2}$`));
-      if (match) {
-        const sequence = parseInt(match[1]);
-        if (sequence > maxSequence) {
-          maxSequence = sequence;
-        }
+  let maxSeq = 0;
+  relevantAssets.forEach((asset) => {
+    const tag = asset.assetTag || asset.tag;
+    if (tag && tag.startsWith(prefix) && tag.endsWith(suffix)) {
+      let temp = tag.slice(prefix.length);
+      temp = temp.slice(0, -suffix.length);
+      const seq = parseInt(temp, 10);
+      if (!isNaN(seq) && seq > maxSeq) {
+        maxSeq = seq;
       }
     }
   });
 
-  const nextSequence = maxSequence + 1;
-  const sequenceStr = nextSequence.toString().padStart(4, '0');
+  const nextSequence = maxSeq + 1;
+  return `${prefix}${String(nextSequence).padStart(padding, '0')}${suffix}`;
+};
 
-  return `${keyword}-${sequenceStr}-${currentYear}`;
+const AssetDocumentUpload = ({
+  label,
+  value,
+  onUpload,
+  onRemove,
+  isView,
+  assetTag,
+  documentType,
+}) => {
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || isView) return;
+    try {
+      setUploading(true);
+      setError('');
+      const url = await uploadAssetDocument(file, assetTag, documentType);
+      onUpload(url);
+      toast.success(`${label} uploaded successfully`);
+    } catch (err) {
+      const msg = err.message || 'Upload failed';
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleRemove = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onRemove();
+    toast.success(`${label} removed successfully`);
+  };
+
+  const isImage =
+    value &&
+    (value.toLowerCase().endsWith('.jpg') ||
+      value.toLowerCase().endsWith('.jpeg') ||
+      value.toLowerCase().endsWith('.png') ||
+      value.toLowerCase().endsWith('.webp') ||
+      value.includes('.jpg') ||
+      value.includes('.jpeg') ||
+      value.includes('.png') ||
+      value.includes('.webp'));
+
+  return (
+    <div className="flex flex-col gap-2 w-full">
+      <span className="text-xs font-semibold text-gray-600 block">{label}</span>
+
+      <div
+        className={`
+        relative group rounded-xl border-2 border-dashed transition-all duration-300 min-h-[160px] flex flex-col items-center justify-center p-4
+        ${value ? 'border-blue-200 bg-blue-50/30' : 'border-gray-200 hover:border-blue-400 hover:bg-gray-50'}
+        ${uploading ? 'opacity-70 animate-pulse cursor-wait' : ''}
+        ${isView ? 'bg-gray-50' : 'cursor-pointer'}
+      `}
+      >
+        {value ? (
+          <div className="relative w-full h-full flex items-center justify-center group/img">
+            {isImage ? (
+              <img
+                src={value}
+                alt={label}
+                className="max-h-[140px] rounded-lg shadow-sm object-contain"
+              />
+            ) : (
+              <div className="flex flex-col items-center gap-2 p-4 text-center">
+                <FileText size={48} className="text-[#33a8d9]" />
+                <span className="text-xs text-blue-600 font-bold tracking-wider">
+                  VIEW DOCUMENT
+                </span>
+              </div>
+            )}
+
+            {!isView && (
+              <button
+                onClick={handleRemove}
+                type="button"
+                className="absolute -top-2 -right-2 p-1.5 bg-white border border-red-100 text-red-600 rounded-full opacity-0 group-hover/img:opacity-100 transition-opacity hover:bg-red-50 shadow-md z-10"
+                title={`Remove ${label}`}
+              >
+                <Trash2 size={14} />
+              </button>
+            )}
+
+            <a
+              href={value}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="absolute inset-0 z-0 cursor-pointer"
+              title="Open in new tab"
+            />
+          </div>
+        ) : (
+          <div className="flex flex-col items-center text-center p-4">
+            <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+              {uploading ? (
+                <Loader2 size={24} className="text-[#33a8d9] animate-spin" />
+              ) : (
+                <UploadCloud size={24} className="text-[#33a8d9]" />
+              )}
+            </div>
+            <p className="text-sm font-medium text-gray-600">
+              {uploading ? 'Uploading...' : `Upload ${label}`}
+            </p>
+            <p className="text-[11px] text-gray-400 mt-1.5">
+              Max 5MB (JPG, PNG, PDF)
+            </p>
+          </div>
+        )}
+
+        {!isView && !value && !uploading && (
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp,application/pdf"
+            onChange={handleFileChange}
+            className="absolute inset-0 opacity-0 cursor-pointer"
+          />
+        )}
+      </div>
+      {error && (
+        <p className="text-[11px] text-red-500 mt-1 font-medium bg-red-50 px-2 py-1 rounded">
+          {error}
+        </p>
+      )}
+    </div>
+  );
 };
 
 const AssetForm = ({
@@ -540,36 +682,36 @@ const AssetForm = ({
               </label>
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs text-gray-600 block">
-                Invoice File URL
-                <input
-                  name="invoiceFile"
-                  value={formData.invoiceFile || ''}
-                  onChange={handleChange}
-                  className={`mt-1 w-full px-3 py-2 border rounded-md text-sm outline-none ${
-                    isViewMode ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'
-                  }`}
-                  placeholder={`invoices/${formData.assetTag}.pdf`}
-                  readOnly={isViewMode}
-                />
-              </label>
+            <div className="space-y-1 md:col-span-1">
+              <AssetDocumentUpload
+                label="Invoice Document"
+                value={formData.invoiceFile || ''}
+                onUpload={(url) =>
+                  setFormData((prev) => ({ ...prev, invoiceFile: url }))
+                }
+                onRemove={() =>
+                  setFormData((prev) => ({ ...prev, invoiceFile: '' }))
+                }
+                isView={isViewMode}
+                assetTag={formData.assetTag}
+                documentType="invoice"
+              />
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs text-gray-600 block">
-                Warranty File URL
-                <input
-                  name="warrantyFile"
-                  value={formData.warrantyFile || ''}
-                  onChange={handleChange}
-                  className={`mt-1 w-full px-3 py-2 border rounded-md text-sm outline-none ${
-                    isViewMode ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'
-                  }`}
-                  placeholder={`warranties/${formData.assetTag}.pdf`}
-                  readOnly={isViewMode}
-                />
-              </label>
+            <div className="space-y-1 md:col-span-1">
+              <AssetDocumentUpload
+                label="Warranty Document"
+                value={formData.warrantyFile || ''}
+                onUpload={(url) =>
+                  setFormData((prev) => ({ ...prev, warrantyFile: url }))
+                }
+                onRemove={() =>
+                  setFormData((prev) => ({ ...prev, warrantyFile: '' }))
+                }
+                isView={isViewMode}
+                assetTag={formData.assetTag}
+                documentType="warranty"
+              />
             </div>
 
             {config.specs && config.specs.length > 0 && (

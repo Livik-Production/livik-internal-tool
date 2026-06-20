@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
 import { getMonthlyAttendanceSummary } from '../../../../lib/attendanceService';
+import { NotificationService } from '../../../../services/notification.service.js';
 
 export async function GET() {
   return NextResponse.json({
@@ -234,6 +235,13 @@ export async function POST(req) {
       totalDeductions: totalDeductions,
       netSalary: netSalary,
     };
+
+    // 5. Send Notification
+    await NotificationService.createBulkNotifications([employee.id], {
+      title: 'Payslip Generated',
+      message: `Your payslip for ${month} ${year} has been generated. You can download it now.`,
+      type: 'PAYROLL',
+    });
 
     return NextResponse.json(responseData);
   } catch (error) {

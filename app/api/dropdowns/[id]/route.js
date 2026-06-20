@@ -16,7 +16,7 @@ function addCorsHeaders(response) {
 
 export async function PUT(req, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await req.json();
     const updated = await updateDropdown(id, body);
 
@@ -39,7 +39,7 @@ export async function PUT(req, { params }) {
 
 export async function DELETE(req, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     await deleteDropdown(id);
 
     return addCorsHeaders(

@@ -6,7 +6,7 @@ import {
 
 export async function PUT(req, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await req.json();
     const result = await updatePettyCash(id, body);
     return NextResponse.json(result);
@@ -18,7 +18,7 @@ export async function PUT(req, { params }) {
 
 export async function DELETE(req, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const result = await deletePettyCash(id);
     return NextResponse.json(result);
   } catch (error) {

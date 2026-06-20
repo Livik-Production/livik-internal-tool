@@ -16,7 +16,7 @@ function addCorsHeaders(response) {
 
 export async function GET(req, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const entry = await getTalentCommunityById(id);
     if (!entry) {
       return addCorsHeaders(
@@ -42,7 +42,7 @@ export async function GET(req, { params }) {
 
 export async function DELETE(req, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     await deleteTalentCommunity(id);
     return addCorsHeaders(
       NextResponse.json({

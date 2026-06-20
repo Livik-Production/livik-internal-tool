@@ -10,12 +10,15 @@ export function proxy(req) {
   const isDashboard = pathname.startsWith('/dashboard');
   const isApi = pathname.startsWith('/api');
   const isAuthApi = pathname.startsWith('/api/auth');
+  const isCronApi = pathname.startsWith('/api/cron');
+
   const isPublicApi =
     ((pathname === '/api/contact-submissions' ||
       pathname === '/api/contact-submissions/') &&
       (req.method === 'POST' || req.method === 'OPTIONS')) ||
     pathname === '/api/login-admin' ||
-    pathname === '/api/login-admin/';
+    pathname === '/api/login-admin/' ||
+    isCronApi;
 
   if (isDashboard || (isApi && !isAuthApi && !isPublicApi)) {
     if (!authSession) {
@@ -135,7 +138,11 @@ export function proxy(req) {
         const isHolidayFetch =
           pathname === '/api/hr/holidays' && req.method === 'GET';
         const isOwnEmployeeFetch =
-          pathname.startsWith('/api/employees/') && req.method === 'GET';
+          pathname.startsWith('/api/employees/') &&
+          (req.method === 'GET' ||
+            req.method === 'PUT' ||
+            req.method === 'PATCH' ||
+            (req.method === 'POST' && pathname.includes('/documents')));
         const isAttendanceApi = pathname.startsWith('/api/hr/attendance');
 
         if (
@@ -153,11 +160,42 @@ export function proxy(req) {
 
           // 2. Allow if targetId matches session.employeeId (works for GET and detail URLs)
           const searchParams = req.nextUrl.searchParams;
-          let targetId =
-            searchParams.get('employeeId') || pathname.split('/').pop();
+          // Derive targetId from URL intelligently. Supports paths like:
+          // - /api/employees/{id}
+          // - /api/employees/{id}/documents
+          const parts = pathname.split('/').filter(Boolean);
+          let targetId = searchParams.get('employeeId') || null;
+          if (!targetId) {
+            if (parts.length >= 3 && parts[1] === 'employees') {
+              // parts example: ['api','employees','EMP001','documents']
+              // Employee id is always the segment after 'employees'
+              const empIndex = parts.indexOf('employees') + 1;
+              targetId = parts[empIndex] || null;
+            } else {
+              targetId = pathname.split('/').pop();
+            }
+          }
 
           // Allow explicit fetches on payroll/attendance by employee ID
-          if (targetId === session.employeeId) {
+          if (
+            targetId === session.employeeId ||
+            targetId === session.empId ||
+            targetId === session.contractEmpId
+          ) {
+            return NextResponse.next();
+          }
+
+          // Allow employees to POST their own documents (upload) to
+          // /api/employees/{id}/documents even though it's a POST route.
+          // This keeps uploads possible for regular employees while still
+          // protecting other POST actions on /api/employees.
+          if (
+            req.method === 'POST' &&
+            pathname.match(/^\/api\/employees\/[^/]+\/documents\/?$/) &&
+            (targetId === session.employeeId ||
+              targetId === session.empId ||
+              targetId === session.contractEmpId)
+          ) {
             return NextResponse.next();
           }
 
@@ -331,19 +369,6 @@ export function proxy(req) {
           }
         }
       }
-    }
-
-    /**
-     * 🎨 UX-only role-based routing
-     * (NOT security)
-     */
-    if (
-      isDashboard &&
-      session.roleName === 'Employee' &&
-      pathname === '/dashboard'
-    ) {
-      url.pathname = '/dashboard/employee_portal';
-      return NextResponse.redirect(url);
     }
   }
 

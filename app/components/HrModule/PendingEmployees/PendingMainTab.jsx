@@ -42,6 +42,7 @@ export default function PendingMainTab(props) {
             {...props}
             searchElement={props.searchElement}
             searchQuery={props.searchQuery}
+            onApproveSuccess={props.onApproveSuccess}
           />
         ) : (
           <DocumentApprovalsTable

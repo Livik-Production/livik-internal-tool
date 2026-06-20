@@ -3,11 +3,12 @@ import Button from '../../Buttons/Button';
 import PrimaryButton from '../../Buttons/PrimaryButton';
 import HyperlinkButton from '../../Buttons/HyperlinkButton';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import CustomTable from '../../CustomTable';
 import CustomAlertForm from '../../CustomAlertForm';
 import Loader from '../../Loader';
+import Pagination from '../../Pagination';
 import { showSuccessToast, showErrorToast } from '../../Toast';
 import {
   ChevronDown,
@@ -52,6 +53,10 @@ const UpdateLeaveRequestTab = ({
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [companyHolidays, setCompanyHolidays] = useState([]);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   useEffect(() => {
     const fetchHolidays = async () => {
@@ -279,6 +284,17 @@ const UpdateLeaveRequestTab = ({
     const query = searchQuery.toLowerCase();
     return fullName.includes(query) || emp.empId.toLowerCase().includes(query);
   });
+
+  // Reset pagination when filtered data length, selectedMonth, or selectedYear changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filteredData.length, selectedMonth, selectedYear]);
+
+  // Paginated data
+  const paginatedData = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredData.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredData, currentPage, itemsPerPage]);
 
   const renderBalance = (row, type) => {
     const { available, used } = getLeaveInfo(row.leaveBalances, type);
@@ -547,7 +563,7 @@ const UpdateLeaveRequestTab = ({
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredData.length > 0 ? (
-                filteredData.map((row) => {
+                paginatedData.map((row) => {
                   const cl = getLeaveInfo(row.leaveBalances, 'CL');
                   const sl = getLeaveInfo(row.leaveBalances, 'SL');
 
@@ -622,6 +638,20 @@ const UpdateLeaveRequestTab = ({
         </div>
       </section>
 
+      {filteredData.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalItems={filteredData.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={(newVal) => {
+            setItemsPerPage(newVal);
+            setCurrentPage(1);
+          }}
+          rowsPerPageOptions={[5, 10, 20, 50, 100]}
+        />
+      )}
+
       {/* Update Balances Modal */}
       <CustomModalForm
         open={showModal}
@@ -631,9 +661,7 @@ const UpdateLeaveRequestTab = ({
           selectedRow ? (
             <div className="font-normal text-base block w-full">
               <h3 className="text-xl font-bold text-gray-900">
-                {isEditMode
-                  ? 'Edit Leave Balances'
-                  : 'Add Leave Balances'}
+                {isEditMode ? 'Edit Leave Balances' : 'Add Leave Balances'}
               </h3>
               <p className="text-sm text-gray-900 font-semibold mt-1">
                 {selectedRow.firstName} {selectedRow.lastName}
@@ -647,8 +675,7 @@ const UpdateLeaveRequestTab = ({
                   <span className="text-green-600 font-medium">
                     {(() => {
                       const selectedYear =
-                        parseInt(formData.monthYear.split('/')[1]) ||
-                        2025;
+                        parseInt(formData.monthYear.split('/')[1]) || 2025;
                       const yearData = balanceHistory.filter(
                         (item) => item.year === selectedYear
                       );
@@ -719,181 +746,176 @@ const UpdateLeaveRequestTab = ({
       >
         <form onSubmit={handleFormSubmit} className="p-3">
           <div className="space-y-6">
-                  {/* Year and Month Selection */}
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* Year Selector */}
-                    <div className="ml-2">
-                      <label className="block text-xs font-bold text-gray-900 mb-2 uppercase tracking-wide">
-                        Select Year
-                      </label>
-                      <FilterDropdown
-                        options={(() => {
-                          const now = new Date();
-                          const currentYear = now.getFullYear();
-                          const years = [];
-                          for (let y = 2025; y <= currentYear; y++) {
-                            years.push({
-                              value: y.toString(),
-                              label: y.toString(),
-                            });
-                          }
-                          return years;
-                        })()}
-                        value={(
-                          parseInt(formData.monthYear.split('/')[1]) || 2025
-                        ).toString()}
-                        onChange={(val) => {
-                          const year = parseInt(val);
-                          const currentMonth = parseInt(
-                            formData.monthYear.split('/')[0]
-                          );
-                          let newMonth = currentMonth;
-                          if (year === 2025 && currentMonth < 9) newMonth = 9;
-                          setFormData({
-                            ...formData,
-                            monthYear: `${String(newMonth).padStart(2, '0')}/${year}`,
-                          });
-                        }}
-                        placeholder="Select Year"
-                      />
-                    </div>
+            {/* Year and Month Selection */}
+            <div className="grid grid-cols-2 gap-4">
+              {/* Year Selector */}
+              <div className="ml-2">
+                <label className="block text-xs font-bold text-gray-900 mb-2 uppercase tracking-wide">
+                  Select Year
+                </label>
+                <FilterDropdown
+                  options={(() => {
+                    const now = new Date();
+                    const currentYear = now.getFullYear();
+                    const years = [];
+                    for (let y = 2025; y <= currentYear; y++) {
+                      years.push({
+                        value: y.toString(),
+                        label: y.toString(),
+                      });
+                    }
+                    return years;
+                  })()}
+                  value={(
+                    parseInt(formData.monthYear.split('/')[1]) || 2025
+                  ).toString()}
+                  onChange={(val) => {
+                    const year = parseInt(val);
+                    const currentMonth = parseInt(
+                      formData.monthYear.split('/')[0]
+                    );
+                    let newMonth = currentMonth;
+                    if (year === 2025 && currentMonth < 9) newMonth = 9;
+                    setFormData({
+                      ...formData,
+                      monthYear: `${String(newMonth).padStart(2, '0')}/${year}`,
+                    });
+                  }}
+                  placeholder="Select Year"
+                />
+              </div>
 
-                    {/* Month Selector */}
-                    <div>
-                      <label className="block text-xs font-bold text-gray-900 mb-2 uppercase tracking-wide">
-                        Select Month
-                      </label>
-                      <FilterDropdown
-                        options={Array.from({ length: 12 }, (_, i) => {
-                          const monthIndex = i + 1;
-                          const currentYear = parseInt(
-                            formData.monthYear.split('/')[1]
-                          );
-                          // Disable if year is 2025 and month < 9 (Sept)
-                          const isDisabled =
-                            currentYear === 2025 && monthIndex < 9;
+              {/* Month Selector */}
+              <div>
+                <label className="block text-xs font-bold text-gray-900 mb-2 uppercase tracking-wide">
+                  Select Month
+                </label>
+                <FilterDropdown
+                  options={Array.from({ length: 12 }, (_, i) => {
+                    const monthIndex = i + 1;
+                    const currentYear = parseInt(
+                      formData.monthYear.split('/')[1]
+                    );
+                    // Disable if year is 2025 and month < 9 (Sept)
+                    const isDisabled = currentYear === 2025 && monthIndex < 9;
 
-                          const date = new Date(2000, i, 1);
-                          const monthName = date.toLocaleString('default', {
-                            month: 'long',
-                          });
-                          return {
-                            value: monthIndex.toString(),
-                            label: monthName,
-                            disabled: isDisabled,
-                          };
-                        }).filter((opt) => !opt.disabled)}
-                        value={(
-                          parseInt(formData.monthYear.split('/')[0]) || 1
-                        ).toString()}
-                        onChange={(val) => {
-                          const monthIndex = parseInt(val);
-                          const currentYear = parseInt(
-                            formData.monthYear.split('/')[1]
-                          );
-                          setFormData({
-                            ...formData,
-                            monthYear: `${String(monthIndex).padStart(2, '0')}/${currentYear}`,
-                          });
-                        }}
-                        placeholder="Select Month"
-                      />
-                    </div>
-                  </div>
+                    const date = new Date(2000, i, 1);
+                    const monthName = date.toLocaleString('default', {
+                      month: 'long',
+                    });
+                    return {
+                      value: monthIndex.toString(),
+                      label: monthName,
+                      disabled: isDisabled,
+                    };
+                  }).filter((opt) => !opt.disabled)}
+                  value={(
+                    parseInt(formData.monthYear.split('/')[0]) || 1
+                  ).toString()}
+                  onChange={(val) => {
+                    const monthIndex = parseInt(val);
+                    const currentYear = parseInt(
+                      formData.monthYear.split('/')[1]
+                    );
+                    setFormData({
+                      ...formData,
+                      monthYear: `${String(monthIndex).padStart(2, '0')}/${currentYear}`,
+                    });
+                  }}
+                  placeholder="Select Month"
+                />
+              </div>
+            </div>
 
-                  {/* CL & SL Row */}
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* CL */}
-                    <div>
-                      <label className="block text-xs font-bold text-gray-900 mb-2 uppercase tracking-wide">
-                        Casual Leave (CL)
-                      </label>
-                      <input
-                        type="number"
-                        step="any"
-                        value={formData.cl_balance}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            cl_balance: e.target.value,
-                          })
-                        }
-                        placeholder="Enter Balance"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                        required
-                      />
-                    </div>
+            {/* CL & SL Row */}
+            <div className="grid grid-cols-2 gap-4">
+              {/* CL */}
+              <div>
+                <label className="block text-xs font-bold text-gray-900 mb-2 uppercase tracking-wide">
+                  Casual Leave (CL)
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  value={formData.cl_balance}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      cl_balance: e.target.value,
+                    })
+                  }
+                  placeholder="Enter Balance"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  required
+                />
+              </div>
 
-                    {/* SL */}
-                    <div>
-                      <label className="block text-xs font-bold text-gray-900 mb-2 uppercase tracking-wide">
-                        Sick Leave (SL)
-                      </label>
-                      <input
-                        type="number"
-                        step="any"
-                        value={formData.sl_balance}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            sl_balance: e.target.value,
-                          })
-                        }
-                        placeholder="Enter Balance"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                        required
-                      />
-                    </div>
-                  </div>
+              {/* SL */}
+              <div>
+                <label className="block text-xs font-bold text-gray-900 mb-2 uppercase tracking-wide">
+                  Sick Leave (SL)
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  value={formData.sl_balance}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      sl_balance: e.target.value,
+                    })
+                  }
+                  placeholder="Enter Balance"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  required
+                />
+              </div>
+            </div>
 
-                  {/* Remarks Field */}
-                  <div>
-                    <label className="block text-xs font-bold text-gray-900 mb-2 uppercase tracking-wide">
-                      Remarks
-                    </label>
-                    <textarea
-                      value={formData.remarks}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          remarks: e.target.value,
-                        })
-                      }
-                      placeholder="Enter remarks or reason for update"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none h-20"
-                    />
-                  </div>
-                </div>
+            {/* Remarks Field */}
+            <div>
+              <label className="block text-xs font-bold text-gray-900 mb-2 uppercase tracking-wide">
+                Remarks
+              </label>
+              <textarea
+                value={formData.remarks}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    remarks: e.target.value,
+                  })
+                }
+                placeholder="Enter remarks or reason for update"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none h-20"
+              />
+            </div>
+          </div>
 
-                <div className="mt-3 flex gap-3">
-                  <PrimaryButton
-                    type="button"
-                    onClick={() => setShowModal(false)}
-                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-900 font-semibold rounded-lg hover:bg-gray-300 transition"
-                    disabled={isUpdating}
-                  >
-                    Cancel
-                  </PrimaryButton>
-                  <PrimaryButton
-                    type="submit"
-                    className="flex-1 px-4 py-2 bg-[#004475] text-white font-bold uppercase tracking-wide rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all disabled:opacity-50 active:scale-[0.98] flex items-center justify-center gap-2"
-                    disabled={isUpdating}
-                  >
-                    {isUpdating ? (
-                      <>
-                        <Loader2 size={16} className="animate-spin" />
-                        Updating...
-                      </>
-                    ) : (
-                      <>
-                        {isEditMode
-                          ? 'Update Leave Balance'
-                          : 'Add Leave Balance'}
-                      </>
-                    )}
-                  </PrimaryButton>
-                </div>
-              </form>
+          <div className="mt-3 flex gap-3">
+            <PrimaryButton
+              type="button"
+              onClick={() => setShowModal(false)}
+              className="flex-1 px-4 py-2 border border-gray-300 text-gray-900 font-semibold rounded-lg hover:bg-gray-300 transition"
+              disabled={isUpdating}
+            >
+              Cancel
+            </PrimaryButton>
+            <PrimaryButton
+              type="submit"
+              className="flex-1 px-4 py-2 bg-[#004475] text-white font-bold uppercase tracking-wide rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all disabled:opacity-50 active:scale-[0.98] flex items-center justify-center gap-2"
+              disabled={isUpdating}
+            >
+              {isUpdating ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                <>{isEditMode ? 'Update Leave Balance' : 'Add Leave Balance'}</>
+              )}
+            </PrimaryButton>
+          </div>
+        </form>
       </CustomModalForm>
 
       {/* Balance Detail Modal */}

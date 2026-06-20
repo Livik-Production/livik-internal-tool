@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useMemo, useState, useRef, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { logoutSuccess } from '../../store/slices/authSlice';
@@ -20,6 +20,7 @@ import {
   Layers,
   UserCheck,
   Globe,
+  Clock,
 } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
 
@@ -111,6 +112,20 @@ const navItems = [
     title: 'Employee Portal',
     href: '/dashboard/employee_portal',
     icon: <UserCircle2Icon size={20} />,
+    dropdown: [
+      {
+        id: 'employee-profile',
+        title: 'My Profile',
+        href: '/dashboard/employee_portal',
+        icon: <UserCircle2Icon size={16} />,
+      },
+      {
+        id: 'employee-timesheet',
+        title: 'Timesheet',
+        href: '/dashboard/employee_portal?tab=timesheet',
+        icon: <Clock size={16} />,
+      },
+    ],
   },
 ];
 
@@ -136,7 +151,9 @@ const hasModuleRight = (itemId, userRights) => {
         lowerRights.some((r) => r.includes('dashboard'))
       );
     case 'employee-portal':
-      return lowerRights.includes('employee_portal');
+    case 'employee-profile':
+    case 'employee-timesheet':
+      return true; // Everyone can access their own employee portal
     case 'hr':
       return lowerRights.some(
         (r) => r.includes('hr') || r.includes('staffing')
@@ -178,7 +195,34 @@ const hasModuleRight = (itemId, userRights) => {
 export default function Sidebar({ onLinkClick }) {
   const pathname = usePathname() || '';
   const router = useRouter();
+  const searchParams = useSearchParams();
   const dispatch = useDispatch();
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const checkSubActive = useCallback(
+    (subHref) => {
+      const [subPath, subQuery] = subHref.split('?');
+      if (pathname !== subPath) return false;
+
+      if (subQuery) {
+        const urlParams = new URLSearchParams(subQuery);
+        for (const [key, value] of urlParams.entries()) {
+          if (searchParams.get(key) !== value) return false;
+        }
+        return true;
+      } else {
+        if (subPath === '/dashboard/employee_portal') {
+          return !searchParams.get('tab');
+        }
+        return true;
+      }
+    },
+    [pathname, searchParams]
+  );
 
   const [openDropdown, setOpenDropdown] = useState(null);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
@@ -201,7 +245,14 @@ export default function Sidebar({ onLinkClick }) {
     const rights = authUser.rights || [];
     if (rights.includes('ALL_ACCESS')) return navItems;
 
+    // Newly approved employees may have no role/rights yet.
+    // Always show Dashboard and Employee Portal for every logged-in user.
+    const alwaysVisibleIds = new Set(['index', 'employee-portal']);
+
     return navItems.filter((item) => {
+      // Always visible for every authenticated user
+      if (alwaysVisibleIds.has(item.id)) return true;
+
       if (item.dropdown) {
         const visibleDropdowns = item.dropdown.filter((sub) =>
           hasModuleRight(sub.id, rights)
@@ -210,7 +261,7 @@ export default function Sidebar({ onLinkClick }) {
       }
       return hasModuleRight(item.id, rights);
     });
-  }, [authUser, isAdminUser]);
+  }, [authUser, isAdminUser, roleName]);
 
   // Auto-open dropdowns when current path matches a sub-item
   useEffect(() => {
@@ -241,6 +292,7 @@ export default function Sidebar({ onLinkClick }) {
     }
   }, [router, dispatch]);
 
+  if (!mounted) return null;
   if (authStatus === 'loading') return <SidebarSkeleton />;
   if (!authUser) return null;
 
@@ -253,27 +305,21 @@ export default function Sidebar({ onLinkClick }) {
 
     // Item WITH dropdown
     if (item.dropdown) {
-      const isDropdownActive = item.dropdown.some(
-        (sub) => pathname === sub.href || pathname.startsWith(sub.href + '/')
+      const isDropdownActive = item.dropdown.some((sub) =>
+        checkSubActive(sub.href)
       );
       const isOpen = openDropdown === item.id;
-
-      const matchingSubs = item.dropdown.filter(
-        (s) => pathname === s.href || pathname.startsWith(s.href + '/')
-      );
-      const activeSubHref =
-        matchingSubs.length > 0
-          ? matchingSubs.reduce((prev, curr) =>
-              prev.href.length > curr.href.length ? prev : curr
-            ).href
-          : null;
 
       return (
         <div key={item.id}>
           {/* Trigger button */}
           <button
             onClick={() => setOpenDropdown(isOpen ? null : item.id)}
-            className="w-full flex items-center gap-3 px-3 py-3 rounded-xl font-semibold text-base transition-colors duration-200 text-gray-700 hover:text-[#004475] hover:bg-blue-50"
+            className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl font-semibold text-base transition-colors duration-200 ${
+              isDropdownActive
+                ? 'text-[#004475] bg-blue-50/70 font-bold'
+                : 'text-gray-700 hover:text-[#004475] hover:bg-blue-50'
+            }`}
           >
             <span className="flex items-center justify-center">
               {item.icon}
@@ -287,14 +333,14 @@ export default function Sidebar({ onLinkClick }) {
 
           {/* Dropdown sub-items */}
           {isOpen && (
-            <div className="ml-3 mt-1 flex flex-col gap-1 border-l-2 border-blue-100 pl-3">
+            <div className="ml-3 mt-1 flex flex-col gap-1 border-l-2 border-blue-100 pl-5">
               {item.dropdown
                 .filter(
                   (sub) =>
                     isAdminUser || hasModuleRight(sub.id, authUser?.rights)
                 )
                 .map((sub) => {
-                  const isSubActive = sub.href === activeSubHref;
+                  const isSubActive = checkSubActive(sub.href);
                   return (
                     <Link
                       key={sub.id}
@@ -302,9 +348,9 @@ export default function Sidebar({ onLinkClick }) {
                       onClick={() => {
                         onLinkClick?.();
                       }}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm transition-colors duration-200 ${
+                      className={`flex items-center gap-2 px-3 py-2 rounded-xl font-medium text-sm transition-colors duration-200 ${
                         isSubActive
-                          ? 'bg-[#004475] text-white shadow-sm'
+                          ? 'bg-[#004475] text-white shadow-sm font-bold'
                           : 'text-gray-600 hover:text-[#004475] hover:bg-blue-50'
                       }`}
                     >

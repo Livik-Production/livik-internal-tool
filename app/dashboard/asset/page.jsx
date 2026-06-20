@@ -432,6 +432,7 @@ export default function AssetPage() {
       setSelectedAsset(updatedAsset);
 
       toast.success('Asset updated successfully!');
+      closeModal();
     } catch (error) {
       console.error('Error updating asset:', error);
       toast.error('Failed to update asset. Please try again.');
@@ -645,75 +646,64 @@ export default function AssetPage() {
   );
 
   return (
-    <div
-      key={assetsStatus === 'loading'}
-      className="text-left h-full flex flex-col min-h-0 animate-dashboard-reveal"
-    >
-      {assetsStatus === 'loading' ? (
-        <div className="bg-white rounded-2xl shadow-sm p-12 m-0.5 flex flex-col items-center justify-center min-h-[400px]">
-          <Loader label="Loading assets..." size="md" fullScreen={false} />
-        </div>
-      ) : (
-        <>
-          <div className="bg-white rounded-2xl shadow-sm p-3 m-0.5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-50 text-[#33a8d9] rounded-xl">
-                  <Package size={30} />
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900">
-                    Asset Tracking
-                  </h1>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Track company hardware and electronic devices.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-6">
-                <div className="flex items-center gap-2">
-                  <div className="text-sm text-gray-600">Total</div>
-                  <div className="bg-white px-3 py-1 rounded-full shadow text-sm font-medium">
-                    {assets.length}
-                  </div>
-                </div>
-
-                {isViewOnly && (
-                  <div className="px-3 py-1 bg-yellow-50 border border-yellow-200 rounded-full">
-                    <span className="text-xs text-yellow-700 font-medium">
-                      View Only
-                    </span>
-                  </div>
-                )}
-
-                <PrimaryButton
-                  onClick={openAdd}
-                  disabled={isViewOnly || categoriesStatus === 'loading'}
-                >
-                  {categoriesStatus === 'loading'
-                    ? 'Loading...'
-                    : '+ Add Asset'}
-                </PrimaryButton>
-              </div>
+    <div className="text-left h-full flex flex-col min-h-0 animate-dashboard-reveal">
+      <div className="bg-white rounded-2xl shadow-sm p-3 m-0.5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-50 text-[#33a8d9] rounded-xl">
+              <Package size={30} />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">
+                Asset Tracking
+              </h1>
+              <p className="text-sm text-gray-600 mt-1">
+                Track company hardware and electronic devices.
+              </p>
             </div>
           </div>
 
-          <div className="flex-1 flex flex-col bg-white rounded-2xl shadow-sm m-0.5 mt-1.5 min-h-0">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-300 w-full px-2.5 pt-2.5">
-              <div className="flex items-center gap-1.5 overflow-x-auto no-scroll w-full md:w-auto">
-                {visibleTabs.map((tab) => (
-                  <TabButton
-                    key={tab.id}
-                    isActive={activeTab === tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                  >
-                    {tab.label}
-                  </TabButton>
-                ))}
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <div className="text-sm text-gray-600">Total</div>
+              <div className="bg-white px-3 py-1 rounded-full shadow text-sm font-medium">
+                {assets.length}
               </div>
             </div>
-            {/* <div
+
+            {isViewOnly && (
+              <div className="px-3 py-1 bg-yellow-50 border border-yellow-200 rounded-full">
+                <span className="text-xs text-yellow-700 font-medium">
+                  View Only
+                </span>
+              </div>
+            )}
+
+            <PrimaryButton
+              onClick={openAdd}
+              disabled={isViewOnly || categoriesStatus === 'loading'}
+            >
+              {categoriesStatus === 'loading' ? 'Loading...' : '+ Add Asset'}
+            </PrimaryButton>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex-1 flex flex-col bg-white rounded-2xl shadow-sm m-0.5 mt-1.5 min-h-0">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-300 w-full px-2.5 pt-2.5">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scroll w-full md:w-auto">
+            {visibleTabs.map((tab) => (
+              <TabButton
+                key={tab.id}
+                isActive={activeTab === tab.id}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                {tab.label}
+              </TabButton>
+            ))}
+          </div>
+        </div>
+        {/* <div
               key={activeTab}
               className="flex-1 overflow-y-auto no-scrollbar min-h-0 pr-1 animate-dashboard-reveal min-h-0"
             >
@@ -742,375 +732,374 @@ export default function AssetPage() {
                 </div>
               )}
             </div> */}
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeTab}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{
-                  duration: 0.25,
-                  ease: 'easeInOut',
-                }}
-                className="flex-1 overflow-y-auto no-scrollbar min-h-0 pr-1"
-              >
-                {activeTab === 'overview' && (
-                  <OverviewForm assets={assets} isViewOnly={isViewOnly} />
-                )}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{
+              duration: 0.25,
+              ease: 'easeInOut',
+            }}
+            className="flex-1 overflow-y-auto no-scrollbar min-h-0 pr-1"
+          >
+            {activeTab === 'overview' && (
+              <OverviewForm
+                assets={assets}
+                isViewOnly={isViewOnly}
+                isLoading={assetsStatus === 'loading'}
+              />
+            )}
 
-                {activeTab === 'assignments' && (
-                  <AssignmentForm
+            {activeTab === 'assignments' && (
+              <AssignmentForm
+                assets={assets}
+                onViewDetail={openView}
+                onUnassign={handleUnassign}
+                onAssign={handleAssign}
+                isViewOnly={isViewOnly}
+                isLoading={assetsStatus === 'loading'}
+              />
+            )}
+
+            {activeTab === 'assets' && (
+              <div className="p-2.5">
+                {assetsStatus === 'loading' ? (
+                  <div className="flex justify-center items-center py-20 min-h-[400px]">
+                    <Loader
+                      label="Loading assets..."
+                      size="md"
+                      fullScreen={false}
+                    />
+                  </div>
+                ) : (
+                  <AssetsForm
                     assets={assets}
                     onViewDetail={openView}
-                    onUnassign={handleUnassign}
+                    onEdit={openEdit}
                     onAssign={handleAssign}
+                    onDelete={handleDelete}
                     isViewOnly={isViewOnly}
                   />
                 )}
-
-                {activeTab === 'assets' && (
-                  <div className="p-2.5">
-                    <AssetsForm
-                      assets={assets}
-                      onViewDetail={openView}
-                      onEdit={openEdit}
-                      onAssign={handleAssign}
-                      onDelete={handleDelete}
-                      isViewOnly={isViewOnly}
-                    />
-                  </div>
-                )}
-              </motion.div>
-            </AnimatePresence>
-          </div>
-
-          {/* Asset Details Modal (View/Edit) */}
-          <CustomModalForm
-            open={isModalOpen}
-            onClose={closeModal}
-            widthClass="max-w-5xl"
-            title={
-              <div className="flex flex-col gap-4 w-full">
-                <div className="flex items-center justify-between pr-8">
-                  <h2 className="text-xl font-bold text-gray-900">
-                    {selectedAsset?.assetTag || selectedAsset?.tag} Details
-                  </h2>
-                </div>
-                <div className="flex items-center gap-1 overflow-x-auto no-scroll border-b border-gray-200">
-                  <TabButton
-                    isActive={activeModalTab === 'details'}
-                    onClick={() => setActiveModalTab('details')}
-                  >
-                    Details
-                  </TabButton>
-                  <TabButton
-                    isActive={activeModalTab === 'assignment'}
-                    onClick={() => setActiveModalTab('assignment')}
-                  >
-                    Assignment History
-                  </TabButton>
-                  <TabButton
-                    isActive={activeModalTab === 'repair'}
-                    onClick={() => setActiveModalTab('repair')}
-                  >
-                    Repair History
-                  </TabButton>
-                </div>
               </div>
-            }
-          >
-            <div className="p-6">
-              {selectedAsset && (
-                <div key={activeModalTab} className="animate-dashboard-reveal">
-                  {activeModalTab === 'details' && (
-                    <div>
-                      <AssetForm
-                        assetType={
-                          selectedAsset?.deviceType || selectedAsset?.type
-                        }
-                        onSubmit={
-                          modalMode === 'edit' ? handleAssetUpdate : null
-                        }
-                        onCancel={closeModal}
-                        onEdit={
-                          modalMode === 'view' && !isViewOnly
-                            ? () => setModalMode('edit')
-                            : null
-                        }
-                        onBack={null}
-                        isViewMode={modalMode === 'view'}
-                        initialData={formatDataForAssetForm(selectedAsset)}
-                        existingAssets={assets}
-                        isSubmitting={isSubmitting}
-                      />
-                    </div>
-                  )}
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </div>
 
-                  {activeModalTab === 'assignment' && (
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                        Assignment History
-                      </h3>
-                      {selectedAsset.assignments &&
-                      selectedAsset.assignments.length > 0 ? (
-                        <div className="space-y-3">
-                          {selectedAsset.assignments.map(
-                            (assignment, index) => (
-                              <div
-                                key={index}
-                                className="p-4 bg-gray-50 rounded-lg border border-gray-200"
-                              >
-                                <div className="flex justify-between items-start mb-2">
-                                  <div>
-                                    <span className="font-semibold text-gray-900">
-                                      {assignment.employee?.firstName}{' '}
-                                      {assignment.employee?.lastName}
-                                    </span>
-                                    <span className="text-gray-600 ml-2">
-                                      ({assignment.employee?.empId})
-                                    </span>
-                                  </div>
-                                  <div className="text-sm text-gray-500">
-                                    {new Date(
-                                      assignment.assignedDate
-                                    ).toLocaleDateString()}
-                                    {assignment.returnDate && (
-                                      <>
-                                        {' to '}
-                                        {new Date(
-                                          assignment.returnDate
-                                        ).toLocaleDateString()}
-                                      </>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            )
-                          )}
-                        </div>
-                      ) : (
-                        <div className="text-center py-10 bg-gray-50 rounded-xl border border-dashed border-gray-300">
-                          <p className="text-gray-500 italic">
-                            No assignment history found
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {activeModalTab === 'repair' && (
-                    <div>
-                      <RepairHistoryTable
-                        repairs={selectedAsset.repairs || []}
-                        assetId={selectedAsset.id}
-                        assetSpecs={selectedAsset.specs || {}}
-                        assetTag={selectedAsset.assetTag || selectedAsset.tag}
-                        assetModel={
-                          selectedAsset.modelName || selectedAsset.model
-                        }
-                        onEditRepair={null}
-                        onDeleteRepair={handleRepairChange}
-                        onRepairAdded={handleRepairChange}
-                        onRepairUpdated={handleRepairChange}
-                        canEdit={canEditAllAssets}
-                      />
-                    </div>
-                  )}
+      {/* Asset Details Modal (View/Edit) */}
+      <CustomModalForm
+        open={isModalOpen}
+        onClose={closeModal}
+        widthClass="max-w-5xl"
+        title={
+          <div className="flex flex-col gap-4 w-full">
+            <div className="flex items-center justify-between pr-8">
+              <h2 className="text-xl font-bold text-gray-900">
+                {selectedAsset?.assetTag || selectedAsset?.tag} Details
+              </h2>
+            </div>
+            <div className="flex items-center gap-1 overflow-x-auto no-scroll border-b border-gray-200">
+              <TabButton
+                isActive={activeModalTab === 'details'}
+                onClick={() => setActiveModalTab('details')}
+              >
+                Details
+              </TabButton>
+              <TabButton
+                isActive={activeModalTab === 'assignment'}
+                onClick={() => setActiveModalTab('assignment')}
+              >
+                Assignment History
+              </TabButton>
+              <TabButton
+                isActive={activeModalTab === 'repair'}
+                onClick={() => setActiveModalTab('repair')}
+              >
+                Repair History
+              </TabButton>
+            </div>
+          </div>
+        }
+      >
+        <div className="p-6">
+          {selectedAsset && (
+            <div key={activeModalTab} className="animate-dashboard-reveal">
+              {activeModalTab === 'details' && (
+                <div>
+                  <AssetForm
+                    assetType={selectedAsset?.deviceType || selectedAsset?.type}
+                    onSubmit={modalMode === 'edit' ? handleAssetUpdate : null}
+                    onCancel={closeModal}
+                    onEdit={
+                      modalMode === 'view' && !isViewOnly
+                        ? () => setModalMode('edit')
+                        : null
+                    }
+                    onBack={null}
+                    isViewMode={modalMode === 'view'}
+                    initialData={formatDataForAssetForm(selectedAsset)}
+                    existingAssets={assets}
+                    isSubmitting={isSubmitting}
+                  />
                 </div>
               )}
-            </div>
-          </CustomModalForm>
 
-          {/* Add Asset Modal */}
-          <CustomModalForm
-            open={isAddOpen}
-            onClose={closeAdd}
-            widthClass="max-w-5xl"
-            title={
-              showAssetForm
-                ? `Add ${selectedAssetType} Asset`
-                : 'Select Asset Type'
-            }
-          >
-            <div className="p-6">
-              {!showAssetForm ? (
+              {activeModalTab === 'assignment' && (
                 <div>
-                  {categoriesStatus === 'loading' && <CategoryLoadingState />}
-
-                  {categoriesStatus === 'failed' && <CategoryErrorState />}
-
-                  {categoriesStatus === 'succeeded' && (
-                    <>
-                      <p className="text-gray-600 mb-6 text-center">
-                        Select the type of asset you want to add
-                      </p>
-
-                      <div className="max-w-md mx-auto">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Branch *
-                        </label>
-                        <select
-                          value={selectedBranch}
-                          onChange={(e) => setSelectedBranch(e.target.value)}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-700 bg-white transition-all duration-200 mb-4"
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Assignment History
+                  </h3>
+                  {selectedAsset.assignments &&
+                  selectedAsset.assignments.length > 0 ? (
+                    <div className="space-y-3">
+                      {selectedAsset.assignments.map((assignment, index) => (
+                        <div
+                          key={index}
+                          className="p-4 bg-gray-50 rounded-lg border border-gray-200"
                         >
-                          <option value="DGL">DGL</option>
-                          <option value="Other">Other</option>
-                        </select>
-
-                        <div className="flex items-center justify-between mb-2">
-                          <label className="block text-sm font-medium text-gray-700">
-                            Asset Type *
-                          </label>
-                          {isAdmin && !showNewCategoryForm && (
-                            <button
-                              onClick={() => setShowNewCategoryForm(true)}
-                              className="text-xs text-[#004475] cursor-pointer font-xl"
-                            >
-                              + Create New Type
-                            </button>
-                          )}
-                        </div>
-
-                        {isAdmin && showNewCategoryForm ? (
-                          <div className="p-4 bg-gray-50 rounded-lg border border-blue-100 mb-4 transition-all duration-300">
-                            <label className="block text-xs font-semibold text-blue-700 uppercase tracking-wider mb-2">
-                              New Asset Type Name
-                            </label>
-                            <div className="flex gap-2">
-                              <input
-                                type="text"
-                                value={newCategoryName}
-                                onChange={(e) =>
-                                  setNewCategoryName(e.target.value)
-                                }
-                                placeholder="e.g. Webcam, Headphones, Server"
-                                className="flex-1 px-3 py-2 border border-blue-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                                autoFocus
-                              />
-                              <button
-                                onClick={handleCreateCategory}
-                                disabled={
-                                  isCreatingCategory || !newCategoryName.trim()
-                                }
-                                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                                  newCategoryName.trim()
-                                    ? 'bg-[#004475] text-white  shadow-sm'
-                                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                                }`}
-                              >
-                                {isCreatingCategory ? '...' : 'Create'}
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setShowNewCategoryForm(false);
-                                  setNewCategoryName('');
-                                }}
-                                className="px-3 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
-                              >
-                                <svg
-                                  className="h-4 w-4"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth="2"
-                                    d="M6 18L18 6M6 6l12 12"
-                                  />
-                                </svg>
-                              </button>
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <span className="font-semibold text-gray-900">
+                                {assignment.employee?.firstName}{' '}
+                                {assignment.employee?.lastName}
+                              </span>
+                              <span className="text-gray-600 ml-2">
+                                ({assignment.employee?.empId})
+                              </span>
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {new Date(
+                                assignment.assignedDate
+                              ).toLocaleDateString()}
+                              {assignment.returnDate && (
+                                <>
+                                  {' to '}
+                                  {new Date(
+                                    assignment.returnDate
+                                  ).toLocaleDateString()}
+                                </>
+                              )}
                             </div>
                           </div>
-                        ) : (
-                          <select
-                            value={selectedAssetType}
-                            onChange={(e) =>
-                              setSelectedAssetType(e.target.value)
-                            }
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-700 bg-white transition-all duration-200"
-                          >
-                            <option value="">-- Select an asset type --</option>
-                            {assetCategories.map((category) => (
-                              <option key={category.id} value={category.name}>
-                                {category.name}
-                              </option>
-                            ))}
-                          </select>
-                        )}
-
-                        <div className="mt-8 flex justify-center">
-                          <PrimaryButton
-                            onClick={handleNextToForm}
-                            disabled={!selectedAssetType}
-                          >
-                            Next
-                          </PrimaryButton>
                         </div>
-                      </div>
-                    </>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-10 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+                      <p className="text-gray-500 italic">
+                        No assignment history found
+                      </p>
+                    </div>
                   )}
                 </div>
-              ) : (
-                <div>
-                  <div className="bg-gray-50 px-6 py-3 border-b border-gray-200">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <button
-                          onClick={handleBackToTypeSelection}
-                          className="mr-3 text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-200"
-                          title="Back to type selection"
-                        >
-                          ←
-                        </button>
-                        <div className="flex items-center">
-                          <div>
-                            <h3 className="font-medium text-gray-900">
-                              Adding {selectedAssetType}
-                            </h3>
-                            <p className="text-xs text-gray-500">
-                              Fill in the details below
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
-                        {selectedAssetType}
-                      </span>
-                    </div>
-                  </div>
+              )}
 
-                  <div className="p-6">
-                    <AssetForm
-                      assetType={selectedAssetType}
-                      branch={selectedBranch}
-                      onSubmit={handleAssetSubmit}
-                      onCancel={closeAdd}
-                      onBack={handleBackToTypeSelection}
-                      isViewMode={false}
-                      initialData={null}
-                      existingAssets={assets}
-                      isSubmitting={isSubmitting}
-                    />
-                  </div>
+              {activeModalTab === 'repair' && (
+                <div>
+                  <RepairHistoryTable
+                    repairs={selectedAsset.repairs || []}
+                    assetId={selectedAsset.id}
+                    assetSpecs={selectedAsset.specs || {}}
+                    assetTag={selectedAsset.assetTag || selectedAsset.tag}
+                    assetModel={selectedAsset.modelName || selectedAsset.model}
+                    onEditRepair={null}
+                    onDeleteRepair={handleRepairChange}
+                    onRepairAdded={handleRepairChange}
+                    onRepairUpdated={handleRepairChange}
+                    canEdit={canEditAllAssets}
+                  />
                 </div>
               )}
             </div>
-          </CustomModalForm>
-
-          {/* Create Repair Form Modal */}
-          {showRepairForm && selectedAsset && (
-            <CreateRepairForm
-              assetId={selectedAsset.id}
-              assetTag={selectedAsset.assetTag || selectedAsset.tag}
-              assetModel={selectedAsset.modelName || selectedAsset.model}
-              onSubmit={handleCreateRepair}
-              onCancel={() => setShowRepairForm(false)}
-            />
           )}
-        </>
+        </div>
+      </CustomModalForm>
+
+      {/* Add Asset Modal */}
+      <CustomModalForm
+        open={isAddOpen}
+        onClose={closeAdd}
+        widthClass="max-w-5xl"
+        title={
+          showAssetForm ? `Add ${selectedAssetType} Asset` : 'Select Asset Type'
+        }
+      >
+        <div className="p-6">
+          {!showAssetForm ? (
+            <div>
+              {categoriesStatus === 'loading' && <CategoryLoadingState />}
+
+              {categoriesStatus === 'failed' && <CategoryErrorState />}
+
+              {categoriesStatus === 'succeeded' && (
+                <>
+                  <p className="text-gray-600 mb-6 text-center">
+                    Select the type of asset you want to add
+                  </p>
+
+                  <div className="max-w-md mx-auto">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Branch *
+                    </label>
+                    <select
+                      value={selectedBranch}
+                      onChange={(e) => setSelectedBranch(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-700 bg-white transition-all duration-200 mb-4"
+                    >
+                      <option value="DGL">DGL</option>
+                      <option value="Other">Other</option>
+                    </select>
+
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-medium text-gray-700">
+                        Asset Type *
+                      </label>
+                      {isAdmin && !showNewCategoryForm && (
+                        <button
+                          onClick={() => setShowNewCategoryForm(true)}
+                          className="text-xs text-[#004475] cursor-pointer font-xl"
+                        >
+                          + Create New Type
+                        </button>
+                      )}
+                    </div>
+
+                    {isAdmin && showNewCategoryForm ? (
+                      <div className="p-4 bg-gray-50 rounded-lg border border-blue-100 mb-4 transition-all duration-300">
+                        <label className="block text-xs font-semibold text-blue-700 uppercase tracking-wider mb-2">
+                          New Asset Type Name
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={newCategoryName}
+                            onChange={(e) => setNewCategoryName(e.target.value)}
+                            placeholder="e.g. Webcam, Headphones, Server"
+                            className="flex-1 px-3 py-2 border border-blue-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                            autoFocus
+                          />
+                          <button
+                            onClick={handleCreateCategory}
+                            disabled={
+                              isCreatingCategory || !newCategoryName.trim()
+                            }
+                            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                              newCategoryName.trim()
+                                ? 'bg-[#004475] text-white  shadow-sm'
+                                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                            }`}
+                          >
+                            {isCreatingCategory ? '...' : 'Create'}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setShowNewCategoryForm(false);
+                              setNewCategoryName('');
+                            }}
+                            className="px-3 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                          >
+                            <svg
+                              className="h-4 w-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M6 18L18 6M6 6l12 12"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <select
+                        value={selectedAssetType}
+                        onChange={(e) => setSelectedAssetType(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-700 bg-white transition-all duration-200"
+                      >
+                        <option value="">-- Select an asset type --</option>
+                        {assetCategories.map((category) => (
+                          <option key={category.id} value={category.name}>
+                            {category.name}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+
+                    <div className="mt-8 flex justify-center">
+                      <PrimaryButton
+                        onClick={handleNextToForm}
+                        disabled={!selectedAssetType}
+                      >
+                        Next
+                      </PrimaryButton>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          ) : (
+            <div>
+              <div className="bg-gray-50 px-6 py-3 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <button
+                      onClick={handleBackToTypeSelection}
+                      className="mr-3 text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-200"
+                      title="Back to type selection"
+                    >
+                      ←
+                    </button>
+                    <div className="flex items-center">
+                      <div>
+                        <h3 className="font-medium text-gray-900">
+                          Adding {selectedAssetType}
+                        </h3>
+                        <p className="text-xs text-gray-500">
+                          Fill in the details below
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                    {selectedAssetType}
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-6">
+                <AssetForm
+                  assetType={selectedAssetType}
+                  branch={selectedBranch}
+                  onSubmit={handleAssetSubmit}
+                  onCancel={closeAdd}
+                  onBack={handleBackToTypeSelection}
+                  isViewMode={false}
+                  initialData={null}
+                  existingAssets={assets}
+                  isSubmitting={isSubmitting}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </CustomModalForm>
+
+      {/* Create Repair Form Modal */}
+      {showRepairForm && selectedAsset && (
+        <CreateRepairForm
+          assetId={selectedAsset.id}
+          assetTag={selectedAsset.assetTag || selectedAsset.tag}
+          assetModel={selectedAsset.modelName || selectedAsset.model}
+          onSubmit={handleCreateRepair}
+          onCancel={() => setShowRepairForm(false)}
+        />
       )}
     </div>
   );

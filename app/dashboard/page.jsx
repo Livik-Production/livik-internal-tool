@@ -664,6 +664,7 @@ export default function DashboardIndex() {
 
         setEmployeeStats({
           employeeId: authUser.id,
+          status: empData.status,
           remainingLeaves: Math.max(0, remainingLeaves),
           totalLeaves: totalLeaves,
           sickBalance: Math.max(0, sickBalance),
@@ -738,17 +739,34 @@ export default function DashboardIndex() {
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-emerald-200/20 rounded-full blur-3xl animate-pulse delay-2000"></div>
       </div>
 
-      <div className="flex-1 flex flex-col min-h-0 relative z-10 md:px-2">
+      <div className="flex-1 flex flex-col min-h-0 relative z-10 px-0.5 sm:px-1 md:px-0">
         <div className="shrink-0">
           <DashboardModuleHeader />
         </div>
 
         <div className="flex-1 overflow-y-auto no-scrollbar min-h-0 pr-1 pb-6">
           {isEmployeeDashboard ? (
-            <EmployeeDashboard
-              employeeStats={employeeStats}
-              visibleQuickActions={visibleQuickActions}
-            />
+            employeeStats.status &&
+            !['ACTIVE', 'APPROVED'].includes(
+              employeeStats.status.toUpperCase()
+            ) ? (
+              <div className="flex flex-col items-center justify-center h-full p-8 text-center bg-white rounded-2xl shadow-sm border border-gray-100 max-w-2xl mx-auto mt-10">
+                <Shield size={64} className="text-yellow-500 mb-6" />
+                <h2 className="text-2xl font-bold text-gray-800 mb-3">
+                  Pending Admin Approval
+                </h2>
+                <p className="text-base text-gray-500 max-w-md mx-auto">
+                  Your profile has been submitted and is currently under review
+                  by the administration. Your dashboard will be unlocked once
+                  approved.
+                </p>
+              </div>
+            ) : (
+              <EmployeeDashboard
+                employeeStats={employeeStats}
+                visibleQuickActions={visibleQuickActions}
+              />
+            )
           ) : isHrUser ? (
             <HrDashboard
               statsData={statsData}

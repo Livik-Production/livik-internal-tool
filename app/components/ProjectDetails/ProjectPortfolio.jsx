@@ -31,6 +31,7 @@ import EmployeeProfileModal from '../EmployeeProfile/EmployeeProfileModal';
 import Loader from '../Loader';
 import Pagination from '../Pagination';
 import IconButton from '../Buttons/IconButton';
+import { showSuccessToast, showErrorToast } from '../Toast';
 
 /* ====================================================================
    SUB-COMPONENTS
@@ -828,7 +829,7 @@ function CreateProjectModal({ open, onClose, onSubmit }) {
   );
 }
 
-function EditProjectModal({ open, onClose, project, onUpdate }) {
+function EditProjectModal({ open, onClose, project, onUpdate, isUpdating }) {
   const labelCls = 'block text-sm font-bold text-gray-700 mb-2';
   const inputCls =
     'w-full px-4 py-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-[#004475] transition-all bg-white placeholder-gray-400';
@@ -885,7 +886,7 @@ function EditProjectModal({ open, onClose, project, onUpdate }) {
     handleChange('agreementName', file.name);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const tags = [
       form.industry.toUpperCase() || 'GENERAL',
@@ -896,7 +897,7 @@ function EditProjectModal({ open, onClose, project, onUpdate }) {
     if (form.agreementName) {
       tags.push(`AGREEMENT_FILE:${form.agreementName}`);
     }
-    onUpdate?.({
+    const success = await onUpdate?.({
       ...project,
       projectCategory: form.category,
       name: form.name,
@@ -911,7 +912,9 @@ function EditProjectModal({ open, onClose, project, onUpdate }) {
         .filter(Boolean),
       tags: tags,
     });
-    onClose();
+    if (success) {
+      onClose();
+    }
   };
 
   const footer = (
@@ -923,8 +926,12 @@ function EditProjectModal({ open, onClose, project, onUpdate }) {
       >
         Cancel
       </button>
-      <PrimaryButton type="submit" form="edit-project-form">
-        Update Project
+      <PrimaryButton
+        type="submit"
+        form="edit-project-form"
+        disabled={isUpdating}
+      >
+        {isUpdating ? 'Updating...' : 'Update Project'}
         <Rocket size={18} />
       </PrimaryButton>
     </div>
@@ -1237,6 +1244,7 @@ export default function ProjectPortfolio({
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(6);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -1315,10 +1323,13 @@ export default function ProjectPortfolio({
           setSelectedProject(updatedProject);
           setUnassignConfirmOpen(false);
           setMemberToUnassign(null);
+          showSuccessToast('Team member unassigned successfully!');
         } else {
+          showErrorToast('Failed to unassign team member.');
           console.error('Failed to unassign member');
         }
       } catch (err) {
+        showErrorToast('An error occurred during unassignment.');
         console.error('Unassign error:', err);
       }
     }
@@ -1336,19 +1347,21 @@ export default function ProjectPortfolio({
           );
           setDeleteConfirmOpen(false);
           setProjectToDelete(null);
+          showSuccessToast('Project deleted successfully!');
         } else {
+          showErrorToast('Failed to delete project.');
           console.error('Failed to delete project');
         }
       } catch (err) {
+        showErrorToast('An error occurred during deletion.');
         console.error('Delete error:', err);
       }
     }
   };
-
   const handleUpdateProject = async (updatedProject) => {
-    setLoading(true);
+    setIsUpdating(true);
     try {
-      const res = await fetch(`/api/projects?id=${updatedProject.id}`, {
+      const res = await fetch(`/api/projects/${updatedProject.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1383,11 +1396,18 @@ export default function ProjectPortfolio({
               : p
           )
         );
+        showSuccessToast('Project updated successfully!');
+        return true;
+      } else {
+        showErrorToast('Failed to update project.');
+        return false;
       }
     } catch (err) {
+      showErrorToast('An error occurred during update.');
       console.error('Update project error:', err);
+      return false;
     } finally {
-      setLoading(false);
+      setIsUpdating(false);
     }
   };
 
@@ -1518,8 +1538,12 @@ export default function ProjectPortfolio({
                 ]);
                 setLastCreatedProject(created);
                 setCreateSuccessOpen(true);
+                showSuccessToast('Project created successfully!');
+              } else {
+                showErrorToast('Failed to create project.');
               }
             } catch (err) {
+              showErrorToast('An error occurred during creation.');
               console.error('Create project error:', err);
             }
           }}
@@ -1535,6 +1559,7 @@ export default function ProjectPortfolio({
           }}
           project={selectedProject}
           onUpdate={handleUpdateProject}
+          isUpdating={isUpdating}
         />
       )}
 

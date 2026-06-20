@@ -15,7 +15,7 @@ import Pagination from '../../../Pagination';
 import Loader from '../../../Loader';
 import CustomModalForm from '../../../CustomModalForm';
 import PrimaryButton from '../../../Buttons/PrimaryButton';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 const DEFAULT_COLUMNS = {
   createdAt: false,
@@ -311,7 +311,7 @@ export default function TalentCommunityTab() {
     }
   };
 
-  const exportToExcel = () => {
+  const exportToExcel = async () => {
     try {
       const excelData = filtered.map((entry) => ({
         'Date Submitted': new Date(entry.createdAt).toLocaleDateString(
@@ -337,31 +337,48 @@ export default function TalentCommunityTab() {
         Message: entry.shortMessage || '',
       }));
 
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(excelData);
+      const wb = new ExcelJS.Workbook();
+      const ws = wb.addWorksheet('Open Applications');
 
-      const maxWidth = excelData.reduce((acc, row) => {
-        Object.keys(row).forEach((key) => {
-          const length = String(row[key] || '').length;
-          if (!acc[key] || length > acc[key]) {
-            acc[key] = length;
-          }
+      if (excelData.length > 0) {
+        const headers = Object.keys(excelData[0]);
+        ws.addRow(headers);
+
+        const headerRow = ws.getRow(1);
+        headerRow.font = { bold: true };
+
+        excelData.forEach((row) => {
+          ws.addRow(Object.values(row));
         });
-        return acc;
-      }, {});
 
-      const wscols = Object.keys(maxWidth).map((key) => ({
-        wch: Math.min(Math.max(maxWidth[key] + 2, 10), 50),
-      }));
-
-      ws['!cols'] = wscols;
-
-      XLSX.utils.book_append_sheet(wb, ws, 'Open Applications');
+        ws.columns.forEach((column) => {
+          let maxLength = 0;
+          column.eachCell({ includeEmpty: true }, (cell) => {
+            const columnLength = cell.value ? String(cell.value).length : 0;
+            if (columnLength > maxLength) {
+              maxLength = columnLength;
+            }
+          });
+          column.width = Math.min(Math.max(maxLength + 2, 10), 50);
+        });
+      }
 
       const excelFileName = `Open_Applications_${
         new Date().toISOString().split('T')[0]
       }.xlsx`;
-      XLSX.writeFile(wb, excelFileName);
+
+      const buffer = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = excelFileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error exporting to Excel:', error);
       showToast('Failed to export to Excel', 'error');

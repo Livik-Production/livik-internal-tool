@@ -11,12 +11,15 @@ import Pagination from '../../Pagination';
 import { SquarePen, Trash, CheckCircle } from 'lucide-react';
 import ConfirmDialog from '../../ConfirmDialog';
 import CustomAlertForm from '../../CustomAlertForm';
+import { toast } from 'react-toastify';
+import Loader from '../../Loader';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   fetchEmployees,
   updateEmployee as updateEmployeeAction,
   selectEmployeesItems,
   selectEmployeesStatus,
+  resetStatus,
 } from '../../../../store/slices/employeesSlice';
 
 export default function PendingEmployees({
@@ -26,22 +29,58 @@ export default function PendingEmployees({
   onView,
   onEdit,
   onDelete,
+  onApproveSuccess,
   isViewOnly = false,
   searchElement = null,
   searchQuery = '',
+  isAdmin = false,
 }) {
   const dispatch = useDispatch();
   const allEmployees = useSelector(selectEmployeesItems);
   const employeeStatus = useSelector(selectEmployeesStatus);
 
-  // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10); // default to 10
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  // Filter only pending employees
-  let employees = allEmployees.filter(
-    (emp) => emp.status?.toUpperCase() === 'PENDING'
-  );
+  const authUser = useSelector((state) => state.auth?.user);
+  const roleName =
+    authUser?.role?.name?.toUpperCase() ??
+    authUser?.roleName?.toUpperCase() ??
+    null;
+
+  // Filter only pending employees (including PENDING_ADMIN)
+  let employees = allEmployees.filter((emp) => {
+    const statusUpper = emp.status?.toUpperCase();
+    if (statusUpper === 'ACTIVE' || statusUpper === 'APPROVED') {
+      return false;
+    }
+
+    const isPending = statusUpper === 'PENDING';
+    const isPendingAdmin = statusUpper === 'PENDING_ADMIN';
+    const createdByAdmin = emp.createdByRole === 'SUPER_ADMIN';
+    const isLegacy = !emp.createdByRole;
+
+    if (isAdmin) {
+      // Admin sees their own pending + anyone's approved + Legacy
+      return (isPending && createdByAdmin) || isPendingAdmin || isLegacy;
+    } else {
+      // HR / HR_ADMIN sees all pending employees
+      return isPending;
+    }
+  });
+
+  const isDetailsComplete = (row) => {
+    const r = row.__raw || {};
+    if (r.workType === 'CONTRACT') {
+      return !!(r.firstName && r.lastName && r.phoneNumber && r.bondRemarks);
+    }
+    return !!(
+      r.aadhaarNumber &&
+      r.panNumber &&
+      r.dateOfBirth &&
+      r.presentAddress
+    );
+  };
 
   if (searchQuery) {
     const lowerQuery = searchQuery.toLowerCase();
@@ -54,6 +93,12 @@ export default function PendingEmployees({
         (emp.email && emp.email.toLowerCase().includes(lowerQuery))
     );
   }
+
+  // Force a fresh fetch every time this component mounts so HR always
+  // sees the latest employee data (e.g. after an employee fills their profile).
+  useEffect(() => {
+    dispatch(resetStatus());
+  }, [dispatch]);
 
   useEffect(() => {
     if (employeeStatus === 'idle') {
@@ -75,6 +120,14 @@ export default function PendingEmployees({
     const startIndex = (currentPage - 1) * itemsPerPage;
     return employees.slice(startIndex, startIndex + itemsPerPage);
   }, [employees, currentPage, itemsPerPage]);
+
+  const hasApprovableEmployees = useMemo(() => {
+    return employees.some((emp) => {
+      const complete = isDetailsComplete(emp);
+      const isPendingAdmin = emp.status?.toUpperCase() === 'PENDING_ADMIN';
+      return complete && (isAdmin || !isPendingAdmin);
+    });
+  }, [employees, isAdmin]);
 
   // State for confirmation dialog
   const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
@@ -110,6 +163,11 @@ export default function PendingEmployees({
         label: 'Pending',
         color: 'bg-yellow-100 text-yellow-800 border-yellow-200',
         dotColor: 'bg-yellow-500',
+      },
+      pending_admin: {
+        label: 'Pending Admin',
+        color: 'bg-purple-100 text-purple-800 border-purple-200',
+        dotColor: 'bg-purple-500',
       },
       active: {
         label: 'Active',
@@ -156,11 +214,12 @@ export default function PendingEmployees({
     try {
       const employee = selectedEmployee;
       const serverId = employee.__raw?.id || employee.id;
+      const targetStatus = isAdmin ? 'Active' : 'PENDING_ADMIN';
 
       const res = await fetch(`/api/employees/${serverId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'Active' }),
+        body: JSON.stringify({ status: targetStatus }),
       });
 
       if (!res.ok) {
@@ -183,10 +242,12 @@ export default function PendingEmployees({
 
       dispatch(updateEmployeeAction(uiRow));
 
-      showAlert(
-        'Success',
-        `${employee.name} has been approved and activated!`,
-        'success'
+      if (onApproveSuccess) {
+        onApproveSuccess(uiRow);
+      }
+
+      toast.success(
+        `${employee.name} has been approved${!isAdmin ? ' (pending Admin approval)' : ''}!`
       );
 
       // Close the dialog
@@ -194,11 +255,7 @@ export default function PendingEmployees({
       setSelectedEmployee(null);
     } catch (error) {
       console.error('Error updating employee status:', error);
-      showAlert(
-        'Error',
-        'Failed to update status. Please try again.',
-        'danger'
-      );
+      toast.error('Failed to update status. Please try again.');
     } finally {
       setIsUpdating(false);
     }
@@ -216,31 +273,35 @@ export default function PendingEmployees({
     try {
       let approvedCount = 0;
       for (const emp of employees) {
+        // Skip employees who haven't completed their portal setup
+        if (!isDetailsComplete(emp)) continue;
+
+        // Skip employees who are already PENDING_ADMIN if we are not Admin
+        if (!isAdmin && emp.status?.toUpperCase() === 'PENDING_ADMIN') continue;
+
         const serverId = emp.__raw?.id || emp.id;
+        const targetStatus = isAdmin ? 'Active' : 'PENDING_ADMIN';
         const res = await fetch(`/api/employees/${serverId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: 'Active' }),
+          body: JSON.stringify({ status: targetStatus }),
         });
         if (res.ok) {
           const updated = await res.json();
           dispatch(
             updateEmployeeAction({
               ...emp,
-              status: 'Active',
+              status: targetStatus,
               __raw: { ...emp.__raw, ...updated },
             })
           );
           approvedCount++;
         }
       }
-      showAlert(
-        'Success',
-        `Approved all ${approvedCount} employees`,
-        'success'
-      );
+      dispatch(fetchEmployees());
+      toast.success(`${approvedCount} employees approved successfully!`);
     } catch (error) {
-      showAlert('Error', 'Some approvals might have failed.', 'danger');
+      toast.error('Some approvals might have failed.');
     } finally {
       setIsUpdating(false);
     }
@@ -290,37 +351,58 @@ export default function PendingEmployees({
     },
   ];
 
-  const tableActions = (row) => (
-    <div className="flex items-center justify-center gap-2">
-      {/* Approve Button */}
-      <IconButton
-        onClick={() => handleApproveClick(row)}
-        disabled={!canApprove || isUpdating}
-        title={!canApprove ? 'Approve access restricted' : 'Approve Employee'}
-        className="disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        <CheckCircle size={18} />
-      </IconButton>
+  const tableActions = (row) => {
+    const complete = isDetailsComplete(row);
+    const isPendingAdmin = row.status?.toUpperCase() === 'PENDING_ADMIN';
+    const disableApprove =
+      !canApprove || isUpdating || !complete || (!isAdmin && isPendingAdmin);
 
-      {/* Edit Button */}
-      <IconButton
-        onClick={() => onEdit && onEdit(row)}
-        disabled={!canEdit || isUpdating}
-        title="Edit Profile"
-      >
-        <SquarePen size={18} />
-      </IconButton>
+    let approveTitle = 'Approve Employee';
+    if (!canApprove) approveTitle = 'Approve access restricted';
+    else if (!complete) approveTitle = 'Pending details from employee portal';
+    else if (!isAdmin && isPendingAdmin)
+      approveTitle = 'Waiting for Admin approval';
 
-      {/* Delete Button */}
-      <IconButton
-        onClick={() => onDelete && onDelete(row.id)}
-        disabled={!canDelete || isUpdating}
-        title={!canDelete ? 'Delete access restricted' : 'Delete'}
-      >
-        <Trash size={18} />
-      </IconButton>
-    </div>
-  );
+    return (
+      <div className="flex items-center justify-center gap-2">
+        {/* Approve Button */}
+        <IconButton
+          onClick={() => handleApproveClick(row)}
+          disabled={disableApprove}
+          title={approveTitle}
+          className="disabled disabled:cursor-not-allowed"
+        >
+          <CheckCircle size={18} />
+        </IconButton>
+
+        {/* Edit Button */}
+        <IconButton
+          onClick={() => onEdit && onEdit(row)}
+          disabled={!canEdit || isUpdating}
+          title="Edit Profile"
+        >
+          <SquarePen size={18} />
+        </IconButton>
+
+        {/* Delete Button */}
+        <IconButton
+          onClick={() => onDelete && onDelete(row.id)}
+          disabled={!canDelete || isUpdating}
+          title={!canDelete ? 'Delete access restricted' : 'Delete'}
+        >
+          <Trash size={18} />
+        </IconButton>
+      </div>
+    );
+  };
+
+  if (employeeStatus === 'loading') {
+    return (
+      <div className="flex justify-center items-center py-20 bg-white rounded-xl shadow-sm border border-gray-100 min-h-[400px]">
+        <Loader label="Loading pending employees..." fullScreen={false} />
+      </div>
+    );
+  }
 
   return (
     <>
@@ -330,7 +412,7 @@ export default function PendingEmployees({
           {employees.length > 0 && (
             <PrimaryButton
               onClick={handleApproveAllClick}
-              disabled={!canApprove || isUpdating}
+              disabled={!hasApprovableEmployees || isUpdating}
               className="px-4 py-2 m-2 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               title={!canApprove ? 'Approve access restricted' : 'Approve All'}
             >
@@ -367,6 +449,7 @@ export default function PendingEmployees({
       {/* Approve Confirmation Dialog */}
       <ConfirmDialog
         open={isApproveDialogOpen}
+        loading={isUpdating}
         onClose={() => {
           setIsApproveDialogOpen(false);
           setSelectedEmployee(null);
@@ -410,6 +493,7 @@ export default function PendingEmployees({
       {/* Approve All Confirmation Dialog */}
       <ConfirmDialog
         open={isApproveAllDialogOpen}
+        loading={isUpdating}
         onClose={() => setIsApproveAllDialogOpen(false)}
         title="Approve All Employees"
         description={`Are you sure you want to approve all ${employees.length} pending employees? This will activate their accounts and grant them access.`}

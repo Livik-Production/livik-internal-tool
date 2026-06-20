@@ -15,8 +15,12 @@ import {
 import Loader from '../../../Loader';
 import JobApplicationsTab from '../job-applications/JobApplicationsTab';
 import TalentCommunityTab from '../talent-community/TalentCommunityTab';
+import { showSuccessToast, showErrorToast } from '../../../Toast';
 
-export default function JobOpeningsTab({ navigationState, clearNavigationState }) {
+export default function JobOpeningsTab({
+  navigationState,
+  clearNavigationState,
+}) {
   const [activeSubTab, setActiveSubTab] = useState('Create Job');
   const [jobs, setJobs] = useState([]);
 
@@ -27,13 +31,7 @@ export default function JobOpeningsTab({ navigationState, clearNavigationState }
   }, [navigationState]);
   const [jobsLoading, setJobsLoading] = useState(true);
   const [jobsError, setJobsError] = useState(null);
-  const [toast, setToast] = useState(null);
   const [saving, setSaving] = useState(false);
-
-  const showToast = (message, type = 'success') => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3500);
-  };
 
   const fetchJobs = useCallback(async () => {
     setJobsLoading(true);
@@ -135,7 +133,7 @@ export default function JobOpeningsTab({ navigationState, clearNavigationState }
       !jobForm.experience ||
       !jobForm.description
     ) {
-      showToast('Please fill in all required fields.', 'error');
+      showErrorToast('Please fill in all required fields.');
       return;
     }
     setSaving(true);
@@ -157,7 +155,7 @@ export default function JobOpeningsTab({ navigationState, clearNavigationState }
         });
         const json = await res.json();
         if (!res.ok) throw new Error(json.error || 'Failed to update');
-        showToast('Job opening updated successfully!');
+        showSuccessToast('Job opening updated successfully!');
       } else {
         const res = await fetch('/api/job-openings', {
           method: 'POST',
@@ -166,12 +164,12 @@ export default function JobOpeningsTab({ navigationState, clearNavigationState }
         });
         const json = await res.json();
         if (!res.ok) throw new Error(json.error || 'Failed to create');
-        showToast('Job opening posted successfully!');
+        showSuccessToast('Job opening posted successfully!');
       }
       await fetchJobs();
       handleCancelEdit();
     } catch (err) {
-      showToast(err.message, 'error');
+      showErrorToast(err.message);
     } finally {
       setSaving(false);
     }
@@ -186,11 +184,11 @@ export default function JobOpeningsTab({ navigationState, clearNavigationState }
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Failed to delete');
-      showToast('Job opening deleted.');
+      showSuccessToast('Job opening deleted.');
       await fetchJobs();
       handleCancelEdit();
     } catch (err) {
-      showToast(err.message, 'error');
+      showErrorToast(err.message);
     } finally {
       setSaving(false);
     }
@@ -198,15 +196,11 @@ export default function JobOpeningsTab({ navigationState, clearNavigationState }
 
   return (
     <div className="flex flex-col h-full">
-      {/* Toast */}
-      {toast && (
-        <div
-          className={`fixed top-5 right-5 z-[99999] px-5 py-3 rounded-xl shadow-lg text-sm font-semibold text-white transition-all ${
-            toast.type === 'error' ? 'bg-red-500' : 'bg-green-600'
-          }`}
-        >
-          {toast.message}
-        </div>
+      {saving && (
+        <Loader
+          label={jobForm.isEditing ? 'Saving changes...' : 'Posting job...'}
+          fullScreen={true}
+        />
       )}
 
       {/* Sub Tabs Row */}
@@ -503,9 +497,19 @@ export default function JobOpeningsTab({ navigationState, clearNavigationState }
         </div>
       )}
 
-      {activeSubTab === 'Role Applications' && <JobApplicationsTab navigationState={navigationState} clearNavigationState={clearNavigationState} />}
+      {activeSubTab === 'Role Applications' && (
+        <JobApplicationsTab
+          navigationState={navigationState}
+          clearNavigationState={clearNavigationState}
+        />
+      )}
 
-      {activeSubTab === 'Open Applications' && <TalentCommunityTab navigationState={navigationState} clearNavigationState={clearNavigationState} />}
+      {activeSubTab === 'Open Applications' && (
+        <TalentCommunityTab
+          navigationState={navigationState}
+          clearNavigationState={clearNavigationState}
+        />
+      )}
     </div>
   );
 }

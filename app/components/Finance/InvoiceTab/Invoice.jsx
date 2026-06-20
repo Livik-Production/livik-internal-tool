@@ -27,7 +27,6 @@ import {
 import HyperlinkButton from '../../Buttons/HyperlinkButton';
 import CustomModalForm from '../../CustomModalForm';
 import Pagination from '../../Pagination';
-import { handleDownloadInvoicePDF } from './DownloadInvoicePDF';
 import { handlePrint } from '../../HrModule/PrintForm';
 
 import { createPortal } from 'react-dom';
@@ -192,6 +191,13 @@ const InvoiceTable = ({ onRefresh }) => {
     { value: 'pending', label: 'Pending' },
   ]);
 
+  const [invoiceFormat, setInvoiceFormat] = useState({
+    prefix: 'INV-',
+    nextNumber: '1001',
+    padding: 4,
+    suffix: '-2026',
+  });
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -207,35 +213,57 @@ const InvoiceTable = ({ onRefresh }) => {
   }, []);
 
   const getNextInvoiceNumber = () => {
-    const currentYearStr = new Date().getFullYear().toString().slice(-2);
-    const prefix = `INV-${currentYearStr}-`;
+    const prefix = invoiceFormat.prefix || 'INV-';
+    const padding = invoiceFormat.padding ?? 4;
+    const suffix = invoiceFormat.suffix || '';
 
-    const yearInvoices = invoicesData.filter(
-      (inv) => inv.invoiceNumber && inv.invoiceNumber.startsWith(prefix)
+    const relevantInvoices = invoicesData.filter(
+      (inv) =>
+        inv.invoiceNumber &&
+        inv.invoiceNumber.startsWith(prefix) &&
+        inv.invoiceNumber.endsWith(suffix)
     );
 
-    if (yearInvoices.length === 0) {
-      return `${prefix}0001`;
+    if (relevantInvoices.length === 0) {
+      const startNum = parseInt(invoiceFormat.nextNumber, 10) || 1001;
+      return `${prefix}${String(startNum).padStart(padding, '0')}${suffix}`;
     }
 
     let maxSeq = 0;
-    yearInvoices.forEach((inv) => {
-      const parts = inv.invoiceNumber.split('-');
-      if (parts.length === 3) {
-        const seq = parseInt(parts[2], 10);
-        if (!isNaN(seq) && seq > maxSeq) {
-          maxSeq = seq;
-        }
+    relevantInvoices.forEach((inv) => {
+      let temp = inv.invoiceNumber;
+      if (prefix && temp.startsWith(prefix)) {
+        temp = temp.slice(prefix.length);
+      }
+      if (suffix && temp.endsWith(suffix)) {
+        temp = temp.slice(0, -suffix.length);
+      }
+      const seq = parseInt(temp, 10);
+      if (!isNaN(seq) && seq > maxSeq) {
+        maxSeq = seq;
       }
     });
 
-    const nextSeqStr = String(maxSeq + 1).padStart(4, '0');
-    return `${prefix}${nextSeqStr}`;
+    const nextSeqStr = String(maxSeq + 1).padStart(padding, '0');
+    return `${prefix}${nextSeqStr}${suffix}`;
   };
 
   const fetchData = async () => {
     setIsLoading(true);
     try {
+      // Fetch Number Format Settings
+      try {
+        const formatRes = await fetch('/api/number-formats');
+        if (formatRes.ok) {
+          const formats = await formatRes.json();
+          if (formats.invoice) {
+            setInvoiceFormat(formats.invoice);
+          }
+        }
+      } catch (err) {
+        console.error('Error loading number formats:', err);
+      }
+
       // Fetch Invoices
       const invRes = await fetch('/api/invoices');
       const invData = await invRes.json();
@@ -685,7 +713,10 @@ const InvoiceTable = ({ onRefresh }) => {
     showInfoToast(
       `Downloading invoice ${previewInvoiceData?.invoiceNumber}...`
     );
-    handleDownloadInvoicePDF(previewInvoiceData, 'with');
+
+    // Switch to server-side Puppeteer generation
+    const invoiceId = previewInvoiceData?.id || previewInvoiceData?._id;
+    window.open(`/api/invoice-pdf?id=${invoiceId}`, '_blank');
   };
 
   const handleEmailInvoice = () => {

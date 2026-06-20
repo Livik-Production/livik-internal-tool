@@ -3,7 +3,7 @@
 
 import React, { useState } from 'react';
 import { Download, FileSpreadsheet } from 'lucide-react';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import CustomAlertForm from '../CustomAlertForm';
 
 const PayrollExportExcel = ({ payrollData, fileName = 'payroll_export' }) => {
@@ -40,38 +40,43 @@ const PayrollExportExcel = ({ payrollData, fileName = 'payroll_export' }) => {
     }));
   };
 
-  const exportToExcel = () => {
+  const exportToExcel = async () => {
     try {
       // Prepare data for Excel
       const excelData = formatPayrollDataForExcel();
 
       // Create a new workbook
-      const wb = XLSX.utils.book_new();
+      const wb = new ExcelJS.Workbook();
 
       // Create a worksheet
-      const ws = XLSX.utils.json_to_sheet(excelData);
+      const ws = wb.addWorksheet('Payroll Data');
 
-      // Auto-size columns
-      const maxWidth = excelData.reduce((acc, row) => {
-        Object.keys(row).forEach((key) => {
-          const length = String(row[key]).length;
-          if (!acc[key] || length > acc[key]) {
-            acc[key] = length;
-          }
+      if (excelData.length > 0) {
+        const headers = Object.keys(excelData[0]);
+        ws.addRow(headers);
+
+        const headerRow = ws.getRow(1);
+        headerRow.font = { bold: true };
+
+        excelData.forEach((row) => {
+          ws.addRow(Object.values(row));
         });
-        return acc;
-      }, {});
 
-      const wscols = Object.keys(maxWidth).map((key) => ({
-        wch: Math.min(maxWidth[key] + 2, 50), // Max width 50 characters
-      }));
-
-      ws['!cols'] = wscols;
-
-      // Add worksheet to workbook
-      XLSX.utils.book_append_sheet(wb, ws, 'Payroll Data');
+        ws.columns.forEach((column) => {
+          let maxLength = 0;
+          column.eachCell({ includeEmpty: true }, (cell) => {
+            const columnLength = cell.value ? String(cell.value).length : 0;
+            if (columnLength > maxLength) {
+              maxLength = columnLength;
+            }
+          });
+          column.width = Math.min(Math.max(maxLength + 2, 10), 50);
+        });
+      }
 
       // Add a summary sheet
+      const summaryWs = wb.addWorksheet('Summary');
+
       const summaryData = [
         ['Payroll Summary Report'],
         ['Generated on:', new Date().toLocaleDateString()],
@@ -121,18 +126,30 @@ const PayrollExportExcel = ({ payrollData, fileName = 'payroll_export' }) => {
         ['Total Employees Processed:', totalAmounts.totalEmployees]
       );
 
-      const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
-      XLSX.utils.book_append_sheet(wb, summaryWs, 'Summary');
+      summaryData.forEach((row) => {
+        summaryWs.addRow(row);
+      });
 
       // Style the summary sheet
-      const summaryCols = [{ wch: 25 }, { wch: 20 }];
-      summaryWs['!cols'] = summaryCols;
+      summaryWs.columns = [{ width: 25 }, { width: 20 }];
 
       // Generate Excel file
       const excelFileName = `${fileName}_${
         new Date().toISOString().split('T')[0]
       }.xlsx`;
-      XLSX.writeFile(wb, excelFileName);
+
+      const buffer = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = excelFileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
 
       return true;
     } catch (error) {

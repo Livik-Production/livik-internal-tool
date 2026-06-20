@@ -14,6 +14,12 @@ const nextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'liviktech-resumes.s3.ap-south-1.amazonaws.com',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
 };

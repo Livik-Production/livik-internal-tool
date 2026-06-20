@@ -75,6 +75,7 @@ export default function RolesTab() {
           emp.name ||
           'Unknown',
         role: emp.role,
+        status: emp.status,
       }));
 
       setEmployees(mapped);
@@ -183,6 +184,9 @@ export default function RolesTab() {
       }
       await fetchRoles();
       setShowDeleteConfirm(false);
+      showSuccessToast(
+        `Role "${roleToDelete.displayName || roleToDelete.roleName}" deleted successfully!`
+      );
       setRoleToDelete(null);
     } catch (error) {
       showErrorToast(

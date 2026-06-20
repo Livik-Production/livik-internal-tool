@@ -16,9 +16,29 @@ export async function GET(request) {
         },
       });
 
+      const allPartialPayments = await prisma.invoicePartialPayment.findMany({
+        orderBy: { paymentDate: 'desc' },
+        include: {
+          invoice: {
+            include: {
+              items: true,
+            },
+          },
+        },
+      });
+
+      const combined = [
+        ...allPayments.map((p) => ({ ...p, isPartial: false })),
+        ...allPartialPayments.map((p) => ({ ...p, isPartial: true })),
+      ];
+
+      combined.sort(
+        (a, b) => new Date(b.paymentDate) - new Date(a.paymentDate)
+      );
+
       // Enrich payment data with customer information
       const enrichedPayments = await Promise.all(
-        allPayments.map(async (payment) => {
+        combined.map(async (payment) => {
           let customer = null;
 
           // Extract customer from invoice items metadata
@@ -45,6 +65,8 @@ export async function GET(request) {
             remarks: payment.remarks,
             customer: customer,
             client: customer?.name || 'Unknown Client',
+            isPartial: payment.isPartial,
+            nextInstallmentDate: payment.nextInstallmentDate || null,
           };
         })
       );

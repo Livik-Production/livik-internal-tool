@@ -49,9 +49,30 @@ const ExpensesTable = ({
     { value: '12', label: 'December' },
   ];
 
-  const yearOptions = Array.from({ length: 3 }, (_, i) =>
-    (now.getFullYear() - i).toString()
-  );
+  // Dynamic year options from 2025 to current year
+  const startYear = 2025;
+  const currentYear = now.getFullYear();
+  const yearOptions = [];
+  for (let y = currentYear; y >= startYear; y--) {
+    yearOptions.push(y.toString());
+  }
+
+  // Filter months based on range: Sep-2025 to Current Month
+  const filteredMonthOptions = monthOptions.filter((m) => {
+    if (selectedYear === 'all') return true;
+
+    const monthVal = parseInt(m.value);
+    const selectedYearInt = parseInt(selectedYear);
+    const currentMonthNum = now.getMonth() + 1;
+
+    if (selectedYearInt === 2025) {
+      return monthVal >= 9;
+    }
+    if (selectedYearInt === currentYear) {
+      return monthVal <= currentMonthNum;
+    }
+    return true;
+  });
 
   const data = expenses;
   const filteredData = (data || []).filter((expense) => {
@@ -92,38 +113,44 @@ const ExpensesTable = ({
     ...new Set(expenses.map((e) => e.category).filter(Boolean)),
   ];
 
+  const isMounted = useRef(true);
+
   useEffect(() => {
-    let mounted = true;
-
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        const [expRes, pcRes] = await Promise.all([
-          fetch('/api/expense', { cache: 'no-store' }),
-          fetch('/api/expense/petty-cash', { cache: 'no-store' }),
-        ]);
-
-        if (!expRes.ok) throw new Error('Failed to fetch expenses');
-        if (!pcRes.ok) throw new Error('Failed to fetch petty cash flow');
-
-        const expData = await expRes.json();
-        const pcData = await pcRes.json();
-
-        if (mounted) {
-          setExpenses(Array.isArray(expData) ? expData : []);
-          setPettyCashFlows(Array.isArray(pcData) ? pcData : []);
-        }
-      } catch (err) {
-        console.error('Fetch data failed:', err);
-      } finally {
-        if (mounted) setIsLoading(false);
-      }
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
     };
+  }, []);
 
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      const [expRes, pcRes] = await Promise.all([
+        fetch('/api/expense', { cache: 'no-store' }),
+        fetch('/api/expense/petty-cash', { cache: 'no-store' }),
+      ]);
+
+      if (!expRes.ok) throw new Error('Failed to fetch expenses');
+      if (!pcRes.ok) throw new Error('Failed to fetch petty cash flow');
+
+      const expData = await expRes.json();
+      const pcData = await pcRes.json();
+
+      if (isMounted.current) {
+        setExpenses(Array.isArray(expData) ? expData : []);
+        setPettyCashFlows(Array.isArray(pcData) ? pcData : []);
+      }
+    } catch (err) {
+      console.error('Fetch data failed:', err);
+    } finally {
+      if (isMounted.current) setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchData();
     window.refreshFinanceData = fetchData;
     return () => {
-      mounted = false;
       delete window.refreshFinanceData;
     };
   }, []);
@@ -157,6 +184,7 @@ const ExpensesTable = ({
       setSelectedMonthNum('all');
       setSelectedYear('all');
       setAnimating(false);
+      fetchData();
     }, 400);
   };
 
@@ -223,21 +251,17 @@ const ExpensesTable = ({
             animating ? 'opacity-0 translate-y-4' : 'animate-dashboard-reveal'
           }`}
         >
-          {activeTab === 'dashboard' &&
-            (isLoading || propIsLoading || loading ? (
-              <div className="py-20 flex justify-center">
-                <Loader fullScreen={false} label="Loading dashboard..." />
-              </div>
-            ) : (
-              <DashboardTab
-                expenses={expenses}
-                periodRange={periodRange}
-                setPeriodRange={setPeriodRange}
-                yearRange={yearRange}
-                setYearRange={setYearRange}
-                onViewAll={onViewAll}
-              />
-            ))}
+          {activeTab === 'dashboard' && (
+            <DashboardTab
+              expenses={expenses}
+              periodRange={periodRange}
+              setPeriodRange={setPeriodRange}
+              yearRange={yearRange}
+              setYearRange={setYearRange}
+              onViewAll={onViewAll}
+              isLoading={isLoading || propIsLoading || loading}
+            />
+          )}
           {activeTab === 'all' && (
             <AllExpenseTab
               expenses={filteredData}
@@ -254,24 +278,26 @@ const ExpensesTable = ({
               setSelectedYear={setSelectedYear}
               selectedCategory={selectedCategory}
               setSelectedCategory={setSelectedCategory}
-              monthOptions={monthOptions}
+              monthOptions={filteredMonthOptions}
               yearOptions={yearOptions}
               availableCategories={availableCategories}
             />
           )}
-          {activeTab === 'cashflow' &&
-            (isLoading || propIsLoading || loading ? (
-              <div className="py-20 flex justify-center">
-                <Loader fullScreen={false} label="Loading cash flow..." />
-              </div>
-            ) : (
-              <CashFlowTab
-                inflows={pettyCashFlows}
-                expenses={expenses}
-                onView={handleViewExpense}
-                onRefresh={handleRefresh}
-              />
-            ))}
+          {activeTab === 'cashflow' && (
+            <CashFlowTab
+              inflows={pettyCashFlows}
+              expenses={expenses}
+              onView={handleViewExpense}
+              onRefresh={handleRefresh}
+              isLoading={isLoading || propIsLoading || loading}
+              selectedMonthNum={selectedMonthNum}
+              setSelectedMonthNum={setSelectedMonthNum}
+              selectedYear={selectedYear}
+              setSelectedYear={setSelectedYear}
+              monthOptions={filteredMonthOptions}
+              yearOptions={yearOptions}
+            />
+          )}
         </div>
       </div>
     </>

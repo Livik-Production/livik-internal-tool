@@ -19,6 +19,10 @@ export async function POST(req) {
         where: { phoneNumber: mobile },
         select: {
           id: true,
+          empId: true,
+          contractEmpId: true,
+          workType: true,
+          workMode: true,
           password: true,
           email: true,
           firstName: true,
@@ -55,6 +59,10 @@ export async function POST(req) {
     // 🔐 Constructed session payload matching middleware expectation
     const sessionPayload = {
       employeeId: employee.id, // Middleware expects employeeId
+      empId: employee.empId || null,
+      contractEmpId: employee.contractEmpId || null,
+      workType: employee.workType || null,
+      workMode: employee.workMode || null,
       roleId: employee.role?.id,
       roleName: employee.role?.roleName,
       displayName: employee.role?.displayName,

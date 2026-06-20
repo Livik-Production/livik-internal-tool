@@ -98,6 +98,7 @@ export const HOLIDAYS = [
 const HolidayListTab = ({
   onAddHoliday, // ✅ Receive handler for modal
   canControlAllEmployees,
+  hideAddButton = false,
 }) => {
   const [holidayData, setHolidayData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
@@ -106,14 +107,19 @@ const HolidayListTab = ({
 
   // Year filter logic
   const now = new Date();
-  const [selectedYear, setSelectedYear] = useState(now.getFullYear().toString());
+  const [selectedYear, setSelectedYear] = useState(
+    now.getFullYear().toString()
+  );
 
   const yearOptions = [{ value: 'All', label: 'All Years' }];
   const startYear = 2025;
   const currentYear = now.getFullYear();
-  for (let y = currentYear; y >= startYear; y--) {
+  for (let y = currentYear + 1; y >= startYear; y--) {
     yearOptions.push({ value: y.toString(), label: y.toString() });
   }
+
+  // Month Selection State
+  const [selectedMonthIndex, setSelectedMonthIndex] = useState(null);
 
   // Local Search State
   const [searchQuery, setSearchQuery] = useState('');
@@ -156,13 +162,19 @@ const HolidayListTab = ({
     return () => window.removeEventListener('refreshHolidays', handleRefresh);
   }, []);
 
-  // Filter data based on search query and selected year
+  // Filter data based on search query, selected year, and selected month
   useEffect(() => {
     let filtered = holidayData.filter((item) => {
       if (selectedYear === 'All') return true;
       const itemYear = new Date(item.date).getFullYear().toString();
       return itemYear === selectedYear;
     });
+
+    if (selectedMonthIndex !== null && selectedYear !== 'All') {
+      filtered = filtered.filter((item) => {
+        return new Date(item.date).getMonth() === selectedMonthIndex;
+      });
+    }
 
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
@@ -275,62 +287,154 @@ const HolidayListTab = ({
     setIsDetailModalOpen(true);
   };
 
-  const renderHeaderLayout = () => (
-    <div className="flex items-center justify-between mb-3">
-      <div className="flex-1"></div>
-      <div className="flex items-center gap-3">
-        {/* Year Dropdown */}
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-700 whitespace-nowrap">
-            Year :
-          </span>
-          <FilterDropdown
-            options={yearOptions}
-            value={selectedYear}
-            onChange={(val) => setSelectedYear(val)}
-            placeholder="Year"
-            className="min-w-[110px]"
-          />
-        </div>
+  const yearToUse =
+    selectedYear === 'All' ? currentYear : parseInt(selectedYear);
 
-        <div className="relative">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search holidays..."
-            className="px-3 py-2 pl-10 pr-9 border border-gray-300 rounded-lg text-sm w-64 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-          {searchQuery && (
-            <IconButton
-              onClick={() => setSearchQuery('')}
-              className="absolute right-2 top-1.5 shadow-none bg-transparent hover:bg-transparent"
-              title="Clear search"
-            >
-              <X size={14} className="text-gray-400 hover:text-[#004475]" />
-            </IconButton>
-          )}
-        </div>
+  // Generate 4 months: past 1 month, present month, and 2 future months
+  const baseMonth = yearToUse === currentYear ? now.getMonth() : 0; // Use Jan for non-current years
+  const generatedMonths = [-1, 0, 1, 2].map((offset) => {
+    const date = new Date(yearToUse, baseMonth + offset, 1);
+    return {
+      index: date.getMonth(),
+      actualYear: date.getFullYear(),
+      monthStr: date
+        .toLocaleString('default', { month: 'short' })
+        .toUpperCase(),
+      yearStr: date.getFullYear().toString().slice(-2),
+      fullYear: date.getFullYear(),
+    };
+  });
 
-        {/* Add Holiday Button */}
-        <PrimaryButton
-          onClick={onAddHoliday}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            canControlAllEmployees
-              ? 'bg-[#004475] text-white hover:bg-[#004475]'
-              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-          }`}
-          disabled={!canControlAllEmployees}
-          title={
-            !canControlAllEmployees ? 'Permission required' : 'Add Holiday List'
-          }
-        >
-          + Add Holiday List
-        </PrimaryButton>
+  const renderHeaderLayout = () => {
+    return (
+      <div>
+        <h2 className="text-4xl font-extrabold text-[#004475] mb-3 flex justify-center py-2">
+          Holiday Calendar {yearToUse}
+        </h2>
+        <div className="flex flex-col md:flex-row items-center justify-between mb-4 gap-4">
+          {/* Left Side: Month Selector */}
+          <div className="flex flex-col w-full md:w-auto overflow-hidden">
+            <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 w-full md:max-w-[50vw]">
+              {generatedMonths.map((m, idx) => {
+                const isFilterActive =
+                  selectedMonthIndex !== null &&
+                  m.index === selectedMonthIndex &&
+                  (selectedYear === 'All' ||
+                    m.actualYear.toString() === selectedYear);
+                const isDefaultActive =
+                  selectedMonthIndex === null &&
+                  m.index === now.getMonth() &&
+                  m.actualYear === currentYear;
+                const isActive = isFilterActive || isDefaultActive;
+                const isPast =
+                  m.actualYear < currentYear ||
+                  (m.actualYear === currentYear && m.index < now.getMonth());
+
+                let bgClass =
+                  'bg-white border border-gray-100 text-gray-700 hover:border-blue-300 shadow-sm';
+                if (isActive) {
+                  bgClass =
+                    'bg-[#004475] text-white shadow-md border-[#004475]';
+                } else if (isPast) {
+                  bgClass = 'bg-[#e0eaf5] text-gray-600 border-transparent';
+                }
+
+                return (
+                  <div
+                    key={idx}
+                    onClick={() => {
+                      if (
+                        selectedYear !== 'All' &&
+                        m.actualYear.toString() !== selectedYear
+                      ) {
+                        setSelectedYear(m.actualYear.toString());
+                      }
+                      setSelectedMonthIndex(isActive ? null : m.index);
+                    }}
+                    className={`flex flex-col items-center justify-center min-w-[70px] h-[80px] rounded-2xl cursor-pointer transition-all duration-200 shrink-0 ${bgClass}`}
+                  >
+                    <span
+                      className={`text-[11px] font-bold tracking-wider ${isActive ? 'text-white/90' : 'text-gray-500'}`}
+                    >
+                      {m.monthStr}
+                    </span>
+                    <span
+                      className={`text-xl font-bold mt-0.5 ${isActive ? 'text-white' : 'text-gray-800'}`}
+                    >
+                      {isActive ? m.fullYear : m.yearStr}
+                    </span>
+                    {isActive && (
+                      <div className="w-1.5 h-1.5 bg-white rounded-full mt-1.5 shadow-sm"></div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Right Side: Filters & Actions */}
+          <div className="flex-1 flex items-center justify-end gap-3 w-full md:w-auto flex-wrap md:flex-nowrap">
+            {/* Year Dropdown */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                Year :
+              </span>
+              <FilterDropdown
+                options={yearOptions}
+                value={selectedYear}
+                onChange={(val) => {
+                  setSelectedYear(val);
+                  if (val === 'All') setSelectedMonthIndex(null);
+                }}
+                placeholder="Year"
+                className="min-w-[110px]"
+              />
+            </div>
+
+            <div className="relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search holidays..."
+                className="px-3 py-2 pl-10 pr-9 border border-gray-300 rounded-xl text-sm w-48 lg:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+              />
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+              {searchQuery && (
+                <IconButton
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2 top-1.5 shadow-none bg-transparent hover:bg-transparent"
+                  title="Clear search"
+                >
+                  <X size={14} className="text-gray-400 hover:text-[#004475]" />
+                </IconButton>
+              )}
+            </div>
+
+            {/* Add Holiday Button */}
+            {!hideAddButton && (
+              <PrimaryButton
+                onClick={onAddHoliday}
+                className={`px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all shrink-0 ${
+                  canControlAllEmployees
+                    ? 'bg-[#004475] text-white hover:bg-[#003358] hover:shadow-md'
+                    : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
+                }`}
+                disabled={!canControlAllEmployees}
+                title={
+                  !canControlAllEmployees
+                    ? 'Permission required'
+                    : 'Add Holiday List'
+                }
+              >
+                + Add Holiday List
+              </PrimaryButton>
+            )}
+          </div>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   if (loading) {
     return (
@@ -338,7 +442,11 @@ const HolidayListTab = ({
         {renderHeaderLayout()}
 
         <section className="overflow-hidden rounded-xl border border-gray-300 shadow-inner min-h-[400px] flex items-center justify-center">
-          <Loader label="Loading holiday list..." size="md" fullScreen={false} />
+          <Loader
+            label="Loading holiday list..."
+            size="md"
+            fullScreen={false}
+          />
         </section>
       </div>
     );
@@ -376,7 +484,7 @@ const HolidayListTab = ({
             <p className="text-sm mt-2">
               {searchQuery
                 ? `No holidays match "${searchQuery}". Try a different search term.`
-                : 'No holiday records available.'}
+                : 'No   records available.'}
             </p>
           </div>
         </section>
@@ -384,12 +492,150 @@ const HolidayListTab = ({
     );
   }
 
+  // Compute banner visibility and active month
+  let showBanner = false;
+  let activeMonthForBanner = null;
+
+  for (const m of generatedMonths) {
+    const isFilterActive =
+      selectedMonthIndex !== null &&
+      m.index === selectedMonthIndex &&
+      (selectedYear === 'All' || m.actualYear.toString() === selectedYear);
+    const isDefaultActive =
+      selectedMonthIndex === null &&
+      m.index === now.getMonth() &&
+      m.actualYear === currentYear;
+    const isActive = isFilterActive || isDefaultActive;
+
+    if (isActive) {
+      showBanner = true;
+      activeMonthForBanner = m;
+      break;
+    }
+  }
+
+  // Compute featured holiday for the active month
+  let featuredHoliday = null;
+  let bannerTitle = 'HOLIDAY IN THIS MONTH';
+
+  if (activeMonthForBanner) {
+    const holidaysInActiveMonth = holidayData
+      .filter((h) => {
+        const d = new Date(h.date);
+        return (
+          d.getMonth() === activeMonthForBanner.index &&
+          d.getFullYear() === activeMonthForBanner.actualYear
+        );
+      })
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    if (holidaysInActiveMonth.length > 0) {
+      const upcomingInMonth = holidaysInActiveMonth.filter(
+        (h) =>
+          new Date(h.date).setHours(0, 0, 0, 0) >=
+          new Date().setHours(0, 0, 0, 0)
+      );
+      if (upcomingInMonth.length > 0) {
+        featuredHoliday = upcomingInMonth[0];
+        bannerTitle = 'UPCOMING HOLIDAY IN THIS MONTH';
+      } else {
+        featuredHoliday = holidaysInActiveMonth[0];
+        bannerTitle = 'SELECTED MONTH HOLIDAY';
+      }
+    }
+  }
+
+  const calculateDaysLeft = (dateStr) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const target = new Date(dateStr);
+    target.setHours(0, 0, 0, 0);
+    const diffTime = target - today;
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  };
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {renderHeaderLayout()}
 
+      {showBanner &&
+        (() => {
+          if (!featuredHoliday) {
+            return (
+              <div className="bg-[#154b9a] rounded-xl p-5 md:p-6 flex flex-col items-center justify-center shadow-md border border-blue-900/20 md:min-h-[160px]">
+                <h3 className="text-xl font-bold text-blue-200/90 tracking-wide">
+                  No leave available for this month
+                </h3>
+              </div>
+            );
+          }
+
+          const daysLeft = calculateDaysLeft(featuredHoliday.date);
+          return (
+            <div
+              className="relative rounded-xl overflow-hidden shadow-md border border-blue-900/20 min-h-[160px] md:min-h-[200px] flex items-end p-5 md:p-6"
+              style={{
+                backgroundColor: '#154b9a',
+                backgroundImage: featuredHoliday.imageUrl
+                  ? `url(${featuredHoliday.imageUrl})`
+                  : 'none',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              }}
+            >
+              {/* Gradient Overlay for text readability */}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0a254c] via-[#0a254c]/60 to-transparent"></div>
+
+              <div className="relative z-10 w-full flex flex-col md:flex-row items-start md:items-end justify-between gap-4 text-white">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-blue-200/90 mb-0.5">
+                    {bannerTitle}
+                  </span>
+                  <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight drop-shadow-md">
+                    {featuredHoliday.holiday}
+                  </h2>
+                  <div className="flex items-center gap-1.5 text-xs md:text-sm font-medium text-blue-100 mt-1 drop-shadow-md">
+                    <Calendar size={14} />
+                    <span>
+                      {new Date(featuredHoliday.date).toLocaleDateString(
+                        'en-GB',
+                        {
+                          weekday: 'long',
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                        }
+                      )}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex flex-col items-start md:items-end gap-2 self-start md:self-end">
+                  <div className="px-5 py-2.5 bg-black/30 border border-white/10 rounded-xl flex flex-col items-center justify-center min-w-[100px] backdrop-blur-md shadow-lg">
+                    <span className="text-2xl font-bold leading-none mb-1 drop-shadow-md">
+                      {Math.abs(daysLeft)}
+                    </span>
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-blue-200/90 drop-shadow-md">
+                      {daysLeft === 0
+                        ? 'TODAY'
+                        : daysLeft < 0
+                          ? 'DAYS AGO'
+                          : 'DAYS LEFT'}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => handleViewHoliday(featuredHoliday)}
+                    className="text-[11px] font-bold text-white hover:text-blue-200 flex items-center gap-1 transition-colors mt-1 drop-shadow-md"
+                  >
+                    View Details <span className="text-[14px]">→</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
       <section className="overflow-hidden rounded-xl border border-gray-300 shadow-inner">
-        <div className="p-4 bg-gray-50 border-b border-gray-300">
+        {/* <div className="p-4 bg-gray-50 border-b border-gray-300">
           <div className="flex justify-between items-center">
             <div>
               <h3 className="font-semibold text-gray-700">
@@ -398,7 +644,6 @@ const HolidayListTab = ({
               </h3>
             </div>
             <div className="flex items-center gap-4 font-semibold">
-              {/* Upcoming Holiday Display */}
               <div className="flex items-center gap-2">
                 {nextHoliday ? (
                   <>
@@ -430,7 +675,7 @@ const HolidayListTab = ({
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
         <div className="overflow-y-auto">
           <CustomTable
             maxHeight="60vh"
@@ -607,7 +852,7 @@ const HolidayListTab = ({
             {/* Right Side: Content Container */}
             <div className="md:w-1/2 flex flex-col justify-center space-y-5">
               <div className="text-center md:text-left">
-                <h4 className="text-3xl font-black text-gray-900 leading-tight">
+                <h4 className="text-3xl font-bold text-gray-900 leading-tight">
                   {selectedHoliday.holiday}
                 </h4>
                 {
