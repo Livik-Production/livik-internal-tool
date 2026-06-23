@@ -1,0 +1,153 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-landingPageBg: #f1eae3;
+  --color-primary: #1247a3;
+  --color-secondary-400: #7a7aff;
+  --color-secondary: #ff5a16;
+  --color-textgrey: #374251;
+  --color-bordcolor: #9933b147;
+  --font-outfit: var(--font-outfit);
+  --font-inter: var(--font-inter);
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+@font-face {
+  font-family: 'Euclid Circular B';
+  src:
+    url('/fonts/EuclidCircularB-Regular.woff2') format('woff2'),
+    url('/fonts/EuclidCircularB-Regular.woff') format('woff');
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.animate-spin-slow {
+  animation: spin 8s linear infinite;
+}
+
+/* .no-scrollbar {
+  overflow-y: scroll;
+  scrollbar-width: none; 
+  -ms-overflow-style: none; 
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none; 
+}
+.no-scroll {
+  overflow-y: none;
+  scrollbar-color: transparent;
+}
+.no-scroll::-webkit-scrollbar {
+  display: none;
+} */
+
+/* .custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+} */
+
+.pdf-safe,
+.pdf-safe * {
+  color: rgb(0, 0, 0) !important;
+  background-color: transparent !important;
+  border-color: rgb(0, 0, 0) !important;
+}
+
+/* Specific text shades used in offer letter */
+.pdf-safe .text-gray-900 {
+  color: rgb(17, 24, 39) !important;
+}
+
+.pdf-safe .text-gray-800 {
+  color: rgb(31, 41, 55) !important;
+}
+
+.pdf-safe .text-gray-700 {
+  color: rgb(55, 65, 81) !important;
+}
+
+/* Keep white background intact */
+.pdf-safe .bg-white {
+  background-color: #ffffff !important;
+}
+/* Dashboard Entry Animations */
+@keyframes dashboardReveal {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+    filter: blur(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+.animate-dashboard-reveal {
+  animation: dashboardReveal 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.animate-dashboard-reveal-delayed {
+  animation: dashboardReveal 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.1s forwards;
+  opacity: 0;
+}
+
+@page {
+  size: A4;
+  margin: 0;
+}
+
+body {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.invoice-root {
+  box-sizing: border-box;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #9ca3af;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #9ca3af #f3f4f6;
+}
