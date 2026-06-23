@@ -218,10 +218,7 @@ const InvoiceTable = ({ onRefresh }) => {
     const suffix = invoiceFormat.suffix || '';
 
     const relevantInvoices = invoicesData.filter(
-      (inv) =>
-        inv.invoiceNumber &&
-        inv.invoiceNumber.startsWith(prefix) &&
-        inv.invoiceNumber.endsWith(suffix)
+      (inv) => inv.invoiceNumber && inv.invoiceNumber.startsWith(prefix) && inv.invoiceNumber.endsWith(suffix)
     );
 
     if (relevantInvoices.length === 0) {
@@ -713,7 +710,7 @@ const InvoiceTable = ({ onRefresh }) => {
     showInfoToast(
       `Downloading invoice ${previewInvoiceData?.invoiceNumber}...`
     );
-
+    
     // Switch to server-side Puppeteer generation
     const invoiceId = previewInvoiceData?.id || previewInvoiceData?._id;
     window.open(`/api/invoice-pdf?id=${invoiceId}`, '_blank');

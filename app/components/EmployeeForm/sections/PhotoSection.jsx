@@ -4,16 +4,7 @@ import { useState } from 'react';
 import { uploadEmployeeDocument } from '../../../actions/uploadEmployeeDocument';
 import { deleteEmployeeDocument } from '../../../actions/deleteEmployeeDocument';
 import { uploadOtherDocument } from '../../../actions/uploadOtherDocument';
-import {
-  Camera,
-  CreditCard,
-  IdCard,
-  Trash2,
-  UploadCloud,
-  FileText,
-  Loader2,
-  Plus,
-} from 'lucide-react';
+import { Camera, CreditCard, IdCard, Trash2, UploadCloud, FileText, Loader2, Plus } from 'lucide-react';
 import { showSuccessToast, showErrorToast } from '../../Toast';
 
 /**
@@ -31,7 +22,7 @@ function DocumentUpload({
   icon: Icon,
   empId,
   documentType,
-  accept = 'image/jpeg,image/png,image/webp,application/pdf',
+  accept = "image/jpeg,image/png,image/webp,application/pdf"
 }) {
   const [uploading, setUploading] = useState(false);
   const [removing, setRemoving] = useState(false);
@@ -77,8 +68,7 @@ function DocumentUpload({
   // value is now an S3 key (e.g. "documents/EMP001/aadhar.pdf") or a legacy URL
   const isPDF = value?.toLowerCase().endsWith('.pdf');
   // If value is a full https URL (legacy blob), use it directly; otherwise it's an S3 key (display as PDF icon or image key)
-  const isFullUrl =
-    value?.startsWith('http://') || value?.startsWith('https://');
+  const isFullUrl = value?.startsWith('http://') || value?.startsWith('https://');
 
   return (
     <div className="flex flex-col gap-2">
@@ -87,14 +77,12 @@ function DocumentUpload({
         {label}
       </label>
 
-      <div
-        className={`
+      <div className={`
         relative group rounded-xl border-2 border-dashed transition-all duration-300 min-h-[160px] flex flex-col items-center justify-center p-4
         ${value ? 'border-blue-200 bg-blue-50/30' : 'border-gray-200 hover:border-blue-400 hover:bg-gray-50'}
         ${uploading ? 'opacity-70 animate-pulse cursor-wait' : ''}
         ${isView ? 'bg-gray-50' : 'cursor-pointer'}
-      `}
-      >
+      `}>
         {value ? (
           <div className="relative w-full h-full flex items-center justify-center group/img">
             {/* For S3 keys or PDFs, show a PDF icon. For legacy image URLs show the image. */}
@@ -106,30 +94,18 @@ function DocumentUpload({
                 </span>
               </div>
             ) : (
-              <img
-                src={value}
-                alt={label}
-                className="max-h-[140px] rounded-lg shadow-sm object-contain"
-              />
+              <img src={value} alt={label} className="max-h-[140px] rounded-lg shadow-sm object-contain" />
             )}
 
             {!isView && (
               <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleRemove();
-                }}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleRemove(); }}
                 type="button"
                 disabled={removing}
                 className="absolute -top-2 -right-2 p-1.5 bg-white border border-red-100 text-red-600 rounded-full opacity-0 group-hover/img:opacity-100 transition-opacity hover:bg-red-50 shadow-md z-10 disabled:cursor-not-allowed"
                 title={`Remove ${label}`}
               >
-                {removing ? (
-                  <Loader2 size={14} className="animate-spin" />
-                ) : (
-                  <Trash2 size={14} />
-                )}
+                {removing ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
               </button>
             )}
 
@@ -156,9 +132,7 @@ function DocumentUpload({
             <p className="text-sm font-medium text-gray-600">
               {uploading ? 'Uploading...' : `Upload ${label}`}
             </p>
-            <p className="text-[11px] text-gray-400 mt-1.5">
-              Max 10MB (JPG, PNG, PDF)
-            </p>
+            <p className="text-[11px] text-gray-400 mt-1.5">Max 10MB (JPG, PNG, PDF)</p>
           </div>
         )}
 
@@ -171,11 +145,7 @@ function DocumentUpload({
           />
         )}
       </div>
-      {error && (
-        <p className="text-[11px] text-red-500 mt-1 font-medium bg-red-50 px-2 py-1 rounded">
-          {error}
-        </p>
-      )}
+      {error && <p className="text-[11px] text-red-500 mt-1 font-medium bg-red-50 px-2 py-1 rounded">{error}</p>}
     </div>
   );
 }
@@ -252,12 +222,8 @@ function PhotoSection({ form, setField, isView, empId }) {
                 <FileText size={16} />
               </div>
               <p className="text-xs text-amber-800 font-medium leading-relaxed">
-                <span className="font-bold">
-                  Documents can be uploaded after creating the employee.
-                </span>{' '}
-                Please complete the other steps, click{' '}
-                <strong>Create Employee</strong>, then reopen the employee to
-                upload Aadhaar, PAN, and Profile Photo.
+                <span className="font-bold">Documents can be uploaded after creating the employee.</span>
+                {' '}Please complete the other steps, click <strong>Create Employee</strong>, then reopen the employee to upload Aadhaar, PAN, and Profile Photo.
               </p>
             </div>
           )}
@@ -307,102 +273,83 @@ function PhotoSection({ form, setField, isView, empId }) {
               Other Attachments
             </h4>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {form.proofs &&
-                form.proofs.map((proof, index) => {
-                  const label =
-                    proof.label || proof.proofLabel || 'Untitled Proof';
-                  const url = proof.url || proof.documentUrl;
-                  return (
-                    <div
-                      key={index}
-                      className="flex flex-col p-4 bg-white rounded-xl border border-gray-200 shadow-sm relative group"
-                    >
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="p-2 bg-gray-50 border border-gray-100 rounded-lg text-gray-400">
-                          <FileText size={20} />
-                        </div>
-                        <div className="overflow-hidden">
-                          <div className="text-sm font-bold text-gray-800 truncate">
-                            {label}
-                          </div>
-                          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                            DOCUMENT
-                          </div>
-                        </div>
-                      </div>
-
-                      <a
-                        href={url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-full text-center py-2 text-sm font-semibold text-blue-500 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
-                      >
-                        View Upload
-                      </a>
-
-                      {!isView && (
-                        <button
-                          onClick={() => handleRemoveOtherDocument(index, url)}
-                          className="absolute top-2 right-2 p-1.5 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 rounded-lg"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {form.proofs && form.proofs.map((proof, index) => {
+              const label = proof.label || proof.proofLabel || 'Untitled Proof';
+              const url = proof.url || proof.documentUrl;
+              return (
+                <div key={index} className="flex flex-col p-4 bg-white rounded-xl border border-gray-200 shadow-sm relative group">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 bg-gray-50 border border-gray-100 rounded-lg text-gray-400">
+                      <FileText size={20} />
                     </div>
-                  );
-                })}
-
-              {!isView && (
-                <div className="flex flex-col p-4 border-2 border-dashed border-blue-200 rounded-xl bg-[#f8fafc] shadow-sm">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-5 h-5 rounded-full border border-blue-200 flex items-center justify-center bg-white text-blue-400">
-                      <Plus size={12} className="stroke-[3]" />
+                    <div className="overflow-hidden">
+                      <div className="text-sm font-bold text-gray-800 truncate">{label}</div>
+                      <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">DOCUMENT</div>
                     </div>
-                    <span className="text-sm font-bold text-gray-700">
-                      Add Attachment
-                    </span>
                   </div>
 
-                  <input
-                    type="text"
-                    placeholder="Document Label"
-                    value={newLabel}
-                    onChange={(e) => setNewLabel(e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg mb-3 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white placeholder-gray-400"
-                  />
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full text-center py-2 text-sm font-semibold text-blue-500 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
+                  >
+                    View Upload
+                  </a>
 
-                  <div className="flex gap-2 relative">
-                    <div className="flex-1 relative flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg text-gray-500 font-bold text-xs cursor-pointer hover:bg-gray-50 truncate">
-                      <UploadCloud size={14} className="flex-shrink-0" />
-                      <span className="truncate">
-                        {selectedOtherFile ? selectedOtherFile.name : 'SELECT'}
-                      </span>
-                      <input
-                        type="file"
-                        className="absolute inset-0 opacity-0 cursor-pointer"
-                        onChange={(e) =>
-                          setSelectedOtherFile(e.target.files?.[0])
-                        }
-                        disabled={uploadingOther}
-                      />
-                    </div>
+                  {!isView && (
                     <button
-                      onClick={handleAddOtherDocument}
-                      disabled={uploadingOther}
-                      className="px-4 py-2 bg-[#7595a8] text-white rounded-lg text-xs font-bold hover:bg-[#607e8f] transition-colors disabled:opacity-70 flex items-center justify-center min-w-[70px]"
+                      onClick={() => handleRemoveOtherDocument(index, url)}
+                      className="absolute top-2 right-2 p-1.5 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 rounded-lg"
                     >
-                      {uploadingOther ? (
-                        <Loader2 size={14} className="animate-spin" />
-                      ) : (
-                        'Upload'
-                      )}
+                      <Trash2 size={16} />
                     </button>
-                  </div>
+                  )}
                 </div>
-              )}
-            </div>
+              );
+            })}
+
+            {!isView && (
+              <div className="flex flex-col p-4 border-2 border-dashed border-blue-200 rounded-xl bg-[#f8fafc] shadow-sm">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-5 h-5 rounded-full border border-blue-200 flex items-center justify-center bg-white text-blue-400">
+                    <Plus size={12} className="stroke-[3]" />
+                  </div>
+                  <span className="text-sm font-bold text-gray-700">Add Attachment</span>
+                </div>
+
+                <input
+                  type="text"
+                  placeholder="Document Label"
+                  value={newLabel}
+                  onChange={(e) => setNewLabel(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg mb-3 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white placeholder-gray-400"
+                />
+
+                <div className="flex gap-2 relative">
+                  <div className="flex-1 relative flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg text-gray-500 font-bold text-xs cursor-pointer hover:bg-gray-50 truncate">
+                    <UploadCloud size={14} className="flex-shrink-0" />
+                    <span className="truncate">{selectedOtherFile ? selectedOtherFile.name : 'SELECT'}</span>
+                    <input
+                      type="file"
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                      onChange={(e) => setSelectedOtherFile(e.target.files?.[0])}
+                      disabled={uploadingOther}
+                    />
+                  </div>
+                  <button
+                    onClick={handleAddOtherDocument}
+                    disabled={uploadingOther}
+                    className="px-4 py-2 bg-[#7595a8] text-white rounded-lg text-xs font-bold hover:bg-[#607e8f] transition-colors disabled:opacity-70 flex items-center justify-center min-w-[70px]"
+                  >
+                    {uploadingOther ? <Loader2 size={14} className="animate-spin" /> : 'Upload'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
+        </div>
         )}
 
         {!isView && (
@@ -411,13 +358,10 @@ function PhotoSection({ form, setField, isView, empId }) {
               <CreditCard size={18} />
             </div>
             <div>
-              <h4 className="text-sm font-bold text-blue-800">
-                Document Requirements
-              </h4>
+              <h4 className="text-sm font-bold text-blue-800">Document Requirements</h4>
               <p className="text-xs text-blue-600 mt-1 leading-relaxed">
-                Please ensure all documents are clear and legible. Supported
-                formats: JPG, PNG and PDF. Maximum file size should not exceed
-                10MB per document.
+                Please ensure all documents are clear and legible. Supported formats: JPG, PNG and PDF.
+                Maximum file size should not exceed 10MB per document.
               </p>
             </div>
           </div>

@@ -229,23 +229,35 @@ export default function CreatePayrollModal({
                 </span>
               </div>
             )}
-            <div className="flex justify-end gap-3">
-              <Button onClick={onClose} className="px-4 py-2">
-                {isViewOnly ? 'Close' : 'Cancel'}
-              </Button>
-              {!isViewOnly && (
-                <PrimaryButton
-                  onClick={handleSubmitPayroll}
-                  disabled={isProcessing || hasPendingLeaves || checkingPending}
-                  className="px-6 py-2"
-                >
-                  {isProcessing
-                    ? 'Processing...'
-                    : checkingPending
-                      ? 'Checking...'
-                      : 'Create Payroll'}
-                </PrimaryButton>
-              )}
+            <div className="flex items-center justify-between gap-3 w-full">
+              {isViewOnly && viewPayroll?.createdAt ? (
+                <div className="flex flex-col text-[10px] text-gray-400 font-medium text-left">
+                  <span>Created: {new Date(viewPayroll.createdAt).toLocaleString()}</span>
+                  {viewPayroll.updatedAt && (
+                    <span>Updated: {new Date(viewPayroll.updatedAt).toLocaleString()}</span>
+                  )}
+                </div>
+              ) : <div />}
+              <div className="flex justify-end gap-3">
+                {!isViewOnly && (
+                  <Button onClick={onClose} className="px-4 py-2">
+                    Cancel
+                  </Button>
+                )}
+                {!isViewOnly && (
+                  <PrimaryButton
+                    onClick={handleSubmitPayroll}
+                    disabled={isProcessing || hasPendingLeaves || checkingPending}
+                    className="px-6 py-2"
+                  >
+                    {isProcessing
+                      ? 'Processing...'
+                      : checkingPending
+                        ? 'Checking...'
+                        : 'Create Payroll'}
+                  </PrimaryButton>
+                )}
+              </div>
             </div>
           </div>
         }

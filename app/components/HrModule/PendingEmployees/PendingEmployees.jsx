@@ -43,10 +43,7 @@ export default function PendingEmployees({
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const authUser = useSelector((state) => state.auth?.user);
-  const roleName =
-    authUser?.role?.name?.toUpperCase() ??
-    authUser?.roleName?.toUpperCase() ??
-    null;
+  const roleName = authUser?.role?.name?.toUpperCase() ?? authUser?.roleName?.toUpperCase() ?? null;
 
   // Filter only pending employees (including PENDING_ADMIN)
   let employees = allEmployees.filter((emp) => {

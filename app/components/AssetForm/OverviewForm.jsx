@@ -10,11 +10,7 @@ import {
 } from 'lucide-react';
 import Loader from '../Loader';
 
-export default function Overview({
-  assets = [],
-  isViewOnly = false,
-  isLoading = false,
-}) {
+export default function Overview({ assets = [], isViewOnly = false, isLoading = false }) {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-20 min-h-[400px]">

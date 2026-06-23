@@ -369,13 +369,15 @@ function FinanceContent() {
             </p>
           </div>
         </div>
-        {activeTab === 'expenses' && (
-          <PrimaryButton onClick={handleAddExpense}>
-            <span className="text-xl mr-1">+</span>
-            Add Expense
-          </PrimaryButton>
-        )}
-        <NotificationBell />
+        <div className="flex items-center gap-4">
+          {activeTab === 'expenses' && (
+            <PrimaryButton onClick={handleAddExpense}>
+              <span className="text-xl mr-1">+</span>
+              Add Expense
+            </PrimaryButton>
+          )}
+          <NotificationBell />
+        </div>
       </div>
 
       <div className="flex-1 flex flex-col bg-white rounded-2xl shadow-sm p-2.5 m-0.5 mt-1.5 min-h-0">

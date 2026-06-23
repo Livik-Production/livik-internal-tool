@@ -60,7 +60,7 @@ const ExpensesTable = ({
   // Filter months based on range: Sep-2025 to Current Month
   const filteredMonthOptions = monthOptions.filter((m) => {
     if (selectedYear === 'all') return true;
-
+    
     const monthVal = parseInt(m.value);
     const selectedYearInt = parseInt(selectedYear);
     const currentMonthNum = now.getMonth() + 1;

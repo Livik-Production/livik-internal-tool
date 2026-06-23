@@ -149,16 +149,16 @@ const OfferLetterTab = ({ isViewOnly = false }) => {
   const employees =
     employeesFromRedux && employeesFromRedux.length > 0
       ? employeesFromRedux
-          .filter((emp) => emp.status?.toUpperCase() === 'ACTIVE')
-          .map((emp) => ({
-            id: emp.id || '',
-            name: emp.name || '',
-            role: emp.designation || emp.role || '', // Map designation to role
-            email: emp.email || '',
-            phone: emp.mobile || '',
-            address: emp.address || emp.__raw?.presentAddress || '', // fallback to present address
-            // Add any other fields you need
-          }))
+        .filter((emp) => emp.status?.toUpperCase() === 'ACTIVE')
+        .map((emp) => ({
+          id: emp.id || '',
+          name: emp.name || '',
+          role: emp.designation || emp.role || '', // Map designation to role
+          email: emp.email || '',
+          phone: emp.mobile || '',
+          address: emp.address || emp.__raw?.presentAddress || '', // fallback to present address
+          // Add any other fields you need
+        }))
       : [];
 
   // Refs for modals
@@ -483,9 +483,67 @@ const OfferLetterTab = ({ isViewOnly = false }) => {
       ) : (
         <>
           {/* Offer Letter Content */}
-          <div className="space-y-6 mt-4">
-            {/* 1. Employee Selection with Suggestions */}
-            <div className="relative">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-1">
+            {/* LEFT COLUMN: Controls */}
+            <div className="space-y-6 sticky top-2 self-start">
+              {/* 1. Employee Selection with Suggestions */}
+              <div className="relative">
+
+
+                {/* Suggestions dropdown */}
+                {suggestions.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto no-scroll">
+                    {suggestions.map((emp) => (
+                      <div
+                        key={emp.id}
+                        onClick={() => handleSelectEmployee(emp)}
+                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
+                      >
+                        <div className="font-medium">{emp.id}</div>
+                        <div className="text-sm text-gray-600">
+                          {emp.name} - {emp.role}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {employees.length === 0 && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    No employees found. Make sure your Redux store is populated.
+                  </p>
+                )}
+              </div>
+
+              {/* 3. Letter Type Selection Dropdown */}
+              <div>
+                <h3 className="  text-sm font-medium text-gray-700 mb-3">
+                  Select Letter Type
+                </h3>
+                <div className="relative w-80">
+                  <select
+                    value={selectedLetterType}
+                    onChange={(e) => setSelectedLetterType(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none cursor-pointer pr-10"
+                  >
+                    <option value="" disabled>
+                      -- Select a letter type --
+                    </option>
+                    {dynamicLetterTypes.map((lt) => {
+                      const canonicalId = mapToCanonicalId(lt.value || lt.label);
+                      return (
+                        <option key={lt.id || canonicalId} value={canonicalId}>
+                          {lt.label}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <ChevronDown
+                    size={18}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
+                  />
+                </div>
+              </div>
+
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Enter Employee ID or Name
               </label>
@@ -497,155 +555,119 @@ const OfferLetterTab = ({ isViewOnly = false }) => {
                 className="w-80 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
 
-              {/* Suggestions dropdown */}
-              {suggestions.length > 0 && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto no-scroll">
-                  {suggestions.map((emp) => (
-                    <div
-                      key={emp.id}
-                      onClick={() => handleSelectEmployee(emp)}
-                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
-                    >
-                      <div className="font-medium">{emp.id}</div>
-                      <div className="text-sm text-gray-600">
-                        {emp.name} - {emp.role}
-                      </div>
+              {/* 2. Employee Details Display */}
+              {selectedEmployee && (
+                <div className="mt-3">
+                  <h3 className="font-medium text-gray-700 mb-3">
+                    Employee Details
+                  </h3>
+                  <div className="grid grid-cols-2 gap-y-3 gap-x-5">
+                    {/* Name */}
+                    <div className="px-1">
+                      <span className="text-sm text-gray-500 block mb-1">
+                        Name:
+                      </span>
+                      <p className="font-medium text-left truncate">
+                        {selectedEmployee.name}
+                      </p>
                     </div>
-                  ))}
+
+                    {/* Role */}
+                    <div className="px-1">
+                      <span className="text-sm text-gray-500 block mb-1">
+                        Role:
+                      </span>
+                      <p className="font-medium truncate">
+                        {selectedEmployee.role}
+                      </p>
+                    </div>
+
+                    {/* Email */}
+                    <div className="px-1">
+                      <span className="text-sm text-gray-500 block mb-1">
+                        Email:
+                      </span>
+                      <p className="font-medium truncate">
+                        {selectedEmployee.email}
+                      </p>
+                    </div>
+
+                    {/* Phone */}
+                    <div className="px-1">
+                      <span className="text-sm text-gray-500 block mb-1">
+                        Phone Number:
+                      </span>
+                      <p className="font-medium truncate">
+                        {selectedEmployee.phone}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
-              {employees.length === 0 && (
-                <p className="text-xs text-gray-500 mt-1">
-                  No employees found. Make sure your Redux store is populated.
-                </p>
-              )}
-            </div>
 
-            {/* 2. Employee Details Display */}
-            {selectedEmployee && (
-              <div className="mt-6">
+              {/* 4. Radio Buttons for Letter Pad */}
+              <div>
                 <h3 className="font-medium text-gray-700 mb-3">
-                  Employee Details
+                  Letter Pad Options
                 </h3>
-                <div className="flex ">
-                  {/* Name - Label centered, value left-aligned */}
-                  <div className="flex-1 px-4 py-3">
-                    <span className="text-sm text-gray-500 block mb-1">
-                      Name:
-                    </span>
-                    <p className="font-medium text-left truncate">
-                      {selectedEmployee.name}
-                    </p>
-                  </div>
-
-                  {/* Role - Label centered, value centered */}
-                  <div className="flex-1 px-4 py-3">
-                    <span className="text-sm text-gray-500 block mb-1">
-                      Role:
-                    </span>
-                    <p className="font-medium truncate">
-                      {selectedEmployee.role}
-                    </p>
-                  </div>
-
-                  {/* Email - Label centered, value centered */}
-                  <div className="flex-1 px-4 py-3">
-                    <span className="text-sm text-gray-500 block mb-1">
-                      Email:
-                    </span>
-                    <p className="font-medium truncate">
-                      {selectedEmployee.email}
-                    </p>
-                  </div>
-
-                  {/* Phone - Label centered, value left-aligned */}
-                  <div className="flex-1 px-4 py-3">
-                    <span className="text-sm text-gray-500 block mb-1">
-                      Phone:
-                    </span>
-                    <p className="font-medium truncate">
-                      {selectedEmployee.phone}
-                    </p>
-                  </div>
+                <div className="flex space-x-6">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      value="with"
+                      checked={letterPadOption === 'with'}
+                      onChange={(e) => setLetterPadOption(e.target.value)}
+                      className="mr-2"
+                    />
+                    <span>With Letter Pad (Company Logo)</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      value="without"
+                      checked={letterPadOption === 'without'}
+                      onChange={(e) => setLetterPadOption(e.target.value)}
+                      className="mr-2"
+                    />
+                    <span>Without Letter Pad (No Logo)</span>
+                  </label>
                 </div>
               </div>
-            )}
 
-            {/* 3. Letter Type Selection Dropdown */}
-            <div>
-              <h3 className="font-medium text-gray-700 mb-3">
-                Select Letter Type
-              </h3>
-              <div className="relative w-80">
-                <select
-                  value={selectedLetterType}
-                  onChange={(e) => setSelectedLetterType(e.target.value)}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none cursor-pointer pr-10"
+              {/* 5. Single View Button */}
+              <div className="pt-4 gap-4 flex">
+                <PrimaryButton
+                  onClick={handleViewLetter}
+                  disabled={isGenerating || !selectedLetterType}
+                  className="px-6 py-3 bg-[#004475] text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
-                  <option value="" disabled>
-                    -- Select a letter type --
-                  </option>
-                  {dynamicLetterTypes.map((lt) => {
-                    const canonicalId = mapToCanonicalId(lt.value || lt.label);
-                    return (
-                      <option key={lt.id || canonicalId} value={canonicalId}>
-                        {lt.label}
-                      </option>
-                    );
-                  })}
-                </select>
-                <ChevronDown
-                  size={18}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
-                />
+                  {isGenerating ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Generating...
+                    </>
+                  ) : (
+                    `View ${getSelectedLetterLabel() || 'Letter'}`
+                  )}
+                </PrimaryButton>
               </div>
             </div>
 
-            {/* 4. Radio Buttons for Letter Pad */}
-            <div>
-              <h3 className="font-medium text-gray-700 mb-3">
-                Letter Pad Options
-              </h3>
-              <div className="flex space-x-6">
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    value="with"
-                    checked={letterPadOption === 'with'}
-                    onChange={(e) => setLetterPadOption(e.target.value)}
-                    className="mr-2"
-                  />
-                  <span>With Letter Pad (Company Logo)</span>
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    value="without"
-                    checked={letterPadOption === 'without'}
-                    onChange={(e) => setLetterPadOption(e.target.value)}
-                    className="mr-2"
-                  />
-                  <span>Without Letter Pad (No Logo)</span>
-                </label>
-              </div>
-            </div>
-
-            {/* 5. Single View Button */}
-            <div className="pt-4 gap-4 flex">
-              <PrimaryButton
-                onClick={handleViewLetter}
-                disabled={isGenerating || !selectedLetterType}
-                className="px-6 py-3 bg-[#004475] text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                {isGenerating ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Generating...
-                  </>
-                ) : (
-                  `View ${getSelectedLetterLabel() || 'Letter'}`
-                )}
-              </PrimaryButton>
+            {/* RIGHT COLUMN: Live Preview */}
+            <div className="border border-gray-300 rounded-lg bg-gray-50 p-6 overflow-y-auto h-[calc(100vh-200px)] shadow-inner relative flex justify-center">
+              {!selectedLetterType ? (
+                <div className="flex items-center justify-center h-full text-gray-400">
+                  Select a letter type to see preview
+                </div>
+              ) : (
+                <div className="w-full flex justify-center origin-top" style={{ transform: 'scale(0.85)' }}>
+                  {renderLetterComponent() || (
+                    <div className="flex items-center justify-center h-full text-gray-400">
+                      Preview not available for this letter type
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
           <CustomModalForm

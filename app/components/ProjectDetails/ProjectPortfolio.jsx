@@ -22,6 +22,7 @@ import {
   Upload,
   FileText,
   Target,
+  Loader2,
 } from 'lucide-react';
 import TabButton from '../Buttons/TabButton';
 import PrimaryButton from '../Buttons/PrimaryButton';
@@ -50,134 +51,117 @@ const parseTags = (tags) => {
   return [];
 };
 
-function ProjectCard({ project, onEdit, onDelete, onTeamClick }) {
+function ProjectCard({ project, onEdit, onDelete, onTeamClick, onComplete }) {
   const isCompleted = project.status === 'Completed';
+
+  // Calculate progress (mock or real based on available data)
+  const progress = project.progress || 65;
+
+  const tags = parseTags(project.tags)
+    .filter(
+      (tag) =>
+        !tag.startsWith('AGREEMENT_FILE:') &&
+        !tag.startsWith('CATEGORY:') &&
+        tag !== 'ON TRACK'
+    );
+  const mainTag = tags.length > 0 ? tags[0] : 'GENERAL';
 
   return (
     <div
-      className={`p-6 rounded-2xl transition-all duration-500 group relative border hover:scale-[1.01] hover:-translate-y-1.5 ${
-        isCompleted
-          ? 'bg-white border-green-200 shadow-sm shadow-green-100 hover:shadow-2xl hover:shadow-green-100 hover:border-green-400'
-          : 'bg-white border-gray-100 shadow-sm hover:shadow-2xl hover:shadow-blue-100 hover:border-blue-300'
-      }`}
+      className="p-3 bg-gray-50/50 rounded-3xl transition-all duration-500 relative border border-gray-300 hover:scale-[1.01] hover:shadow-xl shadow-sm flex flex-col xl:flex-row gap-2 group"
     >
-      <div className="absolute top-6 right-6 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
-        {onEdit && (
-          <IconButton
-            onClick={() => onEdit?.(project)}
-            className="p-2 bg-gray-50 text-gray-400 cursor-pointer hover:text-[#004475] hover:bg-blue-50 rounded-lg transition-all"
-            title="Edit Project"
-          >
-            <SquarePen size={16} />
-          </IconButton>
-        )}
-        <IconButton
-          onClick={() => onDelete?.(project)}
-          className="p-2 bg-gray-50 text-red-400 cursor-pointer hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-          title="Delete Project"
-        >
-          <Trash2 size={16} />
-        </IconButton>
-      </div>
-      <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-4">
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-wrap gap-2">
-            {isCompleted ? (
-              <span className="text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider bg-green-100 text-green-700 flex items-center gap-1">
-                <CheckCircle2 size={10} />
-                COMPLETED
-              </span>
-            ) : (
-              parseTags(project.tags)
-                .filter(
-                  (tag) =>
-                    !tag.startsWith('AGREEMENT_FILE:') &&
-                    !tag.startsWith('CATEGORY:') &&
-                    tag !== 'ON TRACK'
-                )
-                .map((tag, idx) => (
+      {/* LEFT COLUMN: Dark Blue Box */}
+      <div className={`flex-1 rounded-2xl p-5 md:p-5 flex flex-col justify-between relative overflow-hidden ${isCompleted ? 'bg-[#0f291e]' : 'bg-[#0b1727]'}`}>
+        {/* Top Right Action Area */}
+        <div className="absolute top-4 right-4 flex items-center gap-3 z-20">
+          {!isCompleted && (
+            <span className="text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border bg-blue-900/50 text-blue-300 border-blue-800/50">
+              ACTIVE
+            </span>
+          )}
+          <div className="flex items-center gap-2 transition-all">
+            {onEdit && (
+              <IconButton
+                onClick={(e) => { e.stopPropagation(); onEdit?.(project); }}
+                className="p-2 bg-white/10 backdrop-blur text-gray-300 cursor-pointer hover:bg-white/20 hover:text-white rounded-lg transition-all"
+                title="Edit Project"
+              >
+                <SquarePen size={16} />
+              </IconButton>
+            )}
+            <IconButton
+              onClick={(e) => { e.stopPropagation(); onDelete?.(project); }}
+              className="p-2 bg-white/10 backdrop-blur text-red-400 cursor-pointer hover:bg-red-500/20 hover:text-red-300 rounded-lg transition-all"
+              title="Delete Project"
+            >
+              <Trash2 size={16} />
+            </IconButton>
+          </div>
+        </div>
+        <div className="flex flex-col gap-5 relative z-10">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border bg-white/10 text-gray-300 border-white/20">
+              {mainTag}
+            </span>
+          </div>
+          <div>
+            <h3 className="text-3xl md:text-4xl font-extrabold text-white mb-3 tracking-tight">
+              {project.name}
+            </h3>
+            <p className="text-sm text-gray-400 line-clamp-4 max-w-5xl leading-relaxed">
+              {project.description}
+            </p>
+          </div>
+
+          {/* Tech Stack - moved here */}
+          {project.techStack && (
+            <div className="flex flex-col gap-2 mt-2">
+              <div className="flex items-center gap-2">
+                <Code2 size={14} className="text-gray-400" />
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                  Tech Stack
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {project.techStack.split(',').map((tech, idx) => (
                   <span
                     key={idx}
-                    className={`text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider ${
-                      tag === 'ON TRACK'
-                        ? 'bg-green-50 text-green-600'
-                        : tag === 'AT RISK'
-                          ? 'bg-orange-50 text-orange-600'
-                          : 'bg-blue-50 text-blue-600'
-                    }`}
+                    className="text-[10px] font-bold px-2.5 py-1 rounded-md bg-white/10 text-blue-200 flex items-center gap-1.5"
                   >
-                    {tag}
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+                    {tech.trim()}
                   </span>
-                ))
-            )}
-            {project.projectCategory && (
-              <span
-                className="text-[10px] font-bold px-2 py-1 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-100 flex items-center gap-1 cursor-default"
-                onClick={(e) => e.stopPropagation()}
-              >
-                Category: {project.projectCategory}
-              </span>
-            )}
-            {parseTags(project.tags).find((tag) =>
-              tag.startsWith('AGREEMENT_FILE:')
-            ) && (
-              <span
-                className="text-[10px] font-bold px-2 py-1 rounded-md bg-purple-50 text-purple-700 border border-purple-100 flex items-center gap-1 cursor-default"
-                title={parseTags(project.tags)
-                  .find((tag) => tag.startsWith('AGREEMENT_FILE:'))
-                  .replace('AGREEMENT_FILE:', '')}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <FileText size={10} className="shrink-0" />
-                Agreement:{' '}
-                {parseTags(project.tags)
-                  .find((tag) => tag.startsWith('AGREEMENT_FILE:'))
-                  .replace('AGREEMENT_FILE:', '')}
-              </span>
-            )}
-          </div>
-          <h3
-            className={`text-xl font-bold transition-colors ${isCompleted ? 'text-green-800' : 'text-gray-900 group-hover:text-[#004475]'}`}
-          >
-            {project.name}
-          </h3>
-          <p className="text-sm text-gray-500 line-clamp-2 max-w-2xl">
-            {project.description}
-          </p>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-      </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-6">
-        <div className="flex items-center gap-3">
-          <div
-            className={`p-2 rounded-lg ${isCompleted ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-[#004475]'}`}
-          >
-            <Briefcase size={16} />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">
-              CLIENT
-            </span>
-            <span
-              className={`text-sm font-semibold ${isCompleted ? 'text-green-700' : 'text-gray-700'}`}
-            >
+        {/* Bottom Stats Row */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-6 mt-12 relative z-10">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 text-gray-400">
+              <div className="p-1 bg-white/5 rounded text-gray-300">
+                <Briefcase size={12} />
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-widest">
+                Client
+              </span>
+            </div>
+            <span className="text-sm font-bold text-white">
               {project.client}
             </span>
           </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <div
-            className={`p-2 rounded-lg ${isCompleted ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-[#004475]'}`}
-          >
-            <Calendar size={16} />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">
-              START DATE
-            </span>
-            <span
-              className={`text-sm font-semibold ${isCompleted ? 'text-green-700' : 'text-gray-700'}`}
-            >
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 text-gray-400">
+              <div className="p-1 bg-white/5 rounded text-gray-300">
+                <Calendar size={12} />
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-widest">
+                Start Date
+              </span>
+            </div>
+            <span className="text-sm font-bold text-white">
               {new Date(project.start).toLocaleDateString('en-US', {
                 month: 'short',
                 day: 'numeric',
@@ -185,126 +169,123 @@ function ProjectCard({ project, onEdit, onDelete, onTeamClick }) {
               })}
             </span>
           </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <div
-            className={`p-2 rounded-lg ${isCompleted ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-[#004475]'}`}
-          >
-            <UserCheck size={16} />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">
-              MANAGER
-            </span>
-            <span
-              className={`text-sm font-semibold ${isCompleted ? 'text-green-700' : 'text-gray-700'}`}
-            >
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 text-gray-400">
+              <div className="p-1 bg-white/5 rounded text-gray-300">
+                <UserCheck size={12} />
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-widest">
+                Manager
+              </span>
+            </div>
+            <span className="text-sm font-bold text-white">
               {project.manager || 'Unassigned'}
             </span>
           </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <div
-            className={`p-2 rounded-lg ${
-              isCompleted
-                ? 'bg-green-50 text-green-600'
-                : project.priority === 'Critical'
-                  ? 'bg-red-50 text-red-600'
-                  : project.priority === 'High'
-                    ? 'bg-orange-50 text-orange-600'
-                    : 'bg-blue-50 text-[#004475]'
-            }`}
-          >
-            <Target size={16} />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">
-              PRIORITY
-            </span>
-            <span
-              className={`text-sm font-semibold ${
-                isCompleted
-                  ? 'text-green-700'
-                  : project.priority === 'Critical'
-                    ? 'text-red-600'
-                    : project.priority === 'High'
-                      ? 'text-orange-600'
-                      : 'text-gray-700'
-              }`}
-            >
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 text-gray-400">
+              <div className="p-1 bg-white/5 rounded text-gray-300">
+                <Target size={12} />
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-widest">
+                Priority
+              </span>
+            </div>
+            <span className="text-sm font-bold text-white">
               {project.priority || 'Medium'}
             </span>
           </div>
+          {isCompleted ? (
+            <div className="flex flex-col gap-2 justify-center">
+              <div className="flex items-center gap-1.5 text-green-400 bg-green-900/30 px-3 py-1.5 rounded-full border border-green-800/50 shadow-sm w-fit mt-auto mb-auto">
+                <CheckCircle2 size={16} />
+                <span className="text-[10px] font-bold uppercase tracking-widest">Completed</span>
+              </div>
+            </div>
+          ) : (
+            onComplete && (
+              <div className="flex flex-col gap-2 justify-center">
+                <button
+                  onClick={(e) => { e.stopPropagation(); onComplete?.(project); }}
+                  className="flex items-center gap-1.5 text-blue-400 bg-blue-900/30 hover:bg-blue-800/50 hover:text-white px-3 py-1.5 rounded-full border border-blue-800/50 shadow-sm w-fit mt-auto mb-auto transition-all cursor-pointer"
+                  title="Mark as Completed"
+                >
+                  <CheckCircle2 size={16} />
+                  <span className="text-[10px] font-bold uppercase tracking-widest">Mark Complete</span>
+                </button>
+              </div>
+            )
+          )}
         </div>
       </div>
 
-      {project.techStack && (
-        <div className="mb-6 flex items-center gap-3">
-          <div
-            className={`p-2 rounded-lg ${isCompleted ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-[#004475]'}`}
-          >
-            <Code2 size={16} />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">
-              TECH STACK
+      {/* RIGHT COLUMN: Assigned Employees */}
+      <div className="w-full xl:w-[350px] flex flex-col gap-4">
+        {/* Assigned Employees Box */}
+        <div className="bg-white border border-gray-300 rounded-2xl p-4 shadow-sm flex flex-col gap-4 flex-1 max-h-[400px] overflow-y-auto no-scroll">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">
+              Assigned Team
             </span>
-            <div className="flex flex-wrap gap-1.5 mt-1">
-              {project.techStack.split(',').map((tech, idx) => (
-                <span
-                  key={idx}
-                  className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${isCompleted ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-[#004475]'}`}
-                >
-                  {tech.trim()}
-                </span>
-              ))}
-            </div>
+            <span className="text-[11px] font-bold text-[#004cf0] bg-blue-50 px-2 py-0.5 rounded-full">
+              {project.members?.length || 0} Members
+            </span>
           </div>
-        </div>
-      )}
 
-      <div
-        className={`pt-6 border-t flex flex-col md:flex-row md:items-center justify-between gap-4 ${isCompleted ? 'border-green-50' : 'border-gray-50'}`}
-      >
-        <div
-          className="flex items-center gap-3 cursor-pointer group/team"
-          onClick={() => onTeamClick?.(project)}
-        >
-          <div className="flex -space-x-2">
-            {(project.members || []).slice(0, 3).map((m, idx) => {
-              const name = m.employee
-                ? `${m.employee.firstName} ${m.employee.lastName}`
-                : 'User';
-              const avatar =
-                m.employee?.photo ||
-                `https://i.pravatar.cc/150?u=${m.employee?.id || m.employeeId}`;
-              return (
-                <div
-                  key={m.id || idx}
-                  className={`w-8 h-8 rounded-full border-2 bg-gray-200 flex items-center justify-center text-[10px] font-bold text-gray-500 overflow-hidden transition-transform group-hover/team:-translate-y-1 ${isCompleted ? 'border-green-100' : 'border-white'}`}
-                  style={{ transitionDelay: `${idx * 50}ms` }}
-                  title={name}
-                >
-                  <img
-                    src={avatar}
-                    alt={name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              );
-            })}
-            {project.members?.length > 3 && (
-              <div
-                className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-[10px] font-bold text-white transition-transform group-hover/team:-translate-y-1 ${isCompleted ? 'border-green-100 bg-green-600' : 'border-white bg-[#004475]'}`}
-                style={{ transitionDelay: '200ms' }}
-              >
-                +{project.members.length - 3}
-              </div>
-            )}
-          </div>
-          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest group-hover/team:text-[#004475] transition-colors">
-            {project.team?.length || 0} ENGINEERS
-          </span>
+          {(project.members?.length || 0) > 0 ? (
+            <div className="flex flex-col gap-3 max-h-[200px] overflow-y-auto no-scroll">
+              {(project.members || []).map((m, idx) => {
+                const name = m.employee
+                  ? `${m.employee.firstName} ${m.employee.lastName}`
+                  : 'Unknown';
+                const role = m.role || m.employee?.designation || 'Staff';
+                const avatar =
+                  m.employee?.photo ||
+                  `https://i.pravatar.cc/150?u=${m.employee?.id || m.employeeId}`;
+                return (
+                  <div
+                    key={m.id || idx}
+                    className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition-all"
+                  >
+                    <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-gray-100 shrink-0">
+                      <img
+                        src={avatar}
+                        alt={name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-sm font-bold text-gray-900 truncate">
+                        {name}
+                      </span>
+                      <span className="text-[11px] text-gray-500 font-medium truncate">
+                        {role}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-6 text-center gap-2">
+              <Users size={28} className="text-gray-200" />
+              <p className="text-xs font-medium text-gray-400">
+                No team members assigned
+              </p>
+            </div>
+          )}
+
+          <button
+            onClick={() => onTeamClick?.(project)}
+            className={`w-full text-sm font-bold px-5 py-2.5 rounded-xl transition-all shadow-sm hover:shadow ${(project.members?.length || 0) > 0
+              ? 'bg-[#004cf0] text-white hover:bg-[#003bcc]'
+              : 'bg-blue-50 text-[#004cf0] hover:bg-blue-100'
+              }`}
+          >
+            {(project.members?.length || 0) > 0
+              ? 'Manage Team'
+              : 'Assign Team'}
+          </button>
         </div>
       </div>
     </div>
@@ -495,6 +476,7 @@ function CreateProjectModal({ open, onClose, onSubmit }) {
   });
   const [dragOver, setDragOver] = useState(false);
   const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validate = () => {
     const e = {};
@@ -514,26 +496,34 @@ function CreateProjectModal({ open, onClose, onSubmit }) {
     handleChange('agreementName', file.name);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
       return;
     }
-    const tags = [form.industry.toUpperCase() || 'GENERAL', 'ON TRACK'];
-    if (form.agreementName) {
-      tags.push(`AGREEMENT_FILE:${form.agreementName}`);
+    
+    setIsSubmitting(true);
+    try {
+      const tags = [form.industry.toUpperCase() || 'GENERAL', 'ON TRACK'];
+      if (form.agreementName) {
+        tags.push(`AGREEMENT_FILE:${form.agreementName}`);
+      }
+      const success = await onSubmit?.({
+        ...form,
+        projectCategory: form.category,
+        id: `PROJ-${Math.floor(Math.random() * 1000)}`,
+        team: [],
+        status: 'Active',
+        tags: tags,
+      });
+      if (success !== false) {
+        onClose();
+      }
+    } finally {
+      setIsSubmitting(false);
     }
-    onSubmit?.({
-      ...form,
-      projectCategory: form.category,
-      id: `PROJ-${Math.floor(Math.random() * 1000)}`,
-      team: [],
-      status: 'Active',
-      tags: tags,
-    });
-    onClose();
   };
 
   const footer = (
@@ -545,9 +535,18 @@ function CreateProjectModal({ open, onClose, onSubmit }) {
       >
         Cancel
       </button>
-      <PrimaryButton type="submit" form="create-project-form">
-        Create Project
-        <Rocket size={18} />
+      <PrimaryButton type="submit" form="create-project-form" disabled={isSubmitting}>
+        {isSubmitting ? (
+          <>
+            <Loader2 size={18} className="animate-spin" />
+            Creating...
+          </>
+        ) : (
+          <>
+            Create Project
+            <Rocket size={18} />
+          </>
+        )}
       </PrimaryButton>
     </div>
   );
@@ -734,11 +733,10 @@ function CreateProjectModal({ open, onClose, onSubmit }) {
               <label className={labelCls}>Agreement Certificate</label>
               <div className="flex flex-col gap-2">
                 <div
-                  className={`flex flex-col items-center justify-center gap-2 w-full py-4 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
-                    dragOver
-                      ? 'border-[#004475] bg-blue-50'
-                      : 'border-gray-300 bg-gray-50 hover:border-gray-400'
-                  }`}
+                  className={`flex flex-col items-center justify-center gap-2 w-full py-4 border-2 border-dashed rounded-xl cursor-pointer transition-all ${dragOver
+                    ? 'border-[#004475] bg-blue-50'
+                    : 'border-gray-300 bg-gray-50 hover:border-gray-400'
+                    }`}
                   onDragOver={(e) => {
                     e.preventDefault();
                     setDragOver(true);
@@ -811,11 +809,10 @@ function CreateProjectModal({ open, onClose, onSubmit }) {
                     key={p}
                     type="button"
                     onClick={() => handleChange('priority', p)}
-                    className={`py-2.5 text-sm font-bold rounded-xl border transition-all ${
-                      form.priority === p
-                        ? 'bg-white border-blue-600 text-blue-600 shadow-sm'
-                        : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'
-                    }`}
+                    className={`py-2.5 text-sm font-bold rounded-xl border transition-all ${form.priority === p
+                      ? 'bg-white border-blue-600 text-blue-600 shadow-sm'
+                      : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'
+                      }`}
                   >
                     {p}
                   </button>
@@ -926,11 +923,7 @@ function EditProjectModal({ open, onClose, project, onUpdate, isUpdating }) {
       >
         Cancel
       </button>
-      <PrimaryButton
-        type="submit"
-        form="edit-project-form"
-        disabled={isUpdating}
-      >
+      <PrimaryButton type="submit" form="edit-project-form" disabled={isUpdating}>
         {isUpdating ? 'Updating...' : 'Update Project'}
         <Rocket size={18} />
       </PrimaryButton>
@@ -1123,11 +1116,10 @@ function EditProjectModal({ open, onClose, project, onUpdate, isUpdating }) {
               <label className={labelCls}>Agreement Certificate</label>
               <div className="flex flex-col gap-2">
                 <div
-                  className={`flex flex-col items-center justify-center gap-2 w-full py-4 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
-                    dragOver
-                      ? 'border-[#004475] bg-blue-50'
-                      : 'border-gray-300 bg-gray-50 hover:border-gray-400'
-                  }`}
+                  className={`flex flex-col items-center justify-center gap-2 w-full py-4 border-2 border-dashed rounded-xl cursor-pointer transition-all ${dragOver
+                    ? 'border-[#004475] bg-blue-50'
+                    : 'border-gray-300 bg-gray-50 hover:border-gray-400'
+                    }`}
                   onDragOver={(e) => {
                     e.preventDefault();
                     setDragOver(true);
@@ -1199,11 +1191,10 @@ function EditProjectModal({ open, onClose, project, onUpdate, isUpdating }) {
                     key={p}
                     type="button"
                     onClick={() => handleChange('priority', p)}
-                    className={`py-2.5 text-sm font-bold rounded-xl border transition-all ${
-                      form.priority === p
-                        ? 'bg-white border-blue-600 text-blue-600 shadow-sm'
-                        : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'
-                    }`}
+                    className={`py-2.5 text-sm font-bold rounded-xl border transition-all ${form.priority === p
+                      ? 'bg-white border-blue-600 text-blue-600 shadow-sm'
+                      : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'
+                      }`}
                   >
                     {p}
                   </button>
@@ -1241,6 +1232,7 @@ export default function ProjectPortfolio({
   const [createSuccessOpen, setCreateSuccessOpen] = useState(false);
   const [lastCreatedProject, setLastCreatedProject] = useState(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(6);
@@ -1337,6 +1329,7 @@ export default function ProjectPortfolio({
 
   const handleConfirmDelete = async () => {
     if (projectToDelete) {
+      setIsDeleting(true);
       try {
         const res = await fetch(`/api/projects/${projectToDelete.id}`, {
           method: 'DELETE',
@@ -1355,6 +1348,8 @@ export default function ProjectPortfolio({
       } catch (err) {
         showErrorToast('An error occurred during deletion.');
         console.error('Delete error:', err);
+      } finally {
+        setIsDeleting(false);
       }
     }
   };
@@ -1383,16 +1378,16 @@ export default function ProjectPortfolio({
           prev.map((p) =>
             p.id === updated.id
               ? {
-                  ...updated,
-                  id: updated.id,
-                  start: updated.startDate,
-                  team: updated.members
-                    ? updated.members.map(
-                        (m) =>
-                          `${m.employee?.firstName} ${m.employee?.lastName}`
-                      )
-                    : p.team,
-                }
+                ...updated,
+                id: updated.id,
+                start: updated.startDate,
+                team: updated.members
+                  ? updated.members.map(
+                    (m) =>
+                      `${m.employee?.firstName} ${m.employee?.lastName}`
+                  )
+                  : p.team,
+              }
               : p
           )
         );
@@ -1416,42 +1411,11 @@ export default function ProjectPortfolio({
   }
 
   return (
-    <div className="flex flex-col gap-4 -m-2 p-4 rounded-b-2xl animate-dashboard-reveal">
-      {/* Portfolio Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
-            Project Portfolio
-          </h2>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="relative group">
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#004475] transition-colors"
-              size={18}
-            />
-            <input
-              type="text"
-              placeholder="Quick search..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-[#004475] transition-all w-64 shadow-sm"
-            />
-          </div>
-          <PrimaryButton
-            onClick={() => setCreateOpen(true)}
-            className="px-5 py-2.5"
-          >
-            <Plus size={18} />
-            Create New Project
-          </PrimaryButton>
-        </div>
-      </div>
-
+    <div className="flex flex-col gap-4 -m-2 p-2.5 rounded-b-2xl animate-dashboard-reveal">
       {/* Sub-Tabs Section */}
       <nav
         role="tablist"
-        className="flex items-center border-b border-gray-200 gap-1.5"
+        className="flex items-center border-b border-gray-200 gap-1.5 mb-2"
       >
         <TabButton
           isActive={subTab === 'in-progress'}
@@ -1477,8 +1441,69 @@ export default function ProjectPortfolio({
         </TabButton>
       </nav>
 
+      {/* Portfolio Header - Only show under In-Progress if requested, or always show below tabs. 
+          Given the text "to be under the sub tab in progress tab", we will wrap it in a condition 
+          or just place it below. Let's place it below and show for all, but wait, the prompt says "under the sub tab in progress tab".
+          Let's wrap in `subTab === 'in-progress'` condition. */}
+      {subTab === 'in-progress' && (
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-2">
+          <div>
+            <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+              Project Portfolio
+            </h2>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="relative group">
+              <Search
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#004475] transition-colors"
+                size={18}
+              />
+              <input
+                type="text"
+                placeholder="Quick search..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-[#004475] transition-all w-64 shadow-sm"
+              />
+            </div>
+            <PrimaryButton
+              onClick={() => setCreateOpen(true)}
+              className="px-5 py-2.5"
+            >
+              <Plus size={18} />
+              Create New Project
+            </PrimaryButton>
+          </div>
+        </div>
+      )}
+
+      {subTab === 'completed' && (
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6">
+          <div>
+            <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+              Completed Projects
+            </h2>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="relative group">
+              <Search
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#004475] transition-colors"
+                size={18}
+              />
+              <input
+                type="text"
+                placeholder="Quick search..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-[#004475] transition-all w-64 shadow-sm"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Projects List */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         {filteredProjects
           .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
           .map((proj) => (
@@ -1488,6 +1513,7 @@ export default function ProjectPortfolio({
               onEdit={subTab === 'in-progress' ? handleEditClick : null}
               onDelete={handleDeleteClick}
               onTeamClick={handleTeamClick}
+              onComplete={subTab === 'in-progress' ? () => handleUpdateProject({ ...proj, status: 'Completed' }) : null}
             />
           ))}
       </div>
@@ -1539,12 +1565,15 @@ export default function ProjectPortfolio({
                 setLastCreatedProject(created);
                 setCreateSuccessOpen(true);
                 showSuccessToast('Project created successfully!');
+                return true;
               } else {
                 showErrorToast('Failed to create project.');
+                return false;
               }
             } catch (err) {
               showErrorToast('An error occurred during creation.');
               console.error('Create project error:', err);
+              return false;
             }
           }}
         />
@@ -1599,6 +1628,7 @@ export default function ProjectPortfolio({
           confirmLabel="Delete Project"
           cancelLabel="Cancel"
           destructive={true}
+          loading={isDeleting}
           onConfirm={handleConfirmDelete}
           onCancel={() => {
             setDeleteConfirmOpen(false);

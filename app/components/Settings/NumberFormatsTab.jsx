@@ -1,7 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { CreditCard, Users, Package } from 'lucide-react';
+import {
+  CreditCard,
+  Users,
+  Package,
+} from 'lucide-react';
 import { showSuccessToast, showErrorToast } from '../Toast';
 
 export default function NumberFormatsTab() {
@@ -386,10 +390,7 @@ export default function NumberFormatsTab() {
                       min="1"
                       value={contractEmployeeConfig.nextNumber}
                       onChange={(e) =>
-                        handleContractEmployeeChange(
-                          'nextNumber',
-                          e.target.value
-                        )
+                        handleContractEmployeeChange('nextNumber', e.target.value)
                       }
                       placeholder="e.g. 101"
                       className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-50/50 focus:border-blue-400 outline-none transition-all font-mono"

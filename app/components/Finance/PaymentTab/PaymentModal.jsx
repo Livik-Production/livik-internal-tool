@@ -68,9 +68,7 @@ export default function PaymentModal({
   const [showPartialModal, setShowPartialModal] = useState(false);
   const [partialAmount, setPartialAmount] = useState('');
   const [partialMethod, setPartialMethod] = useState('');
-  const [partialDate, setPartialDate] = useState(
-    new Date().toISOString().split('T')[0]
-  );
+  const [partialDate, setPartialDate] = useState(new Date().toISOString().split('T')[0]);
   const [partialNextDueDate, setPartialNextDueDate] = useState('');
   const [partialNote, setPartialNote] = useState('');
   const [partialErrors, setPartialErrors] = useState({});
@@ -80,7 +78,7 @@ export default function PaymentModal({
     e.preventDefault();
     const errors = {};
     const amountVal = parseFloat(partialAmount);
-
+    
     if (!partialAmount || amountVal <= 0) {
       errors.amount = 'Please enter a valid payment amount.';
     } else if (amountVal >= remainingAmount) {
@@ -122,7 +120,7 @@ export default function PaymentModal({
       }
 
       showSuccessToast('Partial payment recorded successfully!');
-
+      
       // Reset state
       setPartialAmount('');
       setPartialNote('');
@@ -153,8 +151,8 @@ export default function PaymentModal({
       widthClass="max-w-md"
       footer={
         <div className="px-3 py-3 border-t border-gray-200 flex justify-end space-x-3 w-full">
-          <Button
-            onClick={onClose}
+          <Button 
+            onClick={onClose} 
             disabled={showLoading}
             className="px-4 py-2 border border-gray-300 text-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-100 transition-colors shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -163,15 +161,8 @@ export default function PaymentModal({
           <Button
             onClick={() => {
               // Pre-populate with a reasonable default (e.g. half of remaining)
-              setPartialAmount(
-                Math.max(
-                  0.01,
-                  parseFloat((remainingAmount / 2).toFixed(2))
-                ).toString()
-              );
-              setPartialMethod(
-                paymentMethod || paymentMethods[0] || 'Bank Transfer'
-              );
+              setPartialAmount(Math.max(0.01, parseFloat((remainingAmount / 2).toFixed(2))).toString());
+              setPartialMethod(paymentMethod || paymentMethods[0] || 'Bank Transfer');
               setPartialDate(new Date().toISOString().split('T')[0]);
               setShowPartialModal(true);
             }}
@@ -325,10 +316,7 @@ export default function PaymentModal({
               <PrimaryButton
                 onClick={handlePartialSubmit}
                 disabled={
-                  !partialAmount ||
-                  parseFloat(partialAmount) <= 0 ||
-                  parseFloat(partialAmount) >= remainingAmount ||
-                  isSubmittingPartial
+                  !partialAmount || parseFloat(partialAmount) <= 0 || parseFloat(partialAmount) >= remainingAmount || isSubmittingPartial
                 }
                 className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-sm font-semibold shadow-md transition-all active:scale-95 cursor-pointer disabled:opacity-50"
               >
@@ -346,8 +334,7 @@ export default function PaymentModal({
         >
           <div className="px-3 py-2 border-b border-gray-200">
             <p className="text-sm text-gray-500 mt-1">
-              {invoice.invoiceNumber} •{' '}
-              {invoice.client || invoice.customer?.name || 'Unknown Client'}
+              {invoice.invoiceNumber} • {invoice.client || invoice.customer?.name || 'Unknown Client'}
             </p>
           </div>
 
@@ -362,15 +349,11 @@ export default function PaymentModal({
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div>
                   <p className="text-xs text-gray-500">Total Amount</p>
-                  <p className="font-medium text-gray-900">
-                    {formatCurrency(invoice.totalAmount)}
-                  </p>
+                  <p className="font-medium text-gray-900">{formatCurrency(invoice.totalAmount)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Remaining Balance</p>
-                  <p className="font-semibold text-amber-700">
-                    {formatCurrency(remainingAmount)}
-                  </p>
+                  <p className="font-semibold text-amber-700">{formatCurrency(remainingAmount)}</p>
                 </div>
               </div>
             </div>
@@ -378,8 +361,7 @@ export default function PaymentModal({
             {/* Partial Amount */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Partial Payment Amount ($){' '}
-                <span className="text-red-500">*</span>
+                Partial Payment Amount ($) <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -394,17 +376,13 @@ export default function PaymentModal({
                 max={(remainingAmount - 0.01).toFixed(2)}
                 step="0.01"
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent disabled:opacity-50 ${
-                  partialErrors.amount
-                    ? 'border-red-500 font-medium'
-                    : 'border-gray-300'
+                  partialErrors.amount ? 'border-red-500 font-medium' : 'border-gray-300'
                 }`}
                 placeholder="Enter partial amount"
                 disabled={isSubmittingPartial}
               />
               {partialErrors.amount && (
-                <p className="text-red-500 text-xs mt-1">
-                  {partialErrors.amount}
-                </p>
+                <p className="text-red-500 text-xs mt-1">{partialErrors.amount}</p>
               )}
             </div>
 
@@ -434,9 +412,7 @@ export default function PaymentModal({
                 ))}
               </select>
               {partialErrors.method && (
-                <p className="text-red-500 text-xs mt-1">
-                  {partialErrors.method}
-                </p>
+                <p className="text-red-500 text-xs mt-1">{partialErrors.method}</p>
               )}
             </div>
 
@@ -460,9 +436,7 @@ export default function PaymentModal({
                 disabled={isSubmittingPartial}
               />
               {partialErrors.date && (
-                <p className="text-red-500 text-xs mt-1">
-                  {partialErrors.date}
-                </p>
+                <p className="text-red-500 text-xs mt-1">{partialErrors.date}</p>
               )}
             </div>
 

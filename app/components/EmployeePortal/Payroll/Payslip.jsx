@@ -110,31 +110,23 @@ const EmployeePayslipTab = ({
 
     if (selectedYear !== 'All Years') {
       const yearNum = Number(selectedYear);
-
+      
       if (yearNum === currentYear) {
-        availableMonths = availableMonths.filter(
-          (_, idx) => idx === 0 || idx <= currentMonthNum
-        );
+        availableMonths = availableMonths.filter((_, idx) => idx === 0 || idx <= currentMonthNum);
       } else if (yearNum === 2025) {
-        availableMonths = availableMonths.filter(
-          (_, idx) => idx === 0 || idx >= 9
-        );
+        availableMonths = availableMonths.filter((_, idx) => idx === 0 || idx >= 9);
       }
     }
-
+    
     return availableMonths.map((m) => ({ label: m, value: m }));
   }, [selectedYear]);
 
   // Ensure selected month is valid for the newly selected year
   useEffect(() => {
-    const isAvailable = filteredMonthOptions.some(
-      (m) => m.value === selectedMonth
-    );
+    const isAvailable = filteredMonthOptions.some(m => m.value === selectedMonth);
     if (!isAvailable && filteredMonthOptions.length > 0) {
       // Default to the most recent available month if the current selection is invalid
-      setSelectedMonth(
-        filteredMonthOptions[filteredMonthOptions.length - 1].value
-      );
+      setSelectedMonth(filteredMonthOptions[filteredMonthOptions.length - 1].value);
     }
   }, [filteredMonthOptions, selectedMonth]);
 

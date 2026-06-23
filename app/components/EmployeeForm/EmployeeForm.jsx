@@ -131,6 +131,7 @@ export default function EmployeeForm({
   onApprove,
   showApprove = false,
   isHrRole = false,
+  isSuperAdmin = false,
 }) {
   const isView = mode === 'view';
   const isEdit = mode === 'edit';
@@ -293,7 +294,12 @@ export default function EmployeeForm({
     const newErrors = {};
 
     if (s === 0) {
-      ['firstName', 'lastName', 'email', 'phoneNumber'].forEach((k) => {
+      [
+        'firstName',
+        'lastName',
+        'email',
+        'phoneNumber',
+      ].forEach((k) => {
         const msg = validators[k]?.(form[k]);
         if (msg) newErrors[k] = msg;
       });
@@ -303,14 +309,14 @@ export default function EmployeeForm({
         const msg = validators[k]?.(form[k]);
         if (msg) newErrors[k] = msg;
       });
-      // workType is required for creation
-      if (!form.workType || !String(form.workType).trim()) {
-        newErrors.workType = 'Work type is required.';
-      }
-      // workMode is required
-      if (!form.workMode || !String(form.workMode).trim()) {
-        newErrors.workMode = 'Work mode is required.';
-      }
+        // workType is required for creation
+        if (!form.workType || !String(form.workType).trim()) {
+          newErrors.workType = 'Work type is required.';
+        }
+        // workMode is required
+        if (!form.workMode || !String(form.workMode).trim()) {
+          newErrors.workMode = 'Work mode is required.';
+        }
     } else if (s === 3) {
       if (form.workType !== 'CONTRACT') {
         if (!form.bondDuration || !String(form.bondDuration).trim()) {
@@ -620,9 +626,9 @@ export default function EmployeeForm({
       bondDuration: String(form.bondDuration ?? '').trim() || undefined,
       documentsCollected: form.documentsCollected || undefined,
       bondRemarks: form.bondRemarks?.trim() || undefined,
-      workMode: form.workMode?.trim() || undefined,
-      wfoOffice: form.wfoOffice?.trim() || undefined,
-      workType: form.workType?.trim() || undefined,
+        workMode: form.workMode?.trim() || undefined,
+        wfoOffice: form.wfoOffice?.trim() || undefined,
+        workType: form.workType?.trim() || undefined,
     };
 
     if (!payload.firstName || !payload.lastName) {
@@ -709,6 +715,8 @@ export default function EmployeeForm({
                 errors={errors}
                 setField={setField}
                 isView={isView}
+                isEdit={isEdit}
+                isSuperAdmin={isSuperAdmin}
               />
 
               <AddressSection
@@ -730,12 +738,7 @@ export default function EmployeeForm({
           )}
 
           {currentStepLabel === 'Uploads' && (
-            <PhotoSection
-              form={form}
-              setField={setField}
-              isView={isView}
-              empId={form.empId}
-            />
+            <PhotoSection form={form} setField={setField} isView={isView} empId={form.empId} />
           )}
 
           {currentStepLabel === 'Employment & Bank' && (

@@ -366,8 +366,8 @@ function CustomerDetailsContent() {
                   Invoice Cycle Days
                 </span>
                 <span className="text-sm font-medium text-gray-900">
-                  {customer.invoiceFromDay && customer.invoiceToDay 
-                    ? `${customer.invoiceFromDay} - ${customer.invoiceToDay}` 
+                  {customer.invoiceFromDay && customer.invoiceToDay
+                    ? `${customer.invoiceFromDay} - ${customer.invoiceToDay}`
                     : 'N/A'}
                 </span>
               </div>
@@ -394,6 +394,31 @@ function CustomerDetailsContent() {
                 </p>
               </div>
             )}
+
+            <div className="grid grid-cols-2 gap-4 border-t border-gray-100 pt-3 mt-4">
+              <div>
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
+                  Created On
+                </span>
+                <span className="text-xs font-medium text-gray-900 block mt-1">
+                  {customer.createdAt ? new Date(customer.createdAt).toLocaleString('en-IN') : 'N/A'}
+                </span>
+                {/* <span className="text-xs text-gray-500 block mt-0.5">
+                  By: {customer.createdBy || 'System'}
+                </span> */}
+              </div>
+              <div>
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
+                  Last Updated
+                </span>
+                <span className="text-xs font-medium text-gray-900 block mt-1">
+                  {customer.updatedAt ? new Date(customer.updatedAt).toLocaleString('en-IN') : 'N/A'}
+                </span>
+                {/* <span className="text-xs text-gray-500 block mt-0.5">
+                  By: {customer.updatedBy || 'System'}
+                </span> */}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -484,16 +509,16 @@ function CustomerDetailsContent() {
   );
 }
 
-  export default function CustomerDetailsPage() {
-    return (
-      <Suspense
-        fallback={
-          <div className="flex justify-center items-center py-20 min-h-[400px]">
-            <Loader label="Loading page..." size="md" />
-          </div>
-        }
-      >
-        <CustomerDetailsContent />
-      </Suspense>
-    );
-  }
+export default function CustomerDetailsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center items-center py-20 min-h-[400px]">
+          <Loader label="Loading page..." size="md" />
+        </div>
+      }
+    >
+      <CustomerDetailsContent />
+    </Suspense>
+  );
+}

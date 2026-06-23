@@ -203,26 +203,23 @@ export default function Sidebar({ onLinkClick }) {
     setMounted(true);
   }, []);
 
-  const checkSubActive = useCallback(
-    (subHref) => {
-      const [subPath, subQuery] = subHref.split('?');
-      if (pathname !== subPath) return false;
-
-      if (subQuery) {
-        const urlParams = new URLSearchParams(subQuery);
-        for (const [key, value] of urlParams.entries()) {
-          if (searchParams.get(key) !== value) return false;
-        }
-        return true;
-      } else {
-        if (subPath === '/dashboard/employee_portal') {
-          return !searchParams.get('tab');
-        }
-        return true;
+  const checkSubActive = useCallback((subHref) => {
+    const [subPath, subQuery] = subHref.split('?');
+    if (pathname !== subPath) return false;
+    
+    if (subQuery) {
+      const urlParams = new URLSearchParams(subQuery);
+      for (const [key, value] of urlParams.entries()) {
+        if (searchParams.get(key) !== value) return false;
       }
-    },
-    [pathname, searchParams]
-  );
+      return true;
+    } else {
+      if (subPath === '/dashboard/employee_portal') {
+        return !searchParams.get('tab');
+      }
+      return true;
+    }
+  }, [pathname, searchParams]);
 
   const [openDropdown, setOpenDropdown] = useState(null);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
@@ -305,8 +302,8 @@ export default function Sidebar({ onLinkClick }) {
 
     // Item WITH dropdown
     if (item.dropdown) {
-      const isDropdownActive = item.dropdown.some((sub) =>
-        checkSubActive(sub.href)
+      const isDropdownActive = item.dropdown.some(
+        (sub) => checkSubActive(sub.href)
       );
       const isOpen = openDropdown === item.id;
 

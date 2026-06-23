@@ -164,11 +164,7 @@ const GSTCalculationModal = ({
         name: selectedClient?.name || 'Client Name',
         address: selectedClient?.address || 'No. 8 , Round Road',
         city: selectedClient?.city || 'Dindigul',
-        gst:
-          selectedClient?.gstnNumber ||
-          selectedClient?.gst ||
-          selectedClient?.gstin ||
-          '',
+        gst: selectedClient?.gstnNumber || selectedClient?.gst || selectedClient?.gstin || '',
         cin: selectedClient?.cinNumber || selectedClient?.cin || '',
         state: selectedClient?.state || 'Tamil Nadu',
       },
@@ -306,9 +302,7 @@ const GSTCalculationModal = ({
                     onChange={handleDiscountValueChange}
                     className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-medium text-gray-900 bg-gray-50/30"
                     placeholder={
-                      discountType === 'percentage'
-                        ? '0%'
-                        : `${currencySymbol} 0.00`
+                      discountType === 'percentage' ? '0%' : `${currencySymbol} 0.00`
                     }
                   />
                 </div>
@@ -473,9 +467,7 @@ const GSTCalculationModal = ({
           onClose={() => {
             if (onCloseFlow) onCloseFlow();
           }}
-          title={
-            <span className="text-2xl">{`Invoice Preview — ${initialData?.invoiceNumber || nextInvoiceNumber || 'New Invoice'}`}</span>
-          }
+          title={<span className="text-2xl">{`Invoice Preview — ${initialData?.invoiceNumber || nextInvoiceNumber || 'New Invoice'}`}</span>}
           widthClass="max-w-[1000px]"
           headerActions={null}
           disableOutsideClick={true}

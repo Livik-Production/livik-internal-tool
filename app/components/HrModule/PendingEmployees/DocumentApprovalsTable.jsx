@@ -9,7 +9,7 @@ import { showSuccessToast, showErrorToast } from '../../Toast';
 import ConfirmDialog from '../../ConfirmDialog';
 import { fetchEmployees } from '../../../../store/slices/employeesSlice';
 import Pagination from '../../Pagination';
-import Loader from '../../Loader';
+import Loader from '../../Loader'
 
 export default function DocumentApprovalsTable({
   searchElement = null,
@@ -221,8 +221,8 @@ export default function DocumentApprovalsTable({
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <Loader />
-            <span className="text-sm text-gray-500 font-medium">
+              <Loader />
+              <span className="text-sm text-gray-500 font-medium">
               Fetching pending approvals...
             </span>
           </div>

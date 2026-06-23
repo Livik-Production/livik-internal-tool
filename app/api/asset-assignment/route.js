@@ -5,19 +5,15 @@ import { assetAssignmentService } from '../../../lib/assetAssignmentService';
 export async function POST(req) {
   try {
     let { assetId, employeeId, assignedDate, notes } = await req.json();
-
+    
     // If employeeId is the display ID (e.g. LK-2026-001) instead of CUID, look it up
     if (employeeId && !employeeId.startsWith('c')) {
       const { prisma } = require('../../../lib/prisma');
-      const emp = await prisma.employee.findFirst({
-        where: { id: employeeId },
-      });
+      const emp = await prisma.employee.findFirst({ where: { id: employeeId } });
       if (emp) {
         employeeId = emp.id; // It happened to be a CUID
       } else {
-        const empByEmpId = await prisma.employee.findFirst({
-          where: { empId: employeeId },
-        });
+        const empByEmpId = await prisma.employee.findFirst({ where: { empId: employeeId } });
         if (empByEmpId) {
           employeeId = empByEmpId.id;
         } else {

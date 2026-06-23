@@ -131,7 +131,10 @@ const PayrollExportExcel = ({ payrollData, fileName = 'payroll_export' }) => {
       });
 
       // Style the summary sheet
-      summaryWs.columns = [{ width: 25 }, { width: 20 }];
+      summaryWs.columns = [
+        { width: 25 },
+        { width: 20 }
+      ];
 
       // Generate Excel file
       const excelFileName = `${fileName}_${
@@ -139,9 +142,7 @@ const PayrollExportExcel = ({ payrollData, fileName = 'payroll_export' }) => {
       }.xlsx`;
 
       const buffer = await wb.xlsx.writeBuffer();
-      const blob = new Blob([buffer], {
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      });
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;

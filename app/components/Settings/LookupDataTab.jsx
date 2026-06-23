@@ -546,14 +546,9 @@ export default function LookupDataTab() {
                     >
                       <span className="text-2xl flex-shrink-0">{cat.icon}</span>
                       <div className="flex-1 min-w-0">
-                        <span className="text-xs font-semibold block truncate w-full">
-                          {cat.name}
-                        </span>
-                        <span
-                          className={`text-[10px] block mt-0.5 ${isSelected ? 'text-blue-200' : 'text-slate-500'}`}
-                        >
-                          {cat.values.length} value
-                          {cat.values.length !== 1 ? 's' : ''}
+                        <span className="text-xs font-semibold block truncate w-full">{cat.name}</span>
+                        <span className={`text-[10px] block mt-0.5 ${isSelected ? 'text-blue-200' : 'text-slate-500'}`}>
+                          {cat.values.length} value{cat.values.length !== 1 ? 's' : ''}
                         </span>
                       </div>
                     </button>
@@ -583,7 +578,7 @@ export default function LookupDataTab() {
                         <h3 className="text-lg font-bold text-slate-800 ml-5">
                           {selectedCategory.name}
                         </h3>
-
+                        
                         {/* Active Stats Pill */}
                         <span className="px-2.5 py-0.5 ml-30 bg-emerald-50 text-emerald-600 rounded-full text-xs font-bold border border-emerald-100 flex-shrink-0">
                           {activeCount}/{totalCount} Active
@@ -609,9 +604,7 @@ export default function LookupDataTab() {
 
                         {/* Delete Category button [🗑️] */}
                         <IconButton
-                          onClick={() =>
-                            handleDeleteCategory(selectedCategory.id)
-                          }
+                          onClick={() => handleDeleteCategory(selectedCategory.id)}
                           className="p-1.5 hover:bg-red-50 transition-colors text-red-500 flex-shrink-0"
                           title="Delete Category"
                         >
@@ -658,6 +651,7 @@ export default function LookupDataTab() {
                       </div>
                     </div>
                   )}
+
 
                   {/* Values list */}
                   <div className="flex-1 overflow-y-auto no-scrollbar px-6 py-4">
@@ -767,9 +761,8 @@ export default function LookupDataTab() {
                                 No values yet
                               </p>
                               <p className="text-xs text-gray-400 mt-1">
-                                Click the inline &quot;+&quot; button in the
-                                header above to create dropdown options for this
-                                category
+                                Click the inline &quot;+&quot; button in the header above to create dropdown
+                                options for this category
                               </p>
                             </>
                           )}
@@ -882,9 +875,7 @@ export default function LookupDataTab() {
             </h3>
             <div className="space-y-4">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-600">
-                  Category Name
-                </label>
+                <label className="text-xs font-bold text-slate-600">Category Name</label>
                 <input
                   type="text"
                   value={newCategoryName}
@@ -903,9 +894,7 @@ export default function LookupDataTab() {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-600">
-                  Description (Optional)
-                </label>
+                <label className="text-xs font-bold text-slate-600">Description (Optional)</label>
                 <input
                   type="text"
                   value={newCategoryDesc}

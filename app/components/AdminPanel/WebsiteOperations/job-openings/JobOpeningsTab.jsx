@@ -17,10 +17,7 @@ import JobApplicationsTab from '../job-applications/JobApplicationsTab';
 import TalentCommunityTab from '../talent-community/TalentCommunityTab';
 import { showSuccessToast, showErrorToast } from '../../../Toast';
 
-export default function JobOpeningsTab({
-  navigationState,
-  clearNavigationState,
-}) {
+export default function JobOpeningsTab({ navigationState, clearNavigationState }) {
   const [activeSubTab, setActiveSubTab] = useState('Create Job');
   const [jobs, setJobs] = useState([]);
 
@@ -196,6 +193,7 @@ export default function JobOpeningsTab({
 
   return (
     <div className="flex flex-col h-full">
+
       {saving && (
         <Loader
           label={jobForm.isEditing ? 'Saving changes...' : 'Posting job...'}
@@ -497,19 +495,9 @@ export default function JobOpeningsTab({
         </div>
       )}
 
-      {activeSubTab === 'Role Applications' && (
-        <JobApplicationsTab
-          navigationState={navigationState}
-          clearNavigationState={clearNavigationState}
-        />
-      )}
+      {activeSubTab === 'Role Applications' && <JobApplicationsTab navigationState={navigationState} clearNavigationState={clearNavigationState} />}
 
-      {activeSubTab === 'Open Applications' && (
-        <TalentCommunityTab
-          navigationState={navigationState}
-          clearNavigationState={clearNavigationState}
-        />
-      )}
+      {activeSubTab === 'Open Applications' && <TalentCommunityTab navigationState={navigationState} clearNavigationState={clearNavigationState} />}
     </div>
   );
 }

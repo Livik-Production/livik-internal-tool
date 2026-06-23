@@ -304,20 +304,23 @@ export default function PayrollTab({
     const period = payrollToDelete.period;
 
     // First update local state
-    const updatedData = payrollData.filter((item) => item.id !== payrollId);
+    const updatedData = payrollData.filter(
+      (item) => item.id !== payrollId
+    );
     setPayrollData(updatedData);
 
     // Then delete from backend
     const deleteFromBackend = async () => {
       try {
-        const response = await fetch(`/api/payroll/data/${payrollId}`, {
-          method: 'DELETE',
-        });
+        const response = await fetch(
+          `/api/payroll/data/${payrollId}`,
+          {
+            method: 'DELETE',
+          }
+        );
 
         if (response.ok) {
-          showSuccessToast(
-            `Payroll cycle for "${period}" deleted successfully!`
-          );
+          showSuccessToast(`Payroll cycle for "${period}" deleted successfully!`);
         } else {
           showErrorToast(`Failed to delete payroll cycle for "${period}".`);
           console.error('Failed to delete payroll from backend');

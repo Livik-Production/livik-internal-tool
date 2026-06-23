@@ -180,9 +180,7 @@ const CustomerFormModal = ({
     }
 
     setIsSubmitting(true);
-    const toastId = toast.loading(
-      type === 'add' ? 'Adding customer...' : 'Updating customer...'
-    );
+    const toastId = toast.loading(type === 'add' ? 'Adding customer...' : 'Updating customer...');
 
     try {
       const url =
@@ -190,15 +188,9 @@ const CustomerFormModal = ({
       const method = type === 'add' ? 'POST' : 'PUT';
 
       const submitData = { ...formData };
-      submitData.invoiceFromDay = submitData.invoiceFromDay
-        ? parseInt(submitData.invoiceFromDay, 10)
-        : null;
-      submitData.invoiceToDay = submitData.invoiceToDay
-        ? parseInt(submitData.invoiceToDay, 10)
-        : null;
-      submitData.reminderDaysBefore = submitData.reminderDaysBefore
-        ? parseInt(submitData.reminderDaysBefore, 10)
-        : 1;
+      submitData.invoiceFromDay = submitData.invoiceFromDay ? parseInt(submitData.invoiceFromDay, 10) : null;
+      submitData.invoiceToDay = submitData.invoiceToDay ? parseInt(submitData.invoiceToDay, 10) : null;
+      submitData.reminderDaysBefore = submitData.reminderDaysBefore ? parseInt(submitData.reminderDaysBefore, 10) : 1;
 
       const res = await fetch(url, {
         method,
@@ -212,12 +204,9 @@ const CustomerFormModal = ({
       }
 
       const savedCustomer = await res.json();
-
+      
       toast.update(toastId, {
-        render:
-          type === 'add'
-            ? 'Customer added successfully!'
-            : 'Customer updated successfully!',
+        render: type === 'add' ? 'Customer added successfully!' : 'Customer updated successfully!',
         type: 'success',
         isLoading: false,
         autoClose: 3000,
@@ -228,7 +217,7 @@ const CustomerFormModal = ({
     } catch (err) {
       console.error('Submit customer failed:', err);
       setErrors({ submit: err.message });
-
+      
       toast.update(toastId, {
         render: err.message || 'Failed to save customer',
         type: 'error',
@@ -507,9 +496,7 @@ const CustomerFormModal = ({
                   onChange={handleInputChange}
                   disabled={type === 'view'}
                   className={`w-full px-3 py-2 border border-gray-300 rounded-md text-sm outline-none focus:border-blue-400 ${
-                    type === 'view'
-                      ? 'bg-gray-50 cursor-not-allowed'
-                      : 'bg-white'
+                    type === 'view' ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'
                   }`}
                 >
                   <option value="active">Active</option>
@@ -520,9 +507,7 @@ const CustomerFormModal = ({
               {/* Invoice Cycles */}
               <div className="grid grid-cols-3 gap-2">
                 <div className="space-y-1">
-                  <label className="text-sm text-gray-600">
-                    Invoice From Day
-                  </label>
+                  <label className="text-sm text-gray-600">Invoice From Day</label>
                   <input
                     type="number"
                     min="1"
@@ -533,16 +518,12 @@ const CustomerFormModal = ({
                     disabled={type === 'view'}
                     placeholder="e.g. 1"
                     className={`w-full px-3 py-2 border border-gray-300 rounded-md text-sm outline-none focus:border-blue-400 ${
-                      type === 'view'
-                        ? 'bg-gray-50 cursor-not-allowed'
-                        : 'bg-white'
+                      type === 'view' ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'
                     }`}
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm text-gray-600">
-                    Invoice To Day
-                  </label>
+                  <label className="text-sm text-gray-600">Invoice To Day</label>
                   <input
                     type="number"
                     min="1"
@@ -553,16 +534,12 @@ const CustomerFormModal = ({
                     disabled={type === 'view'}
                     placeholder="e.g. 30"
                     className={`w-full px-3 py-2 border border-gray-300 rounded-md text-sm outline-none focus:border-blue-400 ${
-                      type === 'view'
-                        ? 'bg-gray-50 cursor-not-allowed'
-                        : 'bg-white'
+                      type === 'view' ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'
                     }`}
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm text-gray-600">
-                    Reminder Days Before Due Date
-                  </label>
+                  <label className="text-sm text-gray-600">Reminder Days Before Due Date</label>
                   <input
                     type="number"
                     min="1"
@@ -573,9 +550,7 @@ const CustomerFormModal = ({
                     disabled={type === 'view'}
                     placeholder="e.g. 1"
                     className={`w-full px-3 py-2 border border-gray-300 rounded-md text-sm outline-none focus:border-blue-400 ${
-                      type === 'view'
-                        ? 'bg-gray-50 cursor-not-allowed'
-                        : 'bg-white'
+                      type === 'view' ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'
                     }`}
                   />
                 </div>
@@ -590,9 +565,7 @@ const CustomerFormModal = ({
                   onChange={handleInputChange}
                   disabled={type === 'view'}
                   className={`w-full px-3 py-[6px] border border-gray-300 rounded-md text-sm outline-none focus:border-blue-400 file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 ${
-                    type === 'view'
-                      ? 'bg-gray-50 cursor-not-allowed'
-                      : 'bg-white'
+                    type === 'view' ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'
                   }`}
                 />
               </div>

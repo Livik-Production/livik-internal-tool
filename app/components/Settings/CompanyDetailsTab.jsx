@@ -59,9 +59,7 @@ export default function CompanyDetailsTab() {
               swiftCode: data.swiftCode || '',
               exportCountry: data.exportCountry || '',
               lutBondNo: data.lutBondNo || '',
-              lutValidFrom: data.lutValidFrom
-                ? data.lutValidFrom.split('T')[0]
-                : '',
+              lutValidFrom: data.lutValidFrom ? data.lutValidFrom.split('T')[0] : '',
               lutValidTo: data.lutValidTo ? data.lutValidTo.split('T')[0] : '',
             });
           }
@@ -319,7 +317,7 @@ export default function CompanyDetailsTab() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
               />
             </div>
-
+            
             {/* LUT / Export Details */}
             <div className="space-y-2">
               <label className="text-sm font-semibold text-gray-700 block text-left">

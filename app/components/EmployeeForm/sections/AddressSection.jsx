@@ -5,22 +5,16 @@ export default function AddressSection({ form, setField, errors, isView }) {
   if (isView) {
     return (
       <>
-        <h3 className="font-bold text-lg text-gray-800 mb-4 border-b pb-2">
-          Address Details :
-        </h3>
+        <h3 className="font-bold text-lg text-gray-800 mb-4 border-b pb-2">Address Details :</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 py-4">
           <div className="flex items-baseline gap-2">
-            <span className="text-[14px] font-medium text-gray-900 whitespace-nowrap">
-              Present Address :
-            </span>
+            <span className="text-[14px] font-medium text-gray-900 whitespace-nowrap">Present Address :</span>
             <div className="text-gray-800 text-[14px] whitespace-pre-wrap leading-relaxed font-medium">
               {form.presentAddress || '-'}
             </div>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-[14px] font-medium text-gray-900 whitespace-nowrap">
-              Permanent Address :
-            </span>
+            <span className="text-[14px] font-medium text-gray-900 whitespace-nowrap">Permanent Address :</span>
             <div className="text-gray-800 text-[14px] whitespace-pre-wrap leading-relaxed font-medium">
               {form.permanentAddress || '-'}
             </div>

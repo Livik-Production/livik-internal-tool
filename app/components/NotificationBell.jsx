@@ -246,27 +246,49 @@ export default function NotificationBell({ placement = 'bottom' }) {
   const notifications = [...mappedDbNotifs, ...pendingNotifs, ...pendingLeaveNotifs, ...enquiryNotifs, ...expenseNotifs].filter((n) => !n.isRead);
   const unreadCount = notifications.length;
 
-  // Auto-mark as read when visiting corresponding tabs
+
+
+  // Auto‑mark notifications of the current tab as read when the tab is visited
   React.useEffect(() => {
-    if (pathname?.includes('/dashboard/hr') && (searchParams?.get('tab') === 'pendingEmployees' || searchParams?.get('mainTab') === 'pendingEmployees' || searchParams?.get('tab') === null)) {
-      if (pendingNotifs.length > 0) {
-        setReadPendingIds(prev => [...new Set([...prev, ...pendingNotifs.map(n => n.rawEmp.id)])]);
-      }
+    // Determine which tag corresponds to the current tab
+    const tab = searchParams?.get('tab');
+    let targetTag = '';
+    if (pathname?.includes('/dashboard/admin')) {
+      if (tab === 'customers') targetTag = 'Invoice';
+      else if (tab === 'assets') targetTag = 'Asset';
+    } else if (pathname?.includes('/dashboard/hr')) {
+      if (tab === 'leave' || searchParams?.get('mainTab') === 'leave') targetTag = 'Leave';
     }
-    if (pathname?.includes('/dashboard/hr') && (searchParams?.get('tab') === 'leave' || searchParams?.get('mainTab') === 'leave')) {
-      if (pendingLeaveNotifs.length > 0) {
-        setReadLeaveIds(prev => [...new Set([...prev, ...pendingLeaveNotifs.map(n => n.id)])]);
-      }
-    }
-    if (pathname?.includes('/dashboard/admin') && searchParams?.get('tab') === 'Client Enquiries') {
-      if (newEnquiries.length > 0) {
-        setHiddenEnquiries(prev => [...new Set([...prev, ...newEnquiries.map(e => e.id)])]);
-      }
-    }
-    if (pathname?.includes('/dashboard/finance') && (searchParams?.get('tab') === 'Expenses' || searchParams?.get('tab') === null)) {
-      setHiddenExpenseReport(true);
-    }
-  }, [pathname, searchParams, pendingNotifs.length, newEnquiries.length]);
+    // Add more mappings as needed for other modules
+
+    if (!targetTag) return;
+
+    // Find unread DB notifications for this tag (exclude UI‑generated IDs)
+    const unreadIds = notifications
+      .filter(
+        (n) =>
+          n.tag === targetTag &&
+          !n.isRead &&
+          !(n.id?.toString().startsWith('pending-')) &&
+          !(n.id?.toString().startsWith('enquiry-')) &&
+          !(n.id?.toString().startsWith('weekly-expense-report'))
+      )
+      .map((n) => n.id);
+
+    if (unreadIds.length === 0) return;
+
+    // Fire a PATCH for each unread notification
+    Promise.all(
+      unreadIds.map((id) =>
+        fetch(`/api/notifications/${id}/read`, {
+          method: 'PATCH',
+          headers: { 'x-user-id': authUser?.id },
+        })
+      )
+    )
+      .then(() => mutate())
+      .catch((err) => console.error('Failed to auto‑mark tab notifications as read:', err));
+  }, [pathname, searchParams, authUser?.id, mutate, notifications]);
 
   // 5. Handlers
   const handleMarkAllRead = async () => {

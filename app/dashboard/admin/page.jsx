@@ -13,6 +13,7 @@ import { Shield, Bell, UserPlus } from 'lucide-react';
 import TabButton from '../../components/Buttons/TabButton';
 import NotificationBell from '../../components/NotificationBell';
 
+
 /* ================= TABS CONFIG ================= */
 const TABS = [
   { id: 'dashboard', label: 'Dashboard', component: Dashboard },
@@ -90,7 +91,10 @@ function AdminContent() {
   useEffect(() => {
     if (visibleTabs.length > 0 && !activeTab) {
       const urlTab = searchParams.get('tab');
-      if (urlTab && visibleTabs.some((t) => t.id === urlTab)) {
+      if (
+        urlTab &&
+        visibleTabs.some((t) => t.id === urlTab)
+      ) {
         setActiveTab(urlTab);
       } else {
         const preferred =
@@ -112,6 +116,8 @@ function AdminContent() {
       setIsTabLoading(false);
     }, 200);
   };
+
+
 
   if (!canViewModule && visibleTabs.length === 0) {
     return (
@@ -160,7 +166,7 @@ function AdminContent() {
         </div>
 
         {/* ===== MAIN CONTENT AREA ===== */}
-        <main className="flex-1 overflow-y-auto no-scrollbar p-2.5 pt-0 min-h-0">
+        <main className="flex-1 overflow-y-auto no-scrollbar pt-0 min-h-0">
           <AnimatePresence mode="wait">
             {isTabLoading || !activeTab ? (
               <motion.div

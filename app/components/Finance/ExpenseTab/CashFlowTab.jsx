@@ -15,18 +15,18 @@ import HyperlinkButton from '../../Buttons/HyperlinkButton';
 import { toast } from 'react-toastify';
 import Loader from '../../Loader';
 
-const CashFlowTab = ({
-  inflows = [],
-  expenses = [],
-  onView,
-  onRefresh,
+const CashFlowTab = ({ 
+  inflows = [], 
+  expenses = [], 
+  onView, 
+  onRefresh, 
   isLoading = false,
   selectedMonthNum,
   setSelectedMonthNum,
   selectedYear,
   setSelectedYear,
   monthOptions = [],
-  yearOptions = [],
+  yearOptions = []
 }) => {
   const [paymentModeFilter, setPaymentModeFilter] = useState('all');
   const [filteredData, setFilteredData] = useState([]);

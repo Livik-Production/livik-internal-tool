@@ -32,9 +32,7 @@ export async function GET(request) {
         ...allPartialPayments.map((p) => ({ ...p, isPartial: true })),
       ];
 
-      combined.sort(
-        (a, b) => new Date(b.paymentDate) - new Date(a.paymentDate)
-      );
+      combined.sort((a, b) => new Date(b.paymentDate) - new Date(a.paymentDate));
 
       // Enrich payment data with customer information
       const enrichedPayments = await Promise.all(

@@ -675,8 +675,13 @@ function HRPageContent() {
         updated.docDegreeCollected ? 'degree' : null,
       ].filter(Boolean);
 
+      // _dbId is the stable Postgres UUID — used by the reducer to match the
+      // existing row even when empId (the display id) changes.
+      const _dbId = updated.id ?? modalData?.__raw?.id ?? targetId;
+
       const uiRow = {
         id,
+        _dbId,
         name,
         email: updated.email ?? '',
         designation: updated.designation ?? '',
@@ -1086,7 +1091,7 @@ function HRPageContent() {
             <nav
               role="tablist"
               aria-label="HR tabs"
-              className="flex shrink-0 space-x-1 border-b border-gray-300 mb-3.5 bg-transparent overflow-x-auto no-scroll"
+              className="flex shrink-0 space-x-1 border-b border-gray-300 mb-3 bg-transparent overflow-x-auto no-scroll"
             >
               {visibleTabs.map((t) => {
                 const active = activeMainTab === t.id && !animating;
@@ -1412,6 +1417,7 @@ function HRPageContent() {
           }
           canControlAllEmployees={canControlAllEmployees} // Pass permission prop
           isHrRole={isHrRole}
+          isSuperAdmin={isAdmin}
         />
       </CustomModalForm>
 

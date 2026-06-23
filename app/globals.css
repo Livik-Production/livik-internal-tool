@@ -132,6 +132,7 @@ body {
   print-color-adjust: exact;
 }
 
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;

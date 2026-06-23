@@ -10,15 +10,15 @@ export function proxy(req) {
   const isDashboard = pathname.startsWith('/dashboard');
   const isApi = pathname.startsWith('/api');
   const isAuthApi = pathname.startsWith('/api/auth');
-  const isCronApi = pathname.startsWith('/api/cron');
+ const isCronApi = pathname.startsWith('/api/cron');
 
-  const isPublicApi =
-    ((pathname === '/api/contact-submissions' ||
-      pathname === '/api/contact-submissions/') &&
-      (req.method === 'POST' || req.method === 'OPTIONS')) ||
-    pathname === '/api/login-admin' ||
-    pathname === '/api/login-admin/' ||
-    isCronApi;
+const isPublicApi =
+  ((pathname === '/api/contact-submissions' ||
+    pathname === '/api/contact-submissions/') &&
+    (req.method === 'POST' || req.method === 'OPTIONS')) ||
+  pathname === '/api/login-admin' ||
+  pathname === '/api/login-admin/' ||
+  isCronApi;
 
   if (isDashboard || (isApi && !isAuthApi && !isPublicApi)) {
     if (!authSession) {
@@ -139,10 +139,7 @@ export function proxy(req) {
           pathname === '/api/hr/holidays' && req.method === 'GET';
         const isOwnEmployeeFetch =
           pathname.startsWith('/api/employees/') &&
-          (req.method === 'GET' ||
-            req.method === 'PUT' ||
-            req.method === 'PATCH' ||
-            (req.method === 'POST' && pathname.includes('/documents')));
+          (req.method === 'GET' || req.method === 'PUT' || req.method === 'PATCH' || (req.method === 'POST' && pathname.includes('/documents')));
         const isAttendanceApi = pathname.startsWith('/api/hr/attendance');
 
         if (
@@ -177,11 +174,7 @@ export function proxy(req) {
           }
 
           // Allow explicit fetches on payroll/attendance by employee ID
-          if (
-            targetId === session.employeeId ||
-            targetId === session.empId ||
-            targetId === session.contractEmpId
-          ) {
+          if (targetId === session.employeeId || targetId === session.empId || targetId === session.contractEmpId) {
             return NextResponse.next();
           }
 
@@ -192,9 +185,7 @@ export function proxy(req) {
           if (
             req.method === 'POST' &&
             pathname.match(/^\/api\/employees\/[^/]+\/documents\/?$/) &&
-            (targetId === session.employeeId ||
-              targetId === session.empId ||
-              targetId === session.contractEmpId)
+            (targetId === session.employeeId || targetId === session.empId || targetId === session.contractEmpId)
           ) {
             return NextResponse.next();
           }
@@ -370,6 +361,7 @@ export function proxy(req) {
         }
       }
     }
+
   }
 
   return NextResponse.next();

@@ -1,12 +1,6 @@
 'use client';
 
-import {
-  SquarePen,
-  UploadCloud,
-  FileText,
-  Loader2,
-  Trash2,
-} from 'lucide-react';
+import { SquarePen, UploadCloud, FileText, Loader2, Trash2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import Button from '../Buttons/Button';
 import PrimaryButton from '../Buttons/PrimaryButton';
@@ -316,37 +310,33 @@ const AssetDocumentUpload = ({
     toast.success(`${label} removed successfully`);
   };
 
-  const isImage =
-    value &&
-    (value.toLowerCase().endsWith('.jpg') ||
-      value.toLowerCase().endsWith('.jpeg') ||
-      value.toLowerCase().endsWith('.png') ||
-      value.toLowerCase().endsWith('.webp') ||
-      value.includes('.jpg') ||
-      value.includes('.jpeg') ||
-      value.includes('.png') ||
-      value.includes('.webp'));
+  const isImage = value && (
+    value.toLowerCase().endsWith('.jpg') || 
+    value.toLowerCase().endsWith('.jpeg') || 
+    value.toLowerCase().endsWith('.png') || 
+    value.toLowerCase().endsWith('.webp') ||
+    value.includes('.jpg') ||
+    value.includes('.jpeg') ||
+    value.includes('.png') ||
+    value.includes('.webp')
+  );
 
   return (
     <div className="flex flex-col gap-2 w-full">
-      <span className="text-xs font-semibold text-gray-600 block">{label}</span>
+      <span className="text-xs font-semibold text-gray-600 block">
+        {label}
+      </span>
 
-      <div
-        className={`
+      <div className={`
         relative group rounded-xl border-2 border-dashed transition-all duration-300 min-h-[160px] flex flex-col items-center justify-center p-4
         ${value ? 'border-blue-200 bg-blue-50/30' : 'border-gray-200 hover:border-blue-400 hover:bg-gray-50'}
         ${uploading ? 'opacity-70 animate-pulse cursor-wait' : ''}
         ${isView ? 'bg-gray-50' : 'cursor-pointer'}
-      `}
-      >
+      `}>
         {value ? (
           <div className="relative w-full h-full flex items-center justify-center group/img">
             {isImage ? (
-              <img
-                src={value}
-                alt={label}
-                className="max-h-[140px] rounded-lg shadow-sm object-contain"
-              />
+              <img src={value} alt={label} className="max-h-[140px] rounded-lg shadow-sm object-contain" />
             ) : (
               <div className="flex flex-col items-center gap-2 p-4 text-center">
                 <FileText size={48} className="text-[#33a8d9]" />
@@ -387,9 +377,7 @@ const AssetDocumentUpload = ({
             <p className="text-sm font-medium text-gray-600">
               {uploading ? 'Uploading...' : `Upload ${label}`}
             </p>
-            <p className="text-[11px] text-gray-400 mt-1.5">
-              Max 5MB (JPG, PNG, PDF)
-            </p>
+            <p className="text-[11px] text-gray-400 mt-1.5">Max 5MB (JPG, PNG, PDF)</p>
           </div>
         )}
 
@@ -402,11 +390,7 @@ const AssetDocumentUpload = ({
           />
         )}
       </div>
-      {error && (
-        <p className="text-[11px] text-red-500 mt-1 font-medium bg-red-50 px-2 py-1 rounded">
-          {error}
-        </p>
-      )}
+      {error && <p className="text-[11px] text-red-500 mt-1 font-medium bg-red-50 px-2 py-1 rounded">{error}</p>}
     </div>
   );
 };
@@ -686,12 +670,8 @@ const AssetForm = ({
               <AssetDocumentUpload
                 label="Invoice Document"
                 value={formData.invoiceFile || ''}
-                onUpload={(url) =>
-                  setFormData((prev) => ({ ...prev, invoiceFile: url }))
-                }
-                onRemove={() =>
-                  setFormData((prev) => ({ ...prev, invoiceFile: '' }))
-                }
+                onUpload={(url) => setFormData((prev) => ({ ...prev, invoiceFile: url }))}
+                onRemove={() => setFormData((prev) => ({ ...prev, invoiceFile: '' }))}
                 isView={isViewMode}
                 assetTag={formData.assetTag}
                 documentType="invoice"
@@ -702,12 +682,8 @@ const AssetForm = ({
               <AssetDocumentUpload
                 label="Warranty Document"
                 value={formData.warrantyFile || ''}
-                onUpload={(url) =>
-                  setFormData((prev) => ({ ...prev, warrantyFile: url }))
-                }
-                onRemove={() =>
-                  setFormData((prev) => ({ ...prev, warrantyFile: '' }))
-                }
+                onUpload={(url) => setFormData((prev) => ({ ...prev, warrantyFile: url }))}
+                onRemove={() => setFormData((prev) => ({ ...prev, warrantyFile: '' }))}
                 isView={isViewMode}
                 assetTag={formData.assetTag}
                 documentType="warranty"
@@ -799,6 +775,14 @@ const AssetForm = ({
               >
                 ← Change Asset Type
               </button>
+            )}
+            {initialData?.createdAt && (
+              <div className="flex flex-col text-[10px] text-gray-400 font-medium">
+                <span>Created: {new Date(initialData.createdAt).toLocaleString()}</span>
+                {initialData.updatedAt && (
+                  <span>Updated: {new Date(initialData.updatedAt).toLocaleString()}</span>
+                )}
+              </div>
             )}
           </div>
 

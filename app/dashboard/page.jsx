@@ -746,19 +746,12 @@ export default function DashboardIndex() {
 
         <div className="flex-1 overflow-y-auto no-scrollbar min-h-0 pr-1 pb-6">
           {isEmployeeDashboard ? (
-            employeeStats.status &&
-            !['ACTIVE', 'APPROVED'].includes(
-              employeeStats.status.toUpperCase()
-            ) ? (
+            employeeStats.status && !['ACTIVE', 'APPROVED'].includes(employeeStats.status.toUpperCase()) ? (
               <div className="flex flex-col items-center justify-center h-full p-8 text-center bg-white rounded-2xl shadow-sm border border-gray-100 max-w-2xl mx-auto mt-10">
                 <Shield size={64} className="text-yellow-500 mb-6" />
-                <h2 className="text-2xl font-bold text-gray-800 mb-3">
-                  Pending Admin Approval
-                </h2>
+                <h2 className="text-2xl font-bold text-gray-800 mb-3">Pending Admin Approval</h2>
                 <p className="text-base text-gray-500 max-w-md mx-auto">
-                  Your profile has been submitted and is currently under review
-                  by the administration. Your dashboard will be unlocked once
-                  approved.
+                  Your profile has been submitted and is currently under review by the administration. Your dashboard will be unlocked once approved.
                 </p>
               </div>
             ) : (

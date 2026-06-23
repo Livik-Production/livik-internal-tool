@@ -343,7 +343,11 @@ const ApprovalsTab = ({ onViewLeaveDetails }) => {
               </p>
             </div>
           ) : (
-            <CustomTable columns={columns} data={paginatedData} rowKey="id" />
+            <CustomTable
+              columns={columns}
+              data={paginatedData}
+              rowKey="id"
+            />
           )}
         </div>
         {!loading && !error && filteredData.length > 0 && (

@@ -17,6 +17,8 @@ export default function DashboardModuleHeader({ quickActions }) {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
 
+
+
   useEffect(() => {
     const now = new Date();
     const formattedDate = now.toLocaleDateString('en-GB', {
@@ -28,6 +30,8 @@ export default function DashboardModuleHeader({ quickActions }) {
     setDateTime({ date: formattedDate, day: formattedDay });
   }, []);
 
+
+
   const handleLogout = useCallback(async () => {
     try {
       setIsLoggingOut(true);
@@ -37,7 +41,7 @@ export default function DashboardModuleHeader({ quickActions }) {
       try {
         localStorage.clear();
         sessionStorage.clear();
-      } catch {}
+      } catch { }
 
       router.replace('/login');
     } catch (error) {
@@ -101,10 +105,7 @@ export default function DashboardModuleHeader({ quickActions }) {
             onClick={() => setLogoutConfirmOpen(true)}
             className="mr-3 px-3 py-1.5 border border-gray-300 rounded hover:bg-gray-50 hover:text-red-500 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 active:scale-95 flex items-center gap-2 text-xs text-black font-medium whitespace-nowrap"
           >
-            <LogOut
-              size={17}
-              className="transition-transform group-hover:rotate-12"
-            />
+            <LogOut size={17} className="transition-transform group-hover:rotate-12" />
             <span>Sign out</span>
           </button>
         </div>

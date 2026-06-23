@@ -18,7 +18,7 @@ export async function GET(req, context) {
     let id = params.id;
     const resolved = await prisma.employee.findFirst({
       where: { OR: [{ id }, { empId: id }] },
-      select: { id: true },
+      select: { id: true }
     });
     if (resolved) id = resolved.id;
 
@@ -26,21 +26,16 @@ export async function GET(req, context) {
     if (!emp) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
     // Resolve S3 keys to signed URLs for photo, aadhaarCard, panCard
-    const { getEmployeeDocument } =
-      await import('../../../../lib/employeeDocumentService');
+    const { getEmployeeDocument } = await import('../../../../lib/employeeDocumentService');
     const docFields = {
       photo: 'PROFILE_PHOTO',
       aadhaarCard: 'AADHAR',
-      panCard: 'PAN',
+      panCard: 'PAN'
     };
 
     for (const [field, docType] of Object.entries(docFields)) {
       const value = emp[field];
-      const isS3Key =
-        value &&
-        !value.startsWith('http://') &&
-        !value.startsWith('https://') &&
-        !value.startsWith('blob:');
+      const isS3Key = value && !value.startsWith('http://') && !value.startsWith('https://') && !value.startsWith('blob:');
       if (isS3Key) {
         try {
           const s3Result = await getEmployeeDocument(emp.empId, docType);
@@ -68,7 +63,7 @@ export async function PUT(req, context) {
     let id = params.id;
     const resolved = await prisma.employee.findFirst({
       where: { OR: [{ id }, { empId: id }] },
-      select: { id: true },
+      select: { id: true }
     });
     if (resolved) id = resolved.id;
 
@@ -88,10 +83,7 @@ export async function PUT(req, context) {
     }
 
     // Check if roleId or role is being modified in PUT request
-    if (
-      ('roleId' in body && body.roleId !== undefined) ||
-      ('role' in body && body.role !== undefined)
-    ) {
+    if (('roleId' in body && body.roleId !== undefined) || ('role' in body && body.role !== undefined)) {
       const requesterId = currentUser?.employeeId;
       if (!requesterId) {
         return NextResponse.json(
@@ -181,19 +173,16 @@ export async function PUT(req, context) {
         const admins = await prisma.employee.findMany({
           where: {
             role: {
-              roleName: {
-                in: ['ADMIN', 'SUPER_ADMIN', 'SUPER ADMIN', 'SUPERADMIN'],
-              },
-            },
+              roleName: { in: ['ADMIN', 'SUPER_ADMIN', 'SUPER ADMIN', 'SUPERADMIN'] }
+            }
           },
-          select: { email: true },
+          select: { email: true }
         });
 
-        const adminEmails = admins.map((a) => a.email).filter(Boolean);
-
+        const adminEmails = admins.map(a => a.email).filter(Boolean);
+        
         if (adminEmails.length > 0 && process.env.EMAIL_ID) {
-          const empName =
-            `${updated.firstName || ''} ${updated.lastName || ''}`.trim();
+          const empName = `${updated.firstName || ''} ${updated.lastName || ''}`.trim();
           await transporter.sendMail({
             from: process.env.EMAIL_ID,
             to: adminEmails,
@@ -227,7 +216,7 @@ export async function DELETE(req, context) {
     let id = params.id;
     const resolved = await prisma.employee.findFirst({
       where: { OR: [{ id }, { empId: id }] },
-      select: { id: true },
+      select: { id: true }
     });
     if (resolved) id = resolved.id;
 

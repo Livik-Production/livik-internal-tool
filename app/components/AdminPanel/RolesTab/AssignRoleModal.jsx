@@ -65,20 +65,17 @@ export default function AssignRoleModal({
   useEffect(() => {
     if (formData.employeeId.trim()) {
       const query = formData.employeeId.toLowerCase();
-      const filtered = employees.filter((emp) => {
-        const statusUpper = (
-          emp.status ||
-          emp.__raw?.status ||
-          ''
-        ).toUpperCase();
-        const isPending =
-          statusUpper === 'PENDING' || statusUpper === 'PENDING_ADMIN';
-        if (isPending) return false;
-        return (
-          (emp.id || '').toLowerCase().includes(query) ||
-          (emp.name || '').toLowerCase().includes(query)
-        );
-      });
+      const filtered = employees.filter(
+        (emp) => {
+          const statusUpper = (emp.status || emp.__raw?.status || '').toUpperCase();
+          const isPending = statusUpper === 'PENDING' || statusUpper === 'PENDING_ADMIN';
+          if (isPending) return false;
+          return (
+            (emp.id || '').toLowerCase().includes(query) ||
+            (emp.name || '').toLowerCase().includes(query)
+          );
+        }
+      );
       setFilteredEmployees(filtered);
       setShowSuggestions(filtered.length > 0);
     } else {

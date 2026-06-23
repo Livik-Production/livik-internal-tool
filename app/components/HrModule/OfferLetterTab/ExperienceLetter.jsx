@@ -59,7 +59,7 @@ const ExperienceLetter = ({
             <h1 className="text-2xl font-bold text-gray-900">
               Livik Technologies
             </h1>
-            <div className="flex justify-end pr-12.5">
+            <div className="flex justify-start pl-32">
               <h1 className="text-md font-semibold text-gray-900">
                 Date : {getCurrentDate()}
               </h1>
@@ -73,7 +73,7 @@ const ExperienceLetter = ({
               <p>Tel: +91 8610470324</p>
               <p>Email: liviktechnologies@gmail.com</p>
             </div>
-            <div className="text-sm text-gray-900 flex flex-col items-start pl-38">
+            <div className="text-sm text-gray-900 flex flex-col items-start pl-32">
               <p className="font-bold">{employeeData?.name || 'Mr. XXX'}</p>
               <p>{employeeData?.address || '[Address]'}</p>
               <p>{employeeData?.email || '[Email]'}</p>

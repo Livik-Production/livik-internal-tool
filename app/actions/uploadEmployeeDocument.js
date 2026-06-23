@@ -16,13 +16,10 @@ export async function uploadEmployeeDocument(file, empId, documentType) {
   formData.append('file', file);
   formData.append('documentType', documentType);
 
-  const res = await fetch(
-    `/api/employees/${encodeURIComponent(empId)}/documents`,
-    {
-      method: 'POST',
-      body: formData,
-    }
-  );
+  const res = await fetch(`/api/employees/${encodeURIComponent(empId)}/documents`, {
+    method: 'POST',
+    body: formData,
+  });
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
