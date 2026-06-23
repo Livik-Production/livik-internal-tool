@@ -239,20 +239,30 @@ function ProjectCard({ project, onEdit, onDelete, onTeamClick, onComplete }) {
                   ? `${m.employee.firstName} ${m.employee.lastName}`
                   : 'Unknown';
                 const role = m.role || m.employee?.designation || 'Staff';
-                const avatar =
-                  m.employee?.photo ||
-                  `https://i.pravatar.cc/150?u=${m.employee?.id || m.employeeId}`;
+                const avatar = m.employee?.photo;
+                const initials = name
+                  .split(' ')
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((n) => n[0].toUpperCase())
+                  .join('');
                 return (
                   <div
                     key={m.id || idx}
                     className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition-all"
                   >
                     <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-gray-100 shrink-0">
-                      <img
-                        src={avatar}
-                        alt={name}
-                        className="w-full h-full object-cover"
-                      />
+                      {avatar ? (
+                        <img
+                          src={avatar}
+                          alt={name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-blue-700 text-xs font-bold">
+                          {initials}
+                        </div>
+                      )}
                     </div>
                     <div className="flex flex-col min-w-0">
                       <span className="text-sm font-bold text-gray-900 truncate">
@@ -275,7 +285,7 @@ function ProjectCard({ project, onEdit, onDelete, onTeamClick, onComplete }) {
             </div>
           )}
 
-          <button
+          <PrimaryButton
             onClick={() => onTeamClick?.(project)}
             className={`w-full text-sm font-bold px-5 py-2.5 rounded-xl transition-all shadow-sm hover:shadow ${(project.members?.length || 0) > 0
               ? 'bg-[#004cf0] text-white hover:bg-[#003bcc]'
@@ -285,7 +295,7 @@ function ProjectCard({ project, onEdit, onDelete, onTeamClick, onComplete }) {
             {(project.members?.length || 0) > 0
               ? 'Manage Team'
               : 'Assign Team'}
-          </button>
+          </PrimaryButton>
         </div>
       </div>
     </div>
@@ -301,22 +311,32 @@ function ProjectTeamModal({
 }) {
   const [searchTerm, setSearchTerm] = useState('');
 
-  const teamMembers = (project?.members || []).map((m) => ({
-    id: m.employee?.id || m.employeeId,
-    name: m.employee
-      ? `${m.employee.firstName} ${m.employee.lastName}`
-      : 'Unknown Employee',
-    role: m.role || m.employee?.designation || 'Staff',
-    status: 'online',
-    skills: Array.isArray(m.employee?.skills)
-      ? m.employee.skills
-      : m.employee?.skills
-        ? m.employee.skills.split(',')
-        : [],
-    avatar:
-      m.employee?.photo ||
-      `https://i.pravatar.cc/150?u=${m.employee?.id || m.employeeId}`,
-  }));
+  const teamMembers = (project?.members || []).map((m) => {
+    const firstName = m.employee?.firstName || '';
+    const lastName = m.employee?.lastName || '';
+    const fullName = firstName || lastName
+      ? `${firstName} ${lastName}`.trim()
+      : 'Unknown Employee';
+    const initials = fullName
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((n) => n[0].toUpperCase())
+      .join('');
+    return {
+      id: m.employee?.id || m.employeeId,
+      name: fullName,
+      role: m.role || m.employee?.designation || 'Staff',
+      status: 'online',
+      skills: Array.isArray(m.employee?.skills)
+        ? m.employee.skills
+        : m.employee?.skills
+          ? m.employee.skills.split(',')
+          : [],
+      avatar: m.employee?.photo || null,
+      initials,
+    };
+  });
 
   const filteredMembers = teamMembers.filter(
     (m) =>
@@ -398,11 +418,17 @@ function ProjectTeamModal({
               <div className="flex items-start gap-4">
                 <div className="relative">
                   <div className="w-14 h-14 rounded-xl overflow-hidden border-2 border-white shadow-sm">
-                    <img
-                      src={member.avatar}
-                      alt={member.name}
-                      className="w-full h-full object-cover"
-                    />
+                    {member.avatar ? (
+                      <img
+                        src={member.avatar}
+                        alt={member.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-lg font-bold">
+                        {member.initials}
+                      </div>
+                    )}
                   </div>
                   <div
                     className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white shadow-sm ${member.status === 'online' ? 'bg-green-500' : 'bg-gray-300'}`}
