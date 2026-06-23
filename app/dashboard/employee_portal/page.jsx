@@ -2,7 +2,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useState, useEffect, useMemo, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams } from 'next/navigation';
 import { useSelector } from 'react-redux';
@@ -12,14 +12,15 @@ import Components from '../../components/EmployeePortal/Payroll/Components';
 import EmployeePayslipTab from '../../components/EmployeePortal/Payroll/Payslip';
 import LeaveSection from './../../components/EmployeePortal/LeaveRequestTab/LeaveSection';
 import AssetDetailsTab from '../../components/EmployeePortal/AssetDetailsTab';
-import AssetViewModal from '../../components/EmployeePortal/AssetViewModal';
 import PaySlip from '../../components/HrModule/PaySlipTab/Payslip';
 import EmployeeView from '../../components/EmployeeForm/EmployeeView';
+import ProfileSetupWizard from '../../components/EmployeePortal/ProfileSetupWizard';
+import TimesheetTab from '../../components/EmployeePortal/TimesheetTab';
+import ProfileSetupWizardContract from '../../components/EmployeePortal/ProfileSetupWizardContract';
 import TabButton from '../../components/Buttons/TabButton';
 import Button from '../../components/Buttons/Button';
 import { handleSendPayslipEmail } from '../../components/HrModule/EmailForm';
-import { uploadEmployeeDocument } from '../../actions/uploadEmployeeDocument';
-import { deleteEmployeeDocument } from '../../actions/deleteEmployeeDocument';
+import { uploadOtherDocument } from '../../actions/uploadOtherDocument';
 import { showSuccessToast, showErrorToast } from '../../components/Toast';
 import {
   Printer,
@@ -30,16 +31,15 @@ import {
   CreditCard,
   FileText,
   Upload,
-  Trash2,
   Loader2,
   Plus,
   CheckCircle,
   ArrowUpRight,
   Camera,
-  Info,
 } from 'lucide-react';
 import { handlePrint } from '../../components/HrModule/PrintForm';
 import { handleDownloadPayslipPDF } from '../../components/HrModule/DownloadForm';
+import NotificationBell from '../../components/NotificationBell';
 
 /* ---------- Config / Mock data ---------- */
 const initialPersonal = {
@@ -96,18 +96,22 @@ function DocSlot({
   onFileSelect,
   onCancel,
   onConfirm,
-  pendingRequest
+  pendingRequest,
 }) {
   return (
     <div className="relative group">
-      <div className={`
+      <div
+        className={`
         relative h-50 rounded-2xl border-2 border-gray-300 border-dashed transition-all duration-300 flex flex-col items-center justify-center overflow-hidden
         ${value || pendingRequest || pending ? 'border-[#33a8d9] mb-1' : 'bg-[#f8fafc] hover:border-[#33a8d9]/50 hover:bg-white'}
-      `}>
+      `}
+      >
         {uploading ? (
           <div className="flex flex-col items-center gap-2">
             <Loader2 className="w-6 h-6 text-[#33a8d9] animate-spin" />
-            <span className="text-[10px] font-bold text-[#33a8d9] animate-pulse uppercase tracking-wider">Uploading...</span>
+            <span className="text-[10px] font-bold text-[#33a8d9] animate-pulse uppercase tracking-wider">
+              Uploading...
+            </span>
           </div>
         ) : pending ? (
           <div className="flex flex-col items-center gap-2.5 p-4">
@@ -137,18 +141,27 @@ function DocSlot({
           </div>
         ) : pendingRequest ? (
           <div className="relative w-full h-full group bg-white">
-            {typeof pendingRequest.documentUrl === 'string' && (pendingRequest.documentUrl.match(/\.(jpeg|jpg|png|webp)/i) || pendingRequest.documentUrl.includes('blob')) ? (
-              <img src={pendingRequest.documentUrl} className="w-full h-full object-contain p-4 opacity-50 grayscale transition-all group-hover:grayscale-0 group-hover:opacity-100" />
+            {typeof pendingRequest.documentUrl === 'string' &&
+            (pendingRequest.documentUrl.match(/\.(jpeg|jpg|png|webp)/i) ||
+              pendingRequest.documentUrl.includes('blob')) ? (
+              <img
+                src={pendingRequest.documentUrl}
+                className="w-full h-full object-contain p-4 opacity-50 grayscale transition-all group-hover:grayscale-0 group-hover:opacity-100"
+              />
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center text-[#33a8d9] gap-2 opacity-50">
                 <FileText size={40} className="opacity-20" />
-                <span className="text-[10px] font-bold uppercase tracking-widest">Document</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest">
+                  Document
+                </span>
               </div>
             )}
             <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center bg-black/5 backdrop-blur-[1px]">
               <div className="px-3 py-1 rounded-full bg-yellow-400 text-yellow-900 border border-yellow-300 shadow-lg shadow-yellow-500/10 mb-2 flex items-center gap-1.5 animate-pulse">
                 <div className="w-1.5 h-1.5 rounded-full bg-yellow-700"></div>
-                <span className="text-[9px] font-black uppercase tracking-wider whitespace-nowrap">Approval Pending</span>
+                <span className="text-[9px] font-black uppercase tracking-wider whitespace-nowrap">
+                  Approval Pending
+                </span>
               </div>
               <a
                 href={pendingRequest.documentUrl}
@@ -161,12 +174,16 @@ function DocSlot({
           </div>
         ) : value ? (
           <div className="relative w-full h-full group/preview bg-white">
-            {typeof value === 'string' && (value.match(/\.(jpeg|jpg|png|webp)/i) || value.includes('blob')) ? (
+            {typeof value === 'string' &&
+            (value.match(/\.(jpeg|jpg|png|webp)/i) ||
+              value.includes('blob')) ? (
               <img src={value} className="w-full h-full object-contain p-4" />
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center text-[#33a8d9] gap-2">
                 <FileText size={40} className="opacity-15" />
-                <span className="text-[10px] font-bold uppercase tracking-widest text-[#33a8d9]/40">View Document</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[#33a8d9]/40">
+                  View Document
+                </span>
               </div>
             )}
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/preview:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-[2px]">
@@ -193,8 +210,12 @@ function DocSlot({
               <Upload size={22} />
             </div>
             <div className="text-center">
-              <div className="text-[13px] font-bold text-[#1e293b]">Upload {label}</div>
-              <div className="text-[9px] text-[#94a3b8] font-bold uppercase tracking-widest mt-1">Max 5MB (JPG, PDF)</div>
+              <div className="text-[13px] font-bold text-[#1e293b]">
+                Upload {label}
+              </div>
+              <div className="text-[9px] text-[#94a3b8] font-bold uppercase tracking-widest mt-1">
+                Max 5MB (JPG, PDF)
+              </div>
             </div>
             <input
               type="file"
@@ -287,6 +308,8 @@ function EmployeePortalContent() {
       if (tab === 'leave' && subtab) setActiveLeaveTab(subtab);
       if (tab === 'payroll' && subtab) setActivePayrollTab(subtab);
       if (tab === 'personal' && subtab) setPersonalTab(subtab);
+    } else {
+      setActiveTab('personal');
     }
     if (action === 'request-leave') setShowLeaveForm(true);
   }, [searchParams]);
@@ -372,15 +395,16 @@ function EmployeePortalContent() {
         // Transform history into effectiveVersions and components
         const versions = history.map((h, i) => ({
           id: h.id,
-          label: `${new Date(h.effectiveDate).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })} - ${history[i - 1]
-            ? new Date(
-              new Date(history[i - 1].effectiveDate).setDate(0)
-            ).toLocaleDateString('en-IN', {
-              month: 'short',
-              year: 'numeric',
-            })
-            : 'Present'
-            }`,
+          label: `${new Date(h.effectiveDate).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })} - ${
+            history[i - 1]
+              ? new Date(
+                  new Date(history[i - 1].effectiveDate).setDate(0)
+                ).toLocaleDateString('en-IN', {
+                  month: 'short',
+                  year: 'numeric',
+                })
+              : 'Present'
+          }`,
           date: h.effectiveDate,
         }));
 
@@ -666,9 +690,7 @@ function EmployeePortalContent() {
               onConfirm={async () => {
                 try {
                   setUploadingPhoto(true);
-                  const fd = new FormData();
-                  fd.append('file', pendingPhoto);
-                  const url = await uploadEmployeeDocument(fd, 'employee-photo');
+                  const url = await uploadOtherDocument(pendingPhoto);
                   const res = await fetch('/api/document-requests', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -693,7 +715,9 @@ function EmployeePortalContent() {
                   setUploadingPhoto(false);
                 }
               }}
-              pendingRequest={pendingRequests.find(r => r.documentType === 'photo')}
+              pendingRequest={pendingRequests.find(
+                (r) => r.documentType === 'photo'
+              )}
             />
           </div>
 
@@ -720,9 +744,7 @@ function EmployeePortalContent() {
               onConfirm={async () => {
                 try {
                   setUploadingAadhaar(true);
-                  const fd = new FormData();
-                  fd.append('file', pendingAadhaar);
-                  const url = await uploadEmployeeDocument(fd, 'employee-aadhaar');
+                  const url = await uploadOtherDocument(pendingAadhaar);
                   const res = await fetch('/api/document-requests', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -747,7 +769,9 @@ function EmployeePortalContent() {
                   setUploadingAadhaar(false);
                 }
               }}
-              pendingRequest={pendingRequests.find(r => r.documentType === 'aadhaarCard')}
+              pendingRequest={pendingRequests.find(
+                (r) => r.documentType === 'aadhaarCard'
+              )}
             />
           </div>
 
@@ -774,9 +798,7 @@ function EmployeePortalContent() {
               onConfirm={async () => {
                 try {
                   setUploadingPan(true);
-                  const fd = new FormData();
-                  fd.append('file', pendingPan);
-                  const url = await uploadEmployeeDocument(fd, 'employee-pan');
+                  const url = await uploadOtherDocument(pendingPan);
                   const res = await fetch('/api/document-requests', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -801,7 +823,9 @@ function EmployeePortalContent() {
                   setUploadingPan(false);
                 }
               }}
-              pendingRequest={pendingRequests.find(r => r.documentType === 'panCard')}
+              pendingRequest={pendingRequests.find(
+                (r) => r.documentType === 'panCard'
+              )}
             />
           </div>
         </div>
@@ -826,10 +850,15 @@ function EmployeePortalContent() {
                   <FileText size={20} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-[13px] font-bold text-[#1e293b] truncate" title={p.label || p.proofLabel || 'Untitled Proof'}>
+                  <div
+                    className="text-[13px] font-bold text-[#1e293b] truncate"
+                    title={p.label || p.proofLabel || 'Untitled Proof'}
+                  >
                     {p.label || p.proofLabel || 'Untitled Proof'}
                   </div>
-                  <div className="text-[9px] text-[#94a3b8] font-bold uppercase tracking-wider">Document</div>
+                  <div className="text-[9px] text-[#94a3b8] font-bold uppercase tracking-wider">
+                    Document
+                  </div>
                 </div>
               </div>
               <a
@@ -856,7 +885,10 @@ function EmployeePortalContent() {
                     <FileText size={20} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="text-[13px] font-bold text-[#1e293b] truncate" title={r.proofLabel}>
+                    <div
+                      className="text-[13px] font-bold text-[#1e293b] truncate"
+                      title={r.proofLabel}
+                    >
                       {r.proofLabel}
                     </div>
                     <div className="flex items-center gap-1 mt-0.5">
@@ -916,11 +948,13 @@ function EmployeePortalContent() {
                 </div>
 
                 <button
-                  disabled={uploadingOther || !pendingOther || !newProofLabel.trim()}
+                  disabled={
+                    uploadingOther || !pendingOther || !newProofLabel.trim()
+                  }
                   onClick={async () => {
                     try {
                       setUploadingOther(true);
-                      const url = await uploadEmployeeDocument(pendingOther, 'employee-other');
+                      const url = await uploadOtherDocument(pendingOther);
                       const res = await fetch('/api/document-requests', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -966,7 +1000,10 @@ function EmployeePortalContent() {
             Document Requirements
           </h4>
           <p className="text-sm text-[#3b82f6] leading-relaxed">
-            Please ensure all documents are clear and legible. Supported formats: <span className="font-bold">JPG and PDF</span>. Maximum file size should not exceed <span className="font-bold">5MB</span> per document.
+            Please ensure all documents are clear and legible. Supported
+            formats: <span className="font-bold">JPG and PDF</span>. Maximum
+            file size should not exceed <span className="font-bold">5MB</span>{' '}
+            per document.
           </p>
         </div>
       </div>
@@ -974,6 +1011,52 @@ function EmployeePortalContent() {
   );
 
   /* ---------- Render ---------- */
+  if (rawEmployeeData && rawEmployeeData.status === 'PENDING') {
+    if (rawEmployeeData.workType === 'CONTRACT') {
+      const isContractComplete = !!(
+        rawEmployeeData.firstName &&
+        rawEmployeeData.lastName &&
+        rawEmployeeData.phoneNumber &&
+        rawEmployeeData.bondRemarks
+      );
+      if (!isContractComplete) {
+        return <ProfileSetupWizardContract rawEmployeeData={rawEmployeeData} />;
+      }
+    } else {
+      const isComplete =
+        rawEmployeeData.aadhaarNumber &&
+        rawEmployeeData.panNumber &&
+        rawEmployeeData.dateOfBirth &&
+        rawEmployeeData.presentAddress;
+      if (!isComplete) {
+        return <ProfileSetupWizard rawEmployeeData={rawEmployeeData} />;
+      }
+    }
+
+    // Common Profile Submitted View for both
+    return (
+      <div className="h-full flex items-center justify-center bg-gray-50">
+        <div className="max-w-md p-8 bg-white rounded-2xl shadow-sm text-center">
+          <div className="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle size={32} />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-3">
+            Profile Submitted
+          </h2>
+          <p className="text-gray-500 text-sm leading-relaxed mb-6">
+            Thank you for completing your profile setup. Your details are
+            currently under review by the HR department. You will be granted
+            full access to the portal once approved.
+          </p>
+          <div className="inline-flex items-center justify-center px-4 py-2 bg-yellow-50 text-yellow-700 font-semibold text-xs rounded-full border border-yellow-200">
+            <div className="w-2 h-2 bg-yellow-400 rounded-full mr-2 animate-pulse" />
+            Pending HR Approval
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full flex flex-col text-left">
       {/* Header */}
@@ -1027,26 +1110,28 @@ function EmployeePortalContent() {
               </div>
             </div>
 
-            <div />
+            <NotificationBell />
           </div>
         </div>
       </div>
 
       {/* main card */}
       <div className="flex-1 flex flex-col bg-white rounded-2xl shadow-sm md:px-2 py-2.5 min-h-0">
-        <div className="mb-2">
-          <nav className="flex space-x-1 border-b border-gray-300 bg-transparent overflow-x-auto no-scroll">
-            {mainTabs.map((tab) => (
-              <TabButton
-                key={tab.id}
-                isActive={activeTab === tab.id}
-                onClick={() => setActiveTab(tab.id)}
-              >
-                {tab.label}
-              </TabButton>
-            ))}
-          </nav>
-        </div>
+        {activeTab !== 'timesheet' && (
+          <div className="mb-2">
+            <nav className="flex space-x-1 border-b border-gray-300 bg-transparent overflow-x-auto no-scroll">
+              {mainTabs.map((tab) => (
+                <TabButton
+                  key={tab.id}
+                  isActive={activeTab === tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                >
+                  {tab.label}
+                </TabButton>
+              ))}
+            </nav>
+          </div>
+        )}
 
         <AnimatePresence mode="wait">
           <motion.div
@@ -1068,7 +1153,10 @@ function EmployeePortalContent() {
                     <Loader label="Fetching personal details..." size="md" />
                   </div>
                 ) : (
-                  <EmployeeView initialData={rawEmployeeData} customUploadSection={customUploadsSection} />
+                  <EmployeeView
+                    initialData={rawEmployeeData}
+                    customUploadSection={customUploadsSection}
+                  />
                 )}
               </div>
             )}
@@ -1197,6 +1285,13 @@ function EmployeePortalContent() {
                     assignments={personalData.assetAssignments || []}
                   />
                 )}
+              </div>
+            )}
+
+            {/* Timesheet Details */}
+            {activeTab === 'timesheet' && (
+              <div className="mt-4 min-h-[400px]">
+                <TimesheetTab authUser={authUser} />
               </div>
             )}
           </motion.div>

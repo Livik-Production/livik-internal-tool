@@ -9,69 +9,78 @@ datasource db {
 }
 
 model Employee {
-  id                    String                @id @default(cuid())
-  empId                 String                @unique
-  firstName             String
-  lastName              String
-  dateOfBirth           DateTime?
-  gender                String?
-  aadhaarNumber         String?
-  panNumber             String?
-  email                 String?               @unique
-  phoneNumber           String?               @unique
-  emergencyContact      String?
-  photo                 String?
-  aadhaarCard           String?
-  panCard               String?
-  proofs                Json?                 @default("[]")
-  bloodGroup            String?
-  presentAddress        String?
-  permanentAddress      String?
-  designation           String?
-  department            String?
-  dateOfJoining         DateTime?
-  workLocation          String?
+  id                       String                    @id @default(cuid())
+  empId                    String                    @unique
+  firstName                String
+  lastName                 String
+  dateOfBirth              DateTime?
+  gender                   String?
+  aadhaarNumber            String?
+  panNumber                String?
+  email                    String?                   @unique
+  phoneNumber              String?                   @unique
+  emergencyContact         String?
+  photo                    String?
+  aadhaarCard              String?
+  panCard                  String?
+  proofs                   Json?                     @default("[]")
+  bloodGroup               String?
+  presentAddress           String?
+  permanentAddress         String?
+  designation              String?
+  department               String?
+  dateOfJoining            DateTime?
+  workLocation             String?
   /// *
   /// * Payroll / Banking
-  bankName              String?
-  accountNumber         String?
-  ifscCode              String?
-  password              String?
-  createdAt             DateTime              @default(now()) @map("created_at")
-  updatedAt             DateTime              @updatedAt @map("updated_at")
-  bondDuration          String?               @map("bond_duration")
-  bondEndDate           DateTime?             @map("bond_end_date")
-  bondRemarks           String?               @map("bond_remarks")
-  bondStartDate         DateTime?             @map("bond_start_date")
-  docDegreeCollected    Boolean               @default(false) @map("doc_degree_collected")
-  docHSCCollected       Boolean               @default(false) @map("doc_hsc_collected")
-  docRemarks            String?               @map("doc_remarks")
+  bankName                 String?
+  accountNumber            String?
+  ifscCode                 String?
+  password                 String?
+  createdAt                DateTime                  @default(now()) @map("created_at")
+  updatedAt                DateTime                  @updatedAt @map("updated_at")
+  bondDuration             String?                   @map("bond_duration")
+  bondEndDate              DateTime?                 @map("bond_end_date")
+  bondRemarks              String?                   @map("bond_remarks")
+  bondStartDate            DateTime?                 @map("bond_start_date")
+  docDegreeCollected       Boolean                   @default(false) @map("doc_degree_collected")
+  docHSCCollected          Boolean                   @default(false) @map("doc_hsc_collected")
+  docRemarks               String?                   @map("doc_remarks")
   /// *
   /// * Document Collection (checkbox style)
-  docSSLCCollected      Boolean               @default(false) @map("doc_sslc_collected")
+  docSSLCCollected         Boolean                   @default(false) @map("doc_sslc_collected")
   /// *
+  // new fields — add these into the existing Employee model
+  workMode                 String?
+  workType                 String?
+  contractEmpId            String?
   /// * Work Bond
-  isOnBond              Boolean               @default(false) @map("is_on_bond")
-  roleId                String?
-  status                String                @default("PENDING")
-  assetAssignments      AssetAssignment[]
-  attendances           Attendance[]
-  educationDetails      Education[]
-  role                  Role?                 @relation(fields: [roleId], references: [id])
-  leaveBalances         LeaveBalance[]
-  leaveBalanceHistories LeaveBalanceHistory[]
-  leaveApprovals        LeaveRequest[]        @relation("LeaveApprover")
-  leaveRequests         LeaveRequest[]        @relation("LeaveRequester")
-  otps                  Otp[]
-  payrolls              Payroll[]
-  permissionRequests    PermissionRequest[]   @relation("PermissionRequester")
-  permissionApprovals   PermissionRequest[]   @relation("PermissionApprover")
-  DocumentRequests      DocumentRequest[]
-  projectMembers        ProjectMember[]
-  skills                Skill[]
-  totalExperience       String?
-  projectsDone          String?
-  benchDetail           BenchDetail?
+  isOnBond                 Boolean                   @default(false) @map("is_on_bond")
+  roleId                   String?
+  status                   String                    @default("PENDING")
+  createdByRole            String?                   @map("created_by_role")
+  assetAssignments         AssetAssignment[]
+  attendances              Attendance[]
+  educationDetails         Education[]
+  role                     Role?                     @relation(fields: [roleId], references: [id])
+  leaveBalances            LeaveBalance[]
+  leaveBalanceHistories    LeaveBalanceHistory[]
+  leaveApprovals           LeaveRequest[]            @relation("LeaveApprover")
+  leaveRequests            LeaveRequest[]            @relation("LeaveRequester")
+  otps                     Otp[]
+  payrolls                 Payroll[]
+  permissionRequests       PermissionRequest[]       @relation("PermissionRequester")
+  permissionApprovals      PermissionRequest[]       @relation("PermissionApprover")
+  DocumentRequests         DocumentRequest[]
+  projectMembers           ProjectMember[]
+  skills                   Skill[]
+  totalExperience          String?
+  projectsDone             String?
+  benchDetail              BenchDetail?
+  notifications            Notification[]
+  isActive                 Boolean                   @default(true)
+  birthdayEmailLogs        BirthdayEmailLog[]
+  workAnniversaryEmailLogs WorkAnniversaryEmailLog[]
 }
 
 model BenchDetail {
@@ -226,7 +235,7 @@ model Expense {
 }
 
 model Customer {
-  id                     String   @id @default(cuid())
+  id                     String  @id @default(cuid())
   name                   String
   address1               String
   address2               String?
@@ -238,11 +247,20 @@ model Customer {
   pincode                String
   paymentTerms           String
   website                String?
-  cinNumber              String?  @map("cin_number")
-  gstnNumber             String?  @map("gstn_number")
+  cinNumber              String? @map("cin_number")
+  gstnNumber             String? @map("gstn_number")
   remarks                String?
-  createdAt              DateTime @default(now()) @map("created_at")
-  updatedAt              DateTime @updatedAt @map("updated_at")
+  status                 String? @default("active")
+  invoiceFromDay         Int?    @map("invoice_from_day")
+  invoiceToDay           Int?    @map("invoice_to_day")
+
+  reminderDaysBefore Int?     @default(1)
+  reminderEnabled    Boolean? @default(true)
+
+  uploads String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([gstnNumber])
   @@index([mobile])
@@ -250,21 +268,22 @@ model Customer {
 }
 
 model Invoice {
-  id              String            @id @default(cuid())
-  invoiceNumber   String            @unique @map("invoice_number")
-  invoiceDate     DateTime          @map("invoice_date")
-  dueDate         DateTime          @map("due_date")
-  subTotal        Decimal           @db.Decimal(12, 2)
-  taxPercent      Decimal           @db.Decimal(5, 2)
-  discountPercent Decimal           @db.Decimal(5, 2)
-  total           Decimal           @db.Decimal(12, 2)
-  status          String            @default("PENDING")
-  createdAt       DateTime          @default(now()) @map("created_at")
-  updatedAt       DateTime          @updatedAt @map("updated_at")
+  id              String                  @id @default(cuid())
+  invoiceNumber   String                  @unique @map("invoice_number")
+  invoiceDate     DateTime                @map("invoice_date")
+  dueDate         DateTime                @map("due_date")
+  subTotal        Decimal                 @db.Decimal(12, 2)
+  taxPercent      Decimal                 @db.Decimal(5, 2)
+  discountPercent Decimal                 @db.Decimal(5, 2)
+  total           Decimal                 @db.Decimal(12, 2)
+  status          String                  @default("PENDING")
+  createdAt       DateTime                @default(now()) @map("created_at")
+  updatedAt       DateTime                @updatedAt @map("updated_at")
   invoiceType     String
   notes           String?
   items           InvoiceItem[]
   payments        InvoicePayment[]
+  partialPayments InvoicePartialPayment[]
   followUps       InvoiceFollowUp[]
 
   @@index([dueDate])
@@ -296,6 +315,22 @@ model InvoicePayment {
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
   invoice        Invoice  @relation(fields: [invoiceId], references: [id])
+
+  @@index([invoiceId])
+  @@index([paymentDate])
+}
+
+model InvoicePartialPayment {
+  id                  String    @id @default(cuid())
+  invoiceId           String    @map("invoice_id")
+  receivedAmount      Decimal   @db.Decimal(12, 2)
+  paymentMethod       String
+  paymentDate         DateTime  @map("payment_date")
+  remarks             String?
+  nextInstallmentDate DateTime? @map("next_installment_date")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+  invoice             Invoice   @relation(fields: [invoiceId], references: [id])
 
   @@index([invoiceId])
   @@index([paymentDate])
@@ -556,7 +591,7 @@ model Skill {
 }
 
 model companyDetails {
-  id                String   @id @default(cuid())
+  id                String    @id @default(cuid())
   companyName       String
   companyEmail      String
   companyPhone      String
@@ -573,8 +608,12 @@ model companyDetails {
   accountNumber     String?
   ifscCode          String?
   swiftCode         String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  exportCountry     String?
+  lutBondNo         String?
+  lutValidFrom      DateTime?
+  lutValidTo        DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 }
 
 model dropdown {
@@ -645,4 +684,68 @@ model TalentCommunity {
   shortMessage    String
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+}
+
+model NumberFormatSetting {
+  id         String   @id @default(cuid())
+  module     String   @unique // e.g. "invoice", "employee"
+  prefix     String   @default("")
+  nextNumber String?  @default("1")
+  padding    Int?     @default(3)
+  suffix     String?  @default("")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  title       String
+  message     String
+  type        String // e.g., 'INVOICE_CYCLE'
+  recipientId String   @map("recipient_id")
+  recipient   Employee @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  customerId  String?  @map("customer_id")
+  isRead      Boolean  @default(false) @map("is_read")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([recipientId])
+  @@index([isRead])
+  @@map("notifications")
+}
+
+model InvoiceReminderLog {
+  id           String   @id @default(cuid())
+  customerId   String   @map("customer_id")
+  reminderDate DateTime @map("reminder_date")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@unique([customerId, reminderDate])
+  @@map("invoice_reminder_logs")
+}
+
+model BirthdayEmailLog {
+  id         String   @id @default(cuid())
+  employeeId String
+  sentYear   Int
+  isSuccess  Boolean
+  sentAt     DateTime @default(now())
+  error      String?
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, sentYear])
+}
+
+model WorkAnniversaryEmailLog {
+  id         String   @id @default(cuid())
+  employeeId String
+  sentYear   Int
+  isSuccess  Boolean
+  sentAt     DateTime @default(now())
+  error      String?
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, sentYear])
 }

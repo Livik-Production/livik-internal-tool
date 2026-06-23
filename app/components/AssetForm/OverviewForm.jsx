@@ -8,8 +8,16 @@ import {
   AlertTriangle,
   ExternalLink,
 } from 'lucide-react';
+import Loader from '../Loader';
 
-export default function Overview({ assets = [], isViewOnly = false }) {
+export default function Overview({ assets = [], isViewOnly = false, isLoading = false }) {
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center py-20 min-h-[400px]">
+        <Loader label="Loading dashboard..." size="md" fullScreen={false} />
+      </div>
+    );
+  }
   // Helper to safely get properties
   const getAssetProperty = (asset, property) => {
     if (property === 'type' && asset.deviceType) return asset.deviceType;

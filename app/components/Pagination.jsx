@@ -1,13 +1,42 @@
 'use client';
 
+import { useEffect, useMemo } from 'react';
+
 export default function Pagination({
   currentPage,
   totalItems,
   itemsPerPage,
   onPageChange,
-  rowsPerPageOptions = [5, 10, 15, 25, 50, 100],
+  rowsPerPageOptions, // ignored to enforce global pagination rules
   onItemsPerPageChange,
 }) {
+  const options = useMemo(() => {
+    const opts = [];
+    if (totalItems > 7) {
+      opts.push(10);
+    }
+    if (totalItems > 20) {
+      opts.push(20);
+    }
+    if (totalItems > 50) {
+      opts.push(50);
+    }
+    if (totalItems > 100) {
+      opts.push(100);
+    }
+    return opts;
+  }, [totalItems]);
+
+  useEffect(() => {
+    if (totalItems > 7 && options.length > 0 && !options.includes(itemsPerPage)) {
+      onItemsPerPageChange?.(options[0]);
+    }
+  }, [totalItems, itemsPerPage, options, onItemsPerPageChange]);
+
+  if (totalItems <= 7) {
+    return null;
+  }
+
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   const handlePrevious = () => {
@@ -70,7 +99,7 @@ export default function Pagination({
           onChange={(e) => onItemsPerPageChange?.(Number(e.target.value))}
           className="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-0.5 transition-colors cursor-pointer"
         >
-          {rowsPerPageOptions.map((option) => (
+          {options.map((option) => (
             <option key={option} value={option}>
               {option}
             </option>

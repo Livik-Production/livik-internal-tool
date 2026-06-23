@@ -331,13 +331,12 @@ export default function AssignmentForm({
             <div className="font-medium text-gray-700">{warrantyInfo.text}</div>
             {warrantyInfo.daysRemaining !== null && (
               <div
-                className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                  warrantyInfo.isExpired
+                className={`px-2 py-1 rounded-full text-xs font-semibold ${warrantyInfo.isExpired
                     ? 'bg-red-100 text-red-800'
                     : warrantyInfo.isNearExpiry
                       ? 'bg-yellow-100 text-yellow-800'
                       : 'bg-green-100 text-green-800'
-                }`}
+                  }`}
               >
                 {warrantyInfo.isExpired
                   ? `Expired ${Math.abs(warrantyInfo.daysRemaining)} days ago`
@@ -430,13 +429,12 @@ export default function AssignmentForm({
       label: 'STATUS',
       render: (asset) => (
         <span
-          className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-            asset.status === 'Assigned'
+          className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${asset.status === 'Assigned'
               ? 'bg-green-100 text-green-800'
               : asset.status === 'In Repair'
                 ? 'bg-red-100 text-red-800'
                 : 'bg-gray-100 text-gray-800'
-          }`}
+            }`}
         >
           {asset.status}
         </span>

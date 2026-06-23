@@ -131,6 +131,7 @@ export default function EmployeeForm({
   onApprove,
   showApprove = false,
   isHrRole = false,
+  isSuperAdmin = false,
 }) {
   const isView = mode === 'view';
   const isEdit = mode === 'edit';
@@ -155,6 +156,9 @@ export default function EmployeeForm({
 
   const [form, setForm] = useState({
     empId: initialData.empId ?? '',
+    workMode: initialData.workMode ?? '',
+    wfoOffice: initialData.wfoOffice ?? '',
+    workType: initialData.workType ?? '',
     firstName: initialData.firstName ?? '',
     lastName: initialData.lastName ?? '',
     dateOfBirth:
@@ -295,38 +299,9 @@ export default function EmployeeForm({
         'lastName',
         'email',
         'phoneNumber',
-        'aadhaarNumber',
-        'panNumber',
-        'dateOfBirth',
       ].forEach((k) => {
         const msg = validators[k]?.(form[k]);
         if (msg) newErrors[k] = msg;
-      });
-
-      if (!form.presentAddress || !form.presentAddress.trim()) {
-        newErrors.presentAddress = 'Present address is required.';
-      }
-      const hasValid = educations.some(
-        (e) =>
-          e.institution &&
-          e.institution.trim() &&
-          e.qualification &&
-          e.qualification.trim()
-      );
-
-      if (!hasValid) {
-        newErrors.educations =
-          'Add at least one education record (institution + qualification).';
-      }
-
-      educations.forEach((e, i) => {
-        if (
-          e.yearCompleted &&
-          !/^\d{4}$/.test(String(e.yearCompleted).trim())
-        ) {
-          (newErrors.education_years = newErrors.education_years || {})[i] =
-            'Enter 4-digit year (e.g. 2020)';
-        }
       });
     } else if (s === 1) {
     } else if (s === 2) {
@@ -334,26 +309,30 @@ export default function EmployeeForm({
         const msg = validators[k]?.(form[k]);
         if (msg) newErrors[k] = msg;
       });
-
-      const ifscMsg = validators.ifscCode(form.ifscCode);
-      if (ifscMsg) newErrors.ifscCode = ifscMsg;
-
-      const accMsg = validators.accountNumber(form.accountNumber);
-      if (accMsg) newErrors.accountNumber = accMsg;
-    } else if (s === 3) {
-      if (!form.bondDuration || !String(form.bondDuration).trim()) {
-        newErrors.bondDuration = 'Bond duration is required.';
-      } else {
-        const duration = parseFloat(String(form.bondDuration));
-        if (isNaN(duration) || duration <= 0 || duration > 10) {
-          newErrors.bondDuration =
-            'Please enter a valid duration between 0.5 and 10 years.';
+        // workType is required for creation
+        if (!form.workType || !String(form.workType).trim()) {
+          newErrors.workType = 'Work type is required.';
         }
-      }
+        // workMode is required
+        if (!form.workMode || !String(form.workMode).trim()) {
+          newErrors.workMode = 'Work mode is required.';
+        }
+    } else if (s === 3) {
+      if (form.workType !== 'CONTRACT') {
+        if (!form.bondDuration || !String(form.bondDuration).trim()) {
+          newErrors.bondDuration = 'Bond duration is required.';
+        } else {
+          const duration = parseFloat(String(form.bondDuration));
+          if (isNaN(duration) || duration <= 0 || duration > 10) {
+            newErrors.bondDuration =
+              'Please enter a valid duration between 0.5 and 10 years.';
+          }
+        }
 
-      if (!form.documentsCollected || form.documentsCollected.length === 0) {
-        newErrors.documentsCollected =
-          'At least one document must be selected.';
+        if (!form.documentsCollected || form.documentsCollected.length === 0) {
+          newErrors.documentsCollected =
+            'At least one document must be selected.';
+        }
       }
     }
 
@@ -647,6 +626,9 @@ export default function EmployeeForm({
       bondDuration: String(form.bondDuration ?? '').trim() || undefined,
       documentsCollected: form.documentsCollected || undefined,
       bondRemarks: form.bondRemarks?.trim() || undefined,
+        workMode: form.workMode?.trim() || undefined,
+        wfoOffice: form.wfoOffice?.trim() || undefined,
+        workType: form.workType?.trim() || undefined,
     };
 
     if (!payload.firstName || !payload.lastName) {
@@ -733,6 +715,8 @@ export default function EmployeeForm({
                 errors={errors}
                 setField={setField}
                 isView={isView}
+                isEdit={isEdit}
+                isSuperAdmin={isSuperAdmin}
               />
 
               <AddressSection
@@ -754,7 +738,7 @@ export default function EmployeeForm({
           )}
 
           {currentStepLabel === 'Uploads' && (
-            <PhotoSection form={form} setField={setField} isView={isView} />
+            <PhotoSection form={form} setField={setField} isView={isView} empId={form.empId} />
           )}
 
           {currentStepLabel === 'Employment & Bank' && (

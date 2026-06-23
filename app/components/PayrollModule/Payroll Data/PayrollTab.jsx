@@ -23,6 +23,7 @@ import PrimaryButton from '../../Buttons/PrimaryButton';
 import IconButton from '../../Buttons/IconButton';
 import HyperlinkButton from '../../Buttons/HyperlinkButton';
 import Pagination from '../../Pagination';
+import { showSuccessToast, showErrorToast } from '../../Toast';
 
 export default function PayrollTab({
   employees = [],
@@ -299,9 +300,12 @@ export default function PayrollTab({
   const confirmDeletePayroll = () => {
     if (!payrollToDelete) return;
 
+    const payrollId = payrollToDelete.id;
+    const period = payrollToDelete.period;
+
     // First update local state
     const updatedData = payrollData.filter(
-      (item) => item.id !== payrollToDelete.id
+      (item) => item.id !== payrollId
     );
     setPayrollData(updatedData);
 
@@ -309,16 +313,20 @@ export default function PayrollTab({
     const deleteFromBackend = async () => {
       try {
         const response = await fetch(
-          `/api/payroll/data/${payrollToDelete.id}`,
+          `/api/payroll/data/${payrollId}`,
           {
             method: 'DELETE',
           }
         );
 
-        if (!response.ok) {
+        if (response.ok) {
+          showSuccessToast(`Payroll cycle for "${period}" deleted successfully!`);
+        } else {
+          showErrorToast(`Failed to delete payroll cycle for "${period}".`);
           console.error('Failed to delete payroll from backend');
         }
       } catch (error) {
+        showErrorToast('An error occurred during deletion.');
         console.error('Error deleting payroll:', error);
       }
     };

@@ -72,7 +72,7 @@ export default function EmploymentBankSection({
 
           <div>
             <label className="text-[13px] text-gray-500 font-semibold">
-              Work Location
+              Work Location <span className='text-red-500'>*</span>
             </label>
             <input
               value={form.workLocation}
@@ -81,6 +81,70 @@ export default function EmploymentBankSection({
               disabled={isView}
               className={`mt-1 w-full px-3 py-2 border border-gray-300 text-sm rounded-md ${isView ? 'bg-gray-100 cursor-not-allowed' : ''}`}
             />
+            {errors.workLocation && (
+              <div className="text-xs text-red-600 mt-1">
+                {errors.workLocation}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="text-[13px] text-gray-500 font-semibold">
+              Work Mode <span className='text-red-500'>*</span>
+              Work Mode <span className='text-red-500'>*</span>
+            </label>
+            <select
+              value={form.workMode}
+              onChange={(e) => setField('workMode', e.target.value)}
+              disabled={isView}
+              className={`mt-1 w-full px-3 py-2 border text-sm rounded-md ${errors && errors.workMode ? 'border-red-400 bg-red-50' : 'border-gray-300'} ${isView ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+            >
+              <option value="">Select mode</option>
+              <option value="ONSITE">WFO</option>
+              <option value="REMOTE">REMOTE</option>
+              <option value="HYBRID">HYBRID</option>
+        
+            </select>
+            {errors.workMode && (
+              <div className="text-xs text-red-600 mt-1">
+                {errors.workMode}
+              </div>
+            )}
+          </div>
+
+          {form.workMode === 'WFO' && (
+            <div>
+              <label className="text-[13px] text-gray-500 font-semibold">
+                WFO Office
+              </label>
+              <input
+                value={form.wfoOffice ?? ''}
+                onChange={(e) => setField('wfoOffice', e.target.value)}
+                readOnly={isView}
+                disabled={isView}
+                placeholder="e.g. Chennai HQ, Bangalore Branch"
+                className={`mt-1 w-full px-3 py-2 border border-gray-300 text-sm rounded-md ${isView ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+              />
+            </div>
+          )}
+
+          <div>
+            <label className="text-[13px] text-gray-500 font-semibold">
+              Work Type <span className='text-red-500'>*</span>
+            </label>
+            <select
+              value={form.workType}
+              onChange={(e) => setField('workType', e.target.value)}
+              disabled={isView}
+              className={`mt-1 w-full px-3 py-2 border border-gray-300 text-sm rounded-md ${isView ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+            >
+              <option value="">Select type</option>
+              <option value="REGULAR">REGULAR</option>
+              <option value="CONTRACT">CONTRACT</option>
+            </select>
+            {errors.workType && (
+              <div className="text-xs text-red-600 mt-1">{errors.workType}</div>
+            )}
           </div>
         </>
       )}

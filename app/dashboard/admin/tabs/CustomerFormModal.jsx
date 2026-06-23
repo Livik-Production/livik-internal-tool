@@ -5,6 +5,7 @@ import Button from '../../../components/Buttons/Button';
 import PrimaryButton from '../../../components/Buttons/PrimaryButton';
 import CustomModalForm from '../../../components/CustomModalForm';
 import { Phone, Mail, Hash, CreditCard, SquarePen, Globe } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 const CustomerFormModal = ({
   isOpen,
@@ -31,6 +32,11 @@ const CustomerFormModal = ({
     preferredPaymentTerms: '',
     pincode: '',
     remarks: '',
+    status: 'active',
+    invoiceFromDay: '',
+    invoiceToDay: '',
+    reminderDaysBefore: '1',
+    uploads: null,
   });
 
   const [errors, setErrors] = useState({});
@@ -57,6 +63,11 @@ const CustomerFormModal = ({
           customer.preferredPaymentTerms || customer.paymentTerms || '',
         pincode: customer.pincode || '',
         remarks: customer.remarks || '',
+        status: customer.status || 'active',
+        invoiceFromDay: customer.invoiceFromDay || '',
+        invoiceToDay: customer.invoiceToDay || '',
+        reminderDaysBefore: customer.reminderDaysBefore ?? 1,
+        uploads: customer.uploads || null,
       });
       setRemarksCount((customer.remarks || '').length);
     } else if (isOpen && type === 'add') {
@@ -76,6 +87,11 @@ const CustomerFormModal = ({
         preferredPaymentTerms: '',
         pincode: '',
         remarks: '',
+        status: 'active',
+        invoiceFromDay: '',
+        invoiceToDay: '',
+        reminderDaysBefore: '1',
+        uploads: null,
       });
       setRemarksCount(0);
     }
@@ -137,7 +153,11 @@ const CustomerFormModal = ({
   };
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type: inputType, files } = e.target;
+    if (inputType === 'file') {
+      setFormData((prev) => ({ ...prev, [name]: files[0] }));
+      return;
+    }
     if (name === 'remarks') setRemarksCount(value.length);
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) {
@@ -160,15 +180,22 @@ const CustomerFormModal = ({
     }
 
     setIsSubmitting(true);
+    const toastId = toast.loading(type === 'add' ? 'Adding customer...' : 'Updating customer...');
+
     try {
       const url =
         type === 'add' ? '/api/customers' : `/api/customers/${formData.id}`;
       const method = type === 'add' ? 'POST' : 'PUT';
 
+      const submitData = { ...formData };
+      submitData.invoiceFromDay = submitData.invoiceFromDay ? parseInt(submitData.invoiceFromDay, 10) : null;
+      submitData.invoiceToDay = submitData.invoiceToDay ? parseInt(submitData.invoiceToDay, 10) : null;
+      submitData.reminderDaysBefore = submitData.reminderDaysBefore ? parseInt(submitData.reminderDaysBefore, 10) : 1;
+
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(submitData),
       });
 
       if (!res.ok) {
@@ -177,11 +204,26 @@ const CustomerFormModal = ({
       }
 
       const savedCustomer = await res.json();
+      
+      toast.update(toastId, {
+        render: type === 'add' ? 'Customer added successfully!' : 'Customer updated successfully!',
+        type: 'success',
+        isLoading: false,
+        autoClose: 3000,
+      });
+
       onSuccess(savedCustomer);
       handleClose();
     } catch (err) {
       console.error('Submit customer failed:', err);
       setErrors({ submit: err.message });
+      
+      toast.update(toastId, {
+        render: err.message || 'Failed to save customer',
+        type: 'error',
+        isLoading: false,
+        autoClose: 3000,
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -266,7 +308,7 @@ const CustomerFormModal = ({
             : 'Customer Details'
       }
       footer={renderFooter}
-      widthClass="max-w-2xl"
+      widthClass="max-w-4xl"
     >
       <div className="px-6 py-4">
         <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
@@ -279,7 +321,7 @@ const CustomerFormModal = ({
             </h3>
 
             {/* Row 1: Name + Mobile */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-1">
                 <label className="text-sm text-gray-600">
                   Company Name <span className="text-red-500">*</span>
@@ -321,10 +363,6 @@ const CustomerFormModal = ({
                   <p className="text-xs text-red-500">{errors.mobile}</p>
                 )}
               </div>
-            </div>
-
-            {/* Row 2: Email + Website + GSTN + CIN */}
-            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className="text-sm text-gray-600 flex items-center gap-1">
                   <Mail size={13} /> Email Address (Optional)
@@ -405,10 +443,6 @@ const CustomerFormModal = ({
                   <p className="text-xs text-red-500">{errors.cinNumber}</p>
                 )}
               </div>
-            </div>
-
-            {/* Row 3: Payment Method + Terms */}
-            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className="text-sm text-gray-600 flex items-center gap-1">
                   <CreditCard size={13} /> Preferred Payment Method
@@ -450,6 +484,89 @@ const CustomerFormModal = ({
                       ? 'border-red-300'
                       : 'border-gray-300 focus:border-blue-400'
                   } ${type === 'view' ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'}`}
+                />
+              </div>
+
+              {/* Status */}
+              <div className="space-y-1">
+                <label className="text-sm text-gray-600">Status</label>
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleInputChange}
+                  disabled={type === 'view'}
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-md text-sm outline-none focus:border-blue-400 ${
+                    type === 'view' ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'
+                  }`}
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+
+              {/* Invoice Cycles */}
+              <div className="grid grid-cols-3 gap-2">
+                <div className="space-y-1">
+                  <label className="text-sm text-gray-600">Invoice From Day</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="31"
+                    name="invoiceFromDay"
+                    value={formData.invoiceFromDay}
+                    onChange={handleInputChange}
+                    disabled={type === 'view'}
+                    placeholder="e.g. 1"
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-md text-sm outline-none focus:border-blue-400 ${
+                      type === 'view' ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'
+                    }`}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm text-gray-600">Invoice To Day</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="31"
+                    name="invoiceToDay"
+                    value={formData.invoiceToDay}
+                    onChange={handleInputChange}
+                    disabled={type === 'view'}
+                    placeholder="e.g. 30"
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-md text-sm outline-none focus:border-blue-400 ${
+                      type === 'view' ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'
+                    }`}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm text-gray-600">Reminder Days Before Due Date</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="31"
+                    name="reminderDaysBefore"
+                    value={formData.reminderDaysBefore}
+                    onChange={handleInputChange}
+                    disabled={type === 'view'}
+                    placeholder="e.g. 1"
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-md text-sm outline-none focus:border-blue-400 ${
+                      type === 'view' ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'
+                    }`}
+                  />
+                </div>
+              </div>
+
+              {/* Uploads */}
+              <div className="space-y-1">
+                <label className="text-sm text-gray-600">Uploads</label>
+                <input
+                  type="file"
+                  name="uploads"
+                  onChange={handleInputChange}
+                  disabled={type === 'view'}
+                  className={`w-full px-3 py-[6px] border border-gray-300 rounded-md text-sm outline-none focus:border-blue-400 file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 ${
+                    type === 'view' ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'
+                  }`}
                 />
               </div>
             </div>

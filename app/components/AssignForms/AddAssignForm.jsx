@@ -52,7 +52,6 @@ export default function AddAssignForm({
     );
   }, [assets]);
 
-  // Get employees from Redux store
   const employeesFromRedux = useSelector(selectEmployeesItems);
 
   // Transform Redux employee data to match your form's expected structure

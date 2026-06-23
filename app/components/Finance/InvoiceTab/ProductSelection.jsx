@@ -26,30 +26,13 @@ const CURRENCIES = [
 const getCurrencyInfo = (code) =>
   CURRENCIES.find((c) => c.code === code) || CURRENCIES[0];
 
-const SAMPLE_HSN_CODES = [
-  '998311',
-  '998312',
-  '998313',
-  '998314',
-  '998315',
-  '998316',
-  '998319',
-  '998321',
-  '998322',
-  '998323',
-];
+const SAMPLE_HSN_CODES = ['998313', '9983', '998314', '998319'];
 
 const SAMPLE_ITEM_NAMES = [
-  'Web Application Development',
-  'Mobile App Development',
-  'Cloud Infrastructure Setup',
-  'Database Migration',
-  'UI/UX Design Services',
-  'API Integration',
-  'Annual Maintenance Contract',
-  'Cybersecurity Audit',
-  'Data Analytics Consulting',
-  'E-commerce Platform Development',
+  'Information technology consulting and suppert services',
+  'Other professional, technical and business services',
+  'Information technology design and development services',
+  'Other information technology services nowhere else classified',
 ];
 
 const SAMPLE_PRODUCTS = SAMPLE_HSN_CODES.map((code, i) => ({

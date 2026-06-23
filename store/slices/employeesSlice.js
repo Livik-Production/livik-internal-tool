@@ -23,6 +23,7 @@ export const fetchEmployees = createAsyncThunk(
           (emp.lastName ? ` ${emp.lastName}` : '');
         return {
           id: id,
+          _dbId: emp.id,          // stable Postgres UUID — never changes
           name: name.trim() || emp.name || '',
           email: emp.email ?? emp.emailAddress ?? '',
           mobile: emp.phoneNumber ?? emp.phoneNumber ?? '',
@@ -87,11 +88,21 @@ const employeesSlice = createSlice({
       state.items = state.items.filter((e) => e.id !== action.payload);
     },
     updateEmployee: (state, action) => {
-      const i = state.items.findIndex((x) => x.id === action.payload.id);
-      if (i >= 0) state.items[i] = action.payload;
+      // Match by stable DB UUID first (_dbId), then fall back to display id.
+      // This ensures the row is found even when empId (the display id) changes.
+      const payload = action.payload;
+      const i = state.items.findIndex(
+        (x) =>
+          (payload._dbId && x._dbId && x._dbId === payload._dbId) ||
+          x.id === payload.id
+      );
+      if (i >= 0) state.items[i] = payload;
     },
     setEmployees: (state, action) => {
       state.items = action.payload;
+    },
+    resetStatus: (state) => {
+      state.status = 'idle';
     },
   },
   extraReducers(builder) {
@@ -111,7 +122,7 @@ const employeesSlice = createSlice({
   },
 });
 
-export const { addEmployee, deleteEmployee, updateEmployee, setEmployees } =
+export const { addEmployee, deleteEmployee, updateEmployee, setEmployees, resetStatus } =
   employeesSlice.actions;
 
 export const selectEmployeesItems = (state) => state.employees.items;

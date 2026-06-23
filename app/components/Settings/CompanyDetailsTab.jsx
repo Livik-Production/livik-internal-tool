@@ -25,6 +25,10 @@ export default function CompanyDetailsTab() {
     accountNumber: '',
     ifscCode: '',
     swiftCode: '',
+    exportCountry: '',
+    lutBondNo: '',
+    lutValidFrom: '',
+    lutValidTo: '',
   });
 
   useEffect(() => {
@@ -53,6 +57,10 @@ export default function CompanyDetailsTab() {
               accountNumber: data.accountNumber || '',
               ifscCode: data.ifscCode || '',
               swiftCode: data.swiftCode || '',
+              exportCountry: data.exportCountry || '',
+              lutBondNo: data.lutBondNo || '',
+              lutValidFrom: data.lutValidFrom ? data.lutValidFrom.split('T')[0] : '',
+              lutValidTo: data.lutValidTo ? data.lutValidTo.split('T')[0] : '',
             });
           }
         }
@@ -305,6 +313,58 @@ export default function CompanyDetailsTab() {
                 type="text"
                 name="swiftCode"
                 value={companyDetails.swiftCode}
+                onChange={handleCompanyDetailsChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              />
+            </div>
+            
+            {/* LUT / Export Details */}
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-gray-700 block text-left">
+                Export Country
+              </label>
+              <input
+                type="text"
+                name="exportCountry"
+                value={companyDetails.exportCountry}
+                onChange={handleCompanyDetailsChange}
+                placeholder="e.g. Malaysia"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-gray-700 block text-left">
+                LUT/Bond No.
+              </label>
+              <input
+                type="text"
+                name="lutBondNo"
+                value={companyDetails.lutBondNo}
+                onChange={handleCompanyDetailsChange}
+                placeholder="e.g. AD330625001940G"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-gray-700 block text-left">
+                LUT Valid From
+              </label>
+              <input
+                type="date"
+                name="lutValidFrom"
+                value={companyDetails.lutValidFrom}
+                onChange={handleCompanyDetailsChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-gray-700 block text-left">
+                LUT Valid To
+              </label>
+              <input
+                type="date"
+                name="lutValidTo"
+                value={companyDetails.lutValidTo}
                 onChange={handleCompanyDetailsChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
               />

@@ -15,6 +15,7 @@ import Button from '../../components/Buttons/Button';
 import CustomModalForm from '../../components/CustomModalForm';
 import { ChartNoAxesCombined } from 'lucide-react';
 import { showSuccessToast, showErrorToast } from '../../components/Toast';
+import NotificationBell from '../../components/NotificationBell';
 
 const TAB_CONFIG = [
   { id: 'overview', label: 'Dashboard', right: 'finance_view_overview' },
@@ -368,12 +369,15 @@ function FinanceContent() {
             </p>
           </div>
         </div>
-        {activeTab === 'expenses' && (
-          <PrimaryButton onClick={handleAddExpense}>
-            <span className="text-xl mr-1">+</span>
-            Add Expense
-          </PrimaryButton>
-        )}
+        <div className="flex items-center gap-4">
+          {activeTab === 'expenses' && (
+            <PrimaryButton onClick={handleAddExpense}>
+              <span className="text-xl mr-1">+</span>
+              Add Expense
+            </PrimaryButton>
+          )}
+          <NotificationBell />
+        </div>
       </div>
 
       <div className="flex-1 flex flex-col bg-white rounded-2xl shadow-sm p-2.5 m-0.5 mt-1.5 min-h-0">
@@ -393,42 +397,46 @@ function FinanceContent() {
 
         <div
           key={activeTab}
-          className={`flex-1 overflow-y-auto no-scrollbar transition-all duration-400 min-h-0 ${
-            isLoading && activeTab !== 'expenses'
-              ? 'opacity-0 translate-y-4'
-              : 'animate-dashboard-reveal'
-          }`}
+          className="flex-1 overflow-y-auto no-scrollbar transition-all duration-400 min-h-0 animate-dashboard-reveal"
         >
-          {activeTab === 'overview' && (
-            <OverviewForm financeData={financeData} />
-          )}
-          {activeTab === 'invoice' && (
-            <InvoiceTable
-              invoices={invoices}
-              onViewDetail={openView}
-              onDelete={handleDeleteInvoice}
-              onCreateInvoice={handleCreateInvoice}
-              onRefresh={fetchInvoices}
-            />
-          )}
-          {activeTab === 'payment' && (
-            <PaymentTable
-              invoices={invoices}
-              onMarkAsPaid={handleMarkAsPaid}
-              onViewDetail={openView}
-              isProcessingPayment={isLoading}
-            />
-          )}
-          {activeTab === 'expenses' && (
-            <ExpensesTable
-              expenses={expenses}
-              isLoading={isLoading}
-              onViewDetail={handleViewExpense}
-              onDelete={handleDeleteExpense}
-              onAddExpense={handleAddExpense}
-              onEdit={handleEditExpense}
-              onRefresh={fetchExpenses}
-            />
+          {isLoading && activeTab !== 'expenses' ? (
+            <div className="flex justify-center items-center py-20 min-h-[400px]">
+              <Loader label="Loading content..." />
+            </div>
+          ) : (
+            <>
+              {activeTab === 'overview' && (
+                <OverviewForm financeData={financeData} />
+              )}
+              {activeTab === 'invoice' && (
+                <InvoiceTable
+                  invoices={invoices}
+                  onViewDetail={openView}
+                  onDelete={handleDeleteInvoice}
+                  onCreateInvoice={handleCreateInvoice}
+                  onRefresh={fetchInvoices}
+                />
+              )}
+              {activeTab === 'payment' && (
+                <PaymentTable
+                  invoices={invoices}
+                  onMarkAsPaid={handleMarkAsPaid}
+                  onViewDetail={openView}
+                  isProcessingPayment={isLoading}
+                />
+              )}
+              {activeTab === 'expenses' && (
+                <ExpensesTable
+                  expenses={expenses}
+                  isLoading={isLoading}
+                  onViewDetail={handleViewExpense}
+                  onDelete={handleDeleteExpense}
+                  onAddExpense={handleAddExpense}
+                  onEdit={handleEditExpense}
+                  onRefresh={fetchExpenses}
+                />
+              )}
+            </>
           )}
         </div>
       </div>

@@ -3,12 +3,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import CustomTable from '../../CustomTable';
 import IconButton from '../../Buttons/IconButton';
-import { CheckCircle, XCircle, Eye, Loader2 } from 'lucide-react';
+import { CheckCircle, XCircle, Eye } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import { showSuccessToast, showErrorToast } from '../../Toast';
 import ConfirmDialog from '../../ConfirmDialog';
 import { fetchEmployees } from '../../../../store/slices/employeesSlice';
 import Pagination from '../../Pagination';
+import Loader from '../../Loader'
 
 export default function DocumentApprovalsTable({
   searchElement = null,
@@ -220,8 +221,8 @@ export default function DocumentApprovalsTable({
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-            <span className="text-sm text-gray-500 font-medium">
+              <Loader />
+              <span className="text-sm text-gray-500 font-medium">
               Fetching pending approvals...
             </span>
           </div>

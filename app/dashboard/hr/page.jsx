@@ -35,6 +35,8 @@ import HrDashboardTab from '../../components/HrModule/HrDashboardTab';
 import LeaveMainTab from '../../components/HrModule/LeaveTab/LeaveMainTab';
 import PendingMainTab from '../../components/HrModule/PendingEmployees/PendingMainTab';
 import SkillsDirectory from '../../components/HrModule/SkillsDirectory';
+import ContractEmployeeTab from '../../components/HrModule/ContractEmployee/ContractEmployeeTab';
+import OperationsStaffTab from '../../components/HrModule/OperationsStaff/OperationsStaffTab';
 import Pagination from '../../components/Pagination';
 import { X } from 'lucide-react';
 
@@ -88,7 +90,7 @@ const TAB_CONFIG = [
     controlRight: 'professional_skills_control',
   },
 ];
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 
 function EmployeeLeaveHistoryTab({ initialData }) {
   const [leaveHistory, setLeaveHistory] = useState([]);
@@ -156,6 +158,8 @@ function EmployeeLeaveHistoryTab({ initialData }) {
 function HRPageContent() {
   const dispatch = useDispatch();
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -181,6 +185,7 @@ function HRPageContent() {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState('add');
   const [modalData, setModalData] = useState(null);
+  const [isDeletingEmployee, setIsDeletingEmployee] = useState(false);
 
   // Leave Request Form Modal control
   const [leaveFormOpen, setLeaveFormOpen] = useState(false);
@@ -238,6 +243,14 @@ function HRPageContent() {
     // Filter tabs based on granular or global rights
     const tabs = TAB_CONFIG.filter((tab) => {
       if (isSuperAdmin) return true;
+      if (tab.id === 'all') {
+        return (
+          checkRight('hr_module_view_all_employees') ||
+          checkRight('hr_module_control_all_employees') ||
+          checkRight('hr_module_view_contract_employees') ||
+          checkRight('hr_module_control_contract_employees')
+        );
+      }
       return checkRight(tab.right) || checkRight(tab.controlRight);
     });
 
@@ -274,9 +287,9 @@ function HRPageContent() {
     (activeMainTab === 'all' ||
       activeMainTab === 'dashboard' ||
       activeMainTab === 'leave' ||
-      activeMainTab === 'pendingEmployees');
+      activeMainTab === 'pendingEmployees' ||
+      activeMainTab === 'contractEmployee');
 
-  // Tab-independent permission check for adding employees (used by header button)
   const canAddEmployee =
     isAdmin ||
     (authUser?.rights || [])
@@ -289,11 +302,41 @@ function HRPageContent() {
     return lowerRights.includes(right.toLowerCase());
   };
 
+  const canViewLivik =
+    isAdmin ||
+    hasRight('hr_module_view_all_employees') ||
+    hasRight('hr_module_control_all_employees');
+  const canControlLivik =
+    isAdmin || hasRight('hr_module_control_all_employees');
+
+  const canViewContract =
+    isAdmin ||
+    hasRight('hr_module_view_all_employees') ||
+    hasRight('hr_module_control_all_employees') ||
+    hasRight('hr_module_view_contract_employees') ||
+    hasRight('hr_module_control_contract_employees');
+  const canControlContract =
+    isAdmin ||
+    hasRight('hr_module_control_all_employees') ||
+    hasRight('hr_module_control_contract_employees');
+
+  const canViewOperations = canViewLivik;
+  const canControlOperations = canControlLivik;
+
   // Search functionality
   useEffect(() => {
+    const isPendingStatus = (emp) => {
+      const statusUpper = (emp.status || emp.__raw?.status || '').toUpperCase();
+      return statusUpper === 'PENDING' || statusUpper === 'PENDING_ADMIN';
+    };
+
     if (!searchQuery.trim()) {
       if (activeMainTab === 'all') {
-        setFilteredEmployees(employees.filter((e) => e.status === 'Active'));
+        setFilteredEmployees(
+          employees.filter((e) => e.status === 'Active' && !isPendingStatus(e))
+        );
+      } else if (activeMainTab !== 'pendingEmployees') {
+        setFilteredEmployees(employees.filter((e) => !isPendingStatus(e)));
       } else {
         setFilteredEmployees(employees);
       }
@@ -308,7 +351,10 @@ function HRPageContent() {
           employee.__raw?.firstName?.toLowerCase().includes(query) ||
           employee.__raw?.lastName?.toLowerCase().includes(query);
 
-        // Filter by active status in the "all" tab
+        if (isPendingStatus(employee)) {
+          return activeMainTab === 'pendingEmployees' && matchesQuery;
+        }
+
         if (activeMainTab === 'all') {
           return matchesQuery && employee.status === 'Active';
         }
@@ -629,8 +675,13 @@ function HRPageContent() {
         updated.docDegreeCollected ? 'degree' : null,
       ].filter(Boolean);
 
+      // _dbId is the stable Postgres UUID — used by the reducer to match the
+      // existing row even when empId (the display id) changes.
+      const _dbId = updated.id ?? modalData?.__raw?.id ?? targetId;
+
       const uiRow = {
         id,
+        _dbId,
         name,
         email: updated.email ?? '',
         designation: updated.designation ?? '',
@@ -646,7 +697,17 @@ function HRPageContent() {
       showSuccessToast('Employee updated successfully!');
       closeModal();
     } catch (err) {
-      showErrorToast('Update failed: ' + (err?.message || err));
+      const errorMsg = (err?.message || err || '').toString().toLowerCase();
+      if (
+        errorMsg.includes('already') ||
+        errorMsg.includes('exist') ||
+        errorMsg.includes('duplicate') ||
+        errorMsg.includes('unique')
+      ) {
+        showErrorToast('user details cannot save already details added');
+      } else {
+        showErrorToast('Update failed: ' + (err?.message || err));
+      }
       throw err;
     }
   };
@@ -671,14 +732,15 @@ function HRPageContent() {
 
   const performDeleteEmployee = async () => {
     const id = confirmTargetId;
-    setConfirmOpen(false);
 
     if (!id) {
+      setConfirmOpen(false);
       setConfirmTargetId(null);
       return;
     }
 
     try {
+      setIsDeletingEmployee(true);
       const row = employees.find((r) => r.id === id);
       const serverId = row?.__raw?.id ?? id;
       const res = await fetch(`/api/employees/${serverId}`, {
@@ -692,10 +754,13 @@ function HRPageContent() {
       }
 
       dispatch(deleteEmployeeAction(id));
+      showSuccessToast('Employee deleted successfully');
+      setConfirmOpen(false);
     } catch (err) {
       console.error('Delete failed:', err);
       showErrorToast(`Failed to delete employee: ${err.message}`);
     } finally {
+      setIsDeletingEmployee(false);
       setConfirmTargetId(null);
     }
   };
@@ -738,13 +803,14 @@ function HRPageContent() {
     }
   };
   const handleApproveEmployee = async (employee) => {
-    if (!isAdmin) return;
+    if (!canApprove) return;
     const serverId = employee.__raw?.id || employee.id;
+    const targetStatus = isAdmin ? 'Active' : 'PENDING_ADMIN';
     try {
       const res = await fetch(`/api/employees/${serverId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'Active' }),
+        body: JSON.stringify({ status: targetStatus }),
       });
 
       if (!res.ok) throw new Error('Failed to approve employee');
@@ -763,7 +829,9 @@ function HRPageContent() {
       };
 
       dispatch(updateEmployeeAction(uiRow));
-      showSuccessToast(`${name} has been approved and activated!`);
+      showSuccessToast(
+        `${name} has been approved${!isAdmin ? ' (pending Admin approval)' : ' and activated'}!`
+      );
       closeModal();
     } catch (error) {
       console.error('Error approving employee:', error);
@@ -777,6 +845,13 @@ function HRPageContent() {
   // main tab switch
   const handleTabSwitch = (tabId) => {
     if (tabId === activeMainTab) return;
+
+    // Update the URL so we don't get stuck in a redirect loop from searchParams useEffect
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', tabId);
+    params.delete('subtab');
+    router.replace(`${pathname}?${params.toString()}`);
+
     setAnimating(true);
     setPendingTab(tabId);
     setTimeout(() => {
@@ -788,6 +863,15 @@ function HRPageContent() {
   };
 
   const navigateToTab = (mainTabId, subTabId = null) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', mainTabId);
+    if (subTabId) {
+      params.set('subtab', subTabId);
+    } else {
+      params.delete('subtab');
+    }
+    router.replace(`${pathname}?${params.toString()}`);
+
     setActiveMainTab(mainTabId);
     if (subTabId) {
       setActiveSubTab(subTabId);
@@ -1007,7 +1091,7 @@ function HRPageContent() {
             <nav
               role="tablist"
               aria-label="HR tabs"
-              className="flex shrink-0 space-x-1 border-b border-gray-300 mb-3.5 bg-transparent overflow-x-auto no-scroll"
+              className="flex shrink-0 space-x-1 border-b border-gray-300 mb-3 bg-transparent overflow-x-auto no-scroll"
             >
               {visibleTabs.map((t) => {
                 const active = activeMainTab === t.id && !animating;
@@ -1057,48 +1141,6 @@ function HRPageContent() {
 
               return (
                 <>
-                  {/* SEARCH BAR & Add Button for "All Employees" tab */}
-                  {activeMainTab === 'all' && (
-                    <div className="flex items-center justify-between mb-2.5">
-                      <div className="flex-1"></div>
-                      <div className="flex items-center gap-3">
-                        {SharedSearchBar}
-                        {canViewAllEmployees && (
-                          <PrimaryButton
-                            onClick={openAdd}
-                            className={`px-4 py-2 text-sm ${
-                              !canControlAllEmployees
-                                ? 'opacity-60 cursor-not-allowed'
-                                : ''
-                            }`}
-                            disabled={!canControlAllEmployees}
-                            title={
-                              canControlAllEmployees
-                                ? 'Add new employee'
-                                : 'Add employee access required'
-                            }
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-5 w-5"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                              strokeWidth={2}
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M12 4v16m8-8H4"
-                              />
-                            </svg>
-                            Add Employee
-                          </PrimaryButton>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
                   <div
                     key={activeMainTab}
                     className={`flex-1 overflow-y-auto no-scrollbar transition-all duration-400 min-h-0 ${
@@ -1120,29 +1162,127 @@ function HRPageContent() {
                       <OfferLetter isViewOnly={isViewOnly} />
                     )}
 
-                    {/* ALL EMPLOYEES TAB - Combined for both HR Executive and Admin */}
-                    {activeMainTab === 'all' && canViewAllEmployees && (
-                      <div className="flex flex-col gap-4">
-                        <section className="overflow-hidden rounded-xl border border-gray-200 shadow-inner text-gray-900">
-                          <div className="overflow-y-auto">
-                            <CustomTable
-                              columns={[...employeeColumns]}
-                              data={paginatedEmployees}
-                              rowKey="id"
-                              actions={(row) => <ActionButtons row={row} />}
-                              actionsHeader="Actions"
-                              actionsAlign="center"
+                    {/* ALL EMPLOYEES TAB - Subtabs for Livik, Contract, Operations */}
+                    {activeMainTab === 'all' && (
+                      <div className="flex flex-col h-full min-h-0">
+                        <nav className="flex shrink-0 space-x-1 border-b border-gray-300 mb-2 overflow-x-auto no-scrollbar">
+                          {canViewLivik && (
+                            <TabButton
+                              isActive={
+                                !activeSubTab || activeSubTab === 'livik'
+                              }
+                              onClick={() => navigateToTab('all', 'livik')}
+                            >
+                              LK Employees
+                            </TabButton>
+                          )}
+                          {/* {canViewContract && (
+                            <TabButton
+                              isActive={activeSubTab === 'contract'}
+                              onClick={() => navigateToTab('all', 'contract')}
+                            >
+                              Contract Employees
+                            </TabButton>
+                          )}
+                          {canViewOperations && (
+                            <TabButton
+                              isActive={activeSubTab === 'operations'}
+                              onClick={() => navigateToTab('all', 'operations')}
+                            >
+                              Operations Staff
+                            </TabButton>
+                          )} */}
+                        </nav>
+
+                        <div className="flex-1 overflow-y-auto no-scrollbar min-h-0 flex flex-col ">
+                          {(!activeSubTab || activeSubTab === 'livik') &&
+                            canViewLivik && (
+                              <div className="flex flex-col gap-2">
+                                {/* SEARCH BAR & Add Button for "All Employees" tab */}
+                                <div className="flex items-center justify-between py-2">
+                                  <div className="flex-1"></div>
+                                  <div className="flex items-center gap-3">
+                                    {SharedSearchBar}
+                                    {canControlLivik && (
+                                      <PrimaryButton
+                                        onClick={openAdd}
+                                        className="px-4 py-2 text-sm"
+                                        title="Add new employee"
+                                      >
+                                        <svg
+                                          xmlns="http://www.w3.org/2000/svg"
+                                          className="h-5 w-5"
+                                          fill="none"
+                                          viewBox="0 0 24 24"
+                                          stroke="currentColor"
+                                          strokeWidth={2}
+                                        >
+                                          <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            d="M12 4v16m8-8H4"
+                                          />
+                                        </svg>
+                                        Add Employee
+                                      </PrimaryButton>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {employeesStatus === 'loading' ? (
+                                  <div className="flex justify-center items-center py-20 bg-white rounded-lg shadow-sm min-h-[400px]">
+                                    <Loader
+                                      label="Loading employees..."
+                                      size="md"
+                                      fullScreen={false}
+                                    />
+                                  </div>
+                                ) : (
+                                  <>
+                                    <section className="overflow-hidden rounded-xl border border-gray-200 shadow-inner text-gray-900">
+                                      <div className="overflow-y-auto">
+                                        <CustomTable
+                                          columns={[...employeeColumns]}
+                                          data={paginatedEmployees}
+                                          rowKey="id"
+                                          actions={(row) => (
+                                            <ActionButtons row={row} />
+                                          )}
+                                          actionsHeader="Actions"
+                                          actionsAlign="center"
+                                        />
+                                      </div>
+                                    </section>
+                                    <Pagination
+                                      currentPage={currentPage}
+                                      totalItems={filteredEmployees.length}
+                                      itemsPerPage={itemsPerPage}
+                                      onPageChange={setCurrentPage}
+                                      onItemsPerPageChange={
+                                        handleItemsPerPageChange
+                                      }
+                                      rowsPerPageOptions={[5, 10, 20, 50, 100]}
+                                    />
+                                  </>
+                                )}
+                              </div>
+                            )}
+
+                          {activeSubTab === 'contract' && canViewContract && (
+                            <ContractEmployeeTab
+                              canControl={canControlContract}
+                              isViewOnly={!canControlContract}
                             />
-                          </div>
-                        </section>
-                        <Pagination
-                          currentPage={currentPage}
-                          totalItems={filteredEmployees.length}
-                          itemsPerPage={itemsPerPage}
-                          onPageChange={setCurrentPage}
-                          onItemsPerPageChange={handleItemsPerPageChange}
-                          rowsPerPageOptions={[5, 10, 20, 50, 100]}
-                        />
+                          )}
+
+                          {activeSubTab === 'operations' &&
+                            canViewOperations && (
+                              <OperationsStaffTab
+                                canControl={canControlOperations}
+                                isViewOnly={!canControlOperations}
+                              />
+                            )}
+                        </div>
                       </div>
                     )}
 
@@ -1151,7 +1291,17 @@ function HRPageContent() {
                       <LeaveMainTab
                         canControlAllEmployees={canControlAllEmployees}
                         canApprove={canApprove}
-                        employees={employees}
+                        employees={employees.filter((e) => {
+                          const statusUpper = (
+                            e.status ||
+                            e.__raw?.status ||
+                            ''
+                          ).toUpperCase();
+                          return (
+                            statusUpper !== 'PENDING' &&
+                            statusUpper !== 'PENDING_ADMIN'
+                          );
+                        })}
                         authUser={authUser}
                         isAdmin={isAdmin}
                         onViewLeaveDetails={handleViewLeaveDetails}
@@ -1170,15 +1320,28 @@ function HRPageContent() {
                         searchElement={SharedSearchBar}
                         searchQuery={searchQuery}
                         canEdit={canControlAllEmployees && !isViewOnly}
-                        canApprove={isAdmin && !isViewOnly}
+                        canApprove={
+                          !isViewOnly && (isAdmin || canControlAllEmployees)
+                        }
                         canDelete={
                           !isHrRole &&
                           (isAdmin || canControlAllEmployees) &&
                           !isViewOnly
                         }
+                        isAdmin={isAdmin}
                         onView={(emp) => openView(emp)}
                         onEdit={(emp) => openEdit(emp)}
                         onDelete={(id) => handleDeleteEmployee(id)}
+                        onApproveSuccess={(emp) => {
+                          const wType = emp.workType || emp.__raw?.workType;
+                          if (wType === 'CONTRACT') {
+                            navigateToTab('all', 'contract');
+                          } else if (wType === 'OPERATIONS_STAFF') {
+                            navigateToTab('all', 'operations');
+                          } else {
+                            navigateToTab('all', 'livik');
+                          }
+                        }}
                         isViewOnly={isViewOnly}
                       />
                     )}
@@ -1226,12 +1389,35 @@ function HRPageContent() {
           }}
           onApprove={() => handleApproveEmployee(modalData)}
           showApprove={
-            isAdmin &&
-            modalData?.status?.toUpperCase() === 'PENDING' &&
-            modalMode !== 'add'
+            canApprove &&
+            modalMode !== 'add' &&
+            modalData &&
+            (function () {
+              const r = modalData.__raw || {};
+              const complete =
+                r.workType === 'CONTRACT'
+                  ? !!(
+                      r.firstName &&
+                      r.lastName &&
+                      r.phoneNumber &&
+                      r.bondRemarks
+                    )
+                  : !!(
+                      r.aadhaarNumber &&
+                      r.panNumber &&
+                      r.dateOfBirth &&
+                      r.presentAddress
+                    );
+              return complete;
+            })() &&
+            ((isAdmin &&
+              (modalData?.status?.toUpperCase() === 'PENDING' ||
+                modalData?.status?.toUpperCase() === 'PENDING_ADMIN')) ||
+              (!isAdmin && modalData?.status?.toUpperCase() === 'PENDING'))
           }
           canControlAllEmployees={canControlAllEmployees} // Pass permission prop
           isHrRole={isHrRole}
+          isSuperAdmin={isAdmin}
         />
       </CustomModalForm>
 
@@ -1583,6 +1769,7 @@ function HRPageContent() {
         confirmLabel="Delete"
         cancelLabel="Cancel"
         destructive={true}
+        loading={isDeletingEmployee}
         onConfirm={performDeleteEmployee}
         onCancel={() => {
           setConfirmOpen(false);

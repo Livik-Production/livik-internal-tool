@@ -432,6 +432,7 @@ export default function AssetPage() {
       setSelectedAsset(updatedAsset);
 
       toast.success('Asset updated successfully!');
+      closeModal();
     } catch (error) {
       console.error('Error updating asset:', error);
       toast.error('Failed to update asset. Please try again.');
@@ -586,6 +587,8 @@ export default function AssetPage() {
       warrantyFile: asset.warrantyFile || '',
       notes: asset.notes,
       specs: asset.specs || {},
+      createdAt: asset.createdAt || asset.__raw?.createdAt,
+      updatedAt: asset.updatedAt || asset.__raw?.updatedAt,
     };
   };
 
@@ -646,16 +649,9 @@ export default function AssetPage() {
 
   return (
     <div
-      key={assetsStatus === 'loading'}
       className="text-left h-full flex flex-col min-h-0 animate-dashboard-reveal"
     >
-      {assetsStatus === 'loading' ? (
-        <div className="bg-white rounded-2xl shadow-sm p-12 m-0.5 flex flex-col items-center justify-center min-h-[400px]">
-          <Loader label="Loading assets..." size="md" fullScreen={false} />
-        </div>
-      ) : (
-        <>
-          <div className="bg-white rounded-2xl shadow-sm p-3 m-0.5">
+      <div className="bg-white rounded-2xl shadow-sm p-3 m-0.5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-50 text-[#33a8d9] rounded-xl">
@@ -755,7 +751,11 @@ export default function AssetPage() {
                 className="flex-1 overflow-y-auto no-scrollbar min-h-0 pr-1"
               >
                 {activeTab === 'overview' && (
-                  <OverviewForm assets={assets} isViewOnly={isViewOnly} />
+                  <OverviewForm
+                    assets={assets}
+                    isViewOnly={isViewOnly}
+                    isLoading={assetsStatus === 'loading'}
+                  />
                 )}
 
                 {activeTab === 'assignments' && (
@@ -765,19 +765,26 @@ export default function AssetPage() {
                     onUnassign={handleUnassign}
                     onAssign={handleAssign}
                     isViewOnly={isViewOnly}
+                    isLoading={assetsStatus === 'loading'}
                   />
                 )}
 
                 {activeTab === 'assets' && (
                   <div className="p-2.5">
-                    <AssetsForm
-                      assets={assets}
-                      onViewDetail={openView}
-                      onEdit={openEdit}
-                      onAssign={handleAssign}
-                      onDelete={handleDelete}
-                      isViewOnly={isViewOnly}
-                    />
+                    {assetsStatus === 'loading' ? (
+                      <div className="flex justify-center items-center py-20 min-h-[400px]">
+                        <Loader label="Loading assets..." size="md" fullScreen={false} />
+                      </div>
+                    ) : (
+                      <AssetsForm
+                        assets={assets}
+                        onViewDetail={openView}
+                        onEdit={openEdit}
+                        onAssign={handleAssign}
+                        onDelete={handleDelete}
+                        isViewOnly={isViewOnly}
+                      />
+                    )}
                   </div>
                 )}
               </motion.div>
@@ -1110,8 +1117,6 @@ export default function AssetPage() {
               onCancel={() => setShowRepairForm(false)}
             />
           )}
-        </>
-      )}
     </div>
   );
 }

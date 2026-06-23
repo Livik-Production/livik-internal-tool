@@ -36,6 +36,15 @@ export async function GET() {
           phoneNumber: true,
           department: true,
           designation: true,
+          status: true,
+          aadhaarNumber: true,
+          panNumber: true,
+          dateOfBirth: true,
+          presentAddress: true,
+          workType: true,
+          workMode: true,
+          contractEmpId: true,
+          bondRemarks: true,
           role: {
             select: {
               id: true,
@@ -43,6 +52,9 @@ export async function GET() {
               displayName: true,
             },
           },
+          workType: true,
+          workMode: true,
+          contractEmpId: true,
         },
       })
     );
@@ -81,15 +93,23 @@ export async function GET() {
       rights =
         employeeWithRights?.role?.rights?.map((r) => r.right.rightName) || [];
     }
-
     return NextResponse.json({
       id: employee.id,
       empId: employee.empId,
+      workType: employee.workType || null,
+      workMode: employee.workMode || null,
+      contractEmpId: employee.contractEmpId || null,
       name: `${employee.firstName} ${employee.lastName}`.trim(),
       email: employee.email,
       mobile: employee.phoneNumber,
       department: employee.department,
       designation: employee.designation || null,
+      status: employee.status || null,
+      aadhaarNumber: employee.aadhaarNumber || null,
+      panNumber: employee.panNumber || null,
+      dateOfBirth: employee.dateOfBirth || null,
+      presentAddress: employee.presentAddress || null,
+      bondRemarks: employee.bondRemarks || null,
       role: {
         id: employee.role?.id,
         name: roleName,

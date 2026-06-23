@@ -10,7 +10,7 @@ function addCorsHeaders(response) {
 
 export async function GET(req, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const application = await getJobApplicationById(id);
     if (!application) {
       return addCorsHeaders(NextResponse.json({ error: 'Job application not found' }, { status: 404 }));
@@ -24,7 +24,7 @@ export async function GET(req, { params }) {
 
 export async function DELETE(req, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     await deleteJobApplication(id);
     return addCorsHeaders(NextResponse.json({ message: 'Job application deleted successfully' }));
   } catch (error) {

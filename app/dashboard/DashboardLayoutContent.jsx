@@ -1,9 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import Sidebar from './Sidebar';
 import { MenuIcon, XIcon } from 'lucide-react';
 import { usePathname } from 'next/navigation';
+import { useSelector } from 'react-redux';
+import { selectAuthUser } from '../../store/slices/authSlice';
+import ProfileSetupWizard from '../components/EmployeePortal/ProfileSetupWizard';
+import ProfileSetupWizardContract from '../components/EmployeePortal/ProfileSetupWizardContract';
 
 export default function DashboardLayoutContent({ children }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -11,6 +15,26 @@ export default function DashboardLayoutContent({ children }) {
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
   const closeSidebar = () => setIsSidebarOpen(false);
+
+  const authUser = useSelector(selectAuthUser);
+  
+  // Check if this is a new employee who needs to complete their profile.
+  // Only show wizard for PENDING employees who haven't filled their details.
+  // Active / PENDING_ADMIN employees must never be redirected to the wizard.
+  const statusUpper = authUser?.status?.toUpperCase();
+  const isPending = statusUpper === 'PENDING';
+  const isActive = statusUpper === 'ACTIVE' || statusUpper === 'PENDING_ADMIN';
+  const isContract = (authUser?.workType || '').toString().toUpperCase() === 'CONTRACT';
+  const hasCompletedSetup = isContract
+    ? !!(authUser?.name && authUser?.mobile && authUser?.bondRemarks)
+    : !!(authUser?.aadhaarNumber && authUser?.panNumber && authUser?.dateOfBirth && authUser?.presentAddress);
+
+  // Show setup wizard only for truly pending+incomplete employees
+  if (authUser && isPending && !isActive && !hasCompletedSetup) {
+    const wt = (authUser.workType || '').toString().toUpperCase();
+    if (wt === 'CONTRACT') return <ProfileSetupWizardContract rawEmployeeData={authUser} />;
+    return <ProfileSetupWizard rawEmployeeData={authUser} />;
+  }
 
   return (
     <div className="min-h-screen w-screen flex flex-col md:flex-row bg-gray-50">
@@ -44,7 +68,9 @@ export default function DashboardLayoutContent({ children }) {
         }`}
       >
         <div className="h-full overflow-y-auto">
-          <Sidebar onLinkClick={closeSidebar} />
+          <Suspense fallback={null}>
+            <Sidebar onLinkClick={closeSidebar} />
+          </Suspense>
         </div>
       </aside>
 
@@ -54,7 +80,7 @@ export default function DashboardLayoutContent({ children }) {
           <div className="bg-transparent h-full flex flex-col min-h-0">
             <div
               key={pathname}
-              className="bg-gray-300 rounded-2xl shadow-md p-1 h-full flex flex-col min-h-0 animate-dashboard-reveal overflow-y-auto no-scroll"
+              className="bg-white rounded-2xl shadow-md p-1 h-full flex flex-col min-h-0 animate-dashboard-reveal overflow-y-auto"
             >
               {children}
             </div>

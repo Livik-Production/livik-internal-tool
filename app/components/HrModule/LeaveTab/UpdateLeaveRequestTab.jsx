@@ -3,11 +3,12 @@ import Button from '../../Buttons/Button';
 import PrimaryButton from '../../Buttons/PrimaryButton';
 import HyperlinkButton from '../../Buttons/HyperlinkButton';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import CustomTable from '../../CustomTable';
 import CustomAlertForm from '../../CustomAlertForm';
 import Loader from '../../Loader';
+import Pagination from '../../Pagination';
 import { showSuccessToast, showErrorToast } from '../../Toast';
 import {
   ChevronDown,
@@ -52,6 +53,10 @@ const UpdateLeaveRequestTab = ({
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [companyHolidays, setCompanyHolidays] = useState([]);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   useEffect(() => {
     const fetchHolidays = async () => {
@@ -279,6 +284,17 @@ const UpdateLeaveRequestTab = ({
     const query = searchQuery.toLowerCase();
     return fullName.includes(query) || emp.empId.toLowerCase().includes(query);
   });
+
+  // Reset pagination when filtered data length, selectedMonth, or selectedYear changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filteredData.length, selectedMonth, selectedYear]);
+
+  // Paginated data
+  const paginatedData = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredData.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredData, currentPage, itemsPerPage]);
 
   const renderBalance = (row, type) => {
     const { available, used } = getLeaveInfo(row.leaveBalances, type);
@@ -547,7 +563,7 @@ const UpdateLeaveRequestTab = ({
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredData.length > 0 ? (
-                filteredData.map((row) => {
+                paginatedData.map((row) => {
                   const cl = getLeaveInfo(row.leaveBalances, 'CL');
                   const sl = getLeaveInfo(row.leaveBalances, 'SL');
 
@@ -621,6 +637,20 @@ const UpdateLeaveRequestTab = ({
           </table>
         </div>
       </section>
+
+      {filteredData.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalItems={filteredData.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={(newVal) => {
+            setItemsPerPage(newVal);
+            setCurrentPage(1);
+          }}
+          rowsPerPageOptions={[5, 10, 20, 50, 100]}
+        />
+      )}
 
       {/* Update Balances Modal */}
       <CustomModalForm

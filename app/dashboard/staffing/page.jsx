@@ -92,11 +92,16 @@ function StaffingContent() {
 
       if (empRes.ok) {
         const eData = await empRes.json();
+        const activeEmployees = Array.isArray(eData)
+          ? eData.filter((emp) => {
+              const statusUpper = (emp.status || emp.__raw?.status || '').toUpperCase();
+              return statusUpper === 'ACTIVE';
+            })
+          : [];
         setBenchData(
-          Array.isArray(eData)
-            ? eData.map((emp) => {
-                // Parse mapped projects securely from backend relation
-                const projects = (emp.projectMembers || [])
+          activeEmployees.map((emp) => {
+            // Parse mapped projects securely from backend relation
+            const projects = (emp.projectMembers || [])
                   .map((pm) => {
                     const p = pm.project;
                     return p
@@ -153,8 +158,7 @@ function StaffingContent() {
                   status: isAssigned ? 'Assigned' : 'Available',
                   avatar: emp.photo,
                 };
-              })
-            : []
+          })
         );
       }
     } catch (err) {
@@ -178,9 +182,9 @@ function StaffingContent() {
   };
 
   return (
-    <div className="h-auto min-h-screen md:pb-0 no-scroll">
+    <div className="h-full flex flex-col min-h-0 no-scroll">
       {/* Page Header */}
-      <header className="bg-white rounded-xl shadow-md p-2 m-0.5 border border-gray-200">
+      <header className="bg-white rounded-xl shadow-md p-2 m-0.5 border border-gray-200 flex-shrink-0">
         <div className="flex flex-col md:flex-row items-center md:items-end justify-between gap-6">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-50 text-[#33a8d9] rounded-xl">
@@ -205,12 +209,12 @@ function StaffingContent() {
       </header>
 
       {/* Card with Tabs */}
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-200 m-1 min-h-full h-auto">
+      <div className="bg-white rounded-2xl shadow-xl border border-gray-200 m-1 flex-1 flex flex-col min-h-0 overflow-hidden">
         {/* Tab Nav */}
         <nav
           role="tablist"
           aria-label="Staffing tabs"
-          className="flex space-x-1.5 pl-2  pt-2 border-b border-gray-300 mb-2 bg-transparent overflow-x-auto no-scroll"
+          className="flex space-x-1.5 pl-2 pt-2 mb-1.5 border-b border-gray-300 bg-transparent overflow-x-auto no-scroll flex-shrink-0"
         >
           {TABS.map((t) => {
             const active = activeTab === t.id && !animating;
@@ -233,7 +237,7 @@ function StaffingContent() {
         {/* Tab Content */}
         <div
           key={activeTab}
-          className={`transition-all duration-300 ${
+          className={`flex-1 overflow-y-auto p-1 transition-all duration-300 ${
             animating ? 'opacity-0 translate-y-4' : 'animate-dashboard-reveal'
           }`}
         >

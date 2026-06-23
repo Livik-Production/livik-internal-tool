@@ -8,14 +8,44 @@ import {
 } from '../../../../lib/employeeService';
 import { cookies } from 'next/headers';
 import { createDocumentRequest } from '../../../../lib/documentService';
+import { prisma } from '../../../../lib/prisma';
+import transporter from '../../../../config/emailConfig';
 
 export async function GET(req, context) {
   try {
     // params can be async; await before using
     const params = await context.params;
-    const id = params.id;
+    let id = params.id;
+    const resolved = await prisma.employee.findFirst({
+      where: { OR: [{ id }, { empId: id }] },
+      select: { id: true }
+    });
+    if (resolved) id = resolved.id;
+
     const emp = await getEmployeeById(id);
     if (!emp) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+    // Resolve S3 keys to signed URLs for photo, aadhaarCard, panCard
+    const { getEmployeeDocument } = await import('../../../../lib/employeeDocumentService');
+    const docFields = {
+      photo: 'PROFILE_PHOTO',
+      aadhaarCard: 'AADHAR',
+      panCard: 'PAN'
+    };
+
+    for (const [field, docType] of Object.entries(docFields)) {
+      const value = emp[field];
+      const isS3Key = value && !value.startsWith('http://') && !value.startsWith('https://') && !value.startsWith('blob:');
+      if (isS3Key) {
+        try {
+          const s3Result = await getEmployeeDocument(emp.empId, docType);
+          emp[field] = s3Result.url; // Provide pre-signed URL to the client
+        } catch (s3Error) {
+          console.error(`Failed to generate signed URL for ${field}:`, s3Error);
+        }
+      }
+    }
+
     return NextResponse.json(JSON.parse(JSON.stringify(emp)));
   } catch (error) {
     console.error('GET employee error:', error);
@@ -30,7 +60,12 @@ export async function PUT(req, context) {
   try {
     // await params per Next.js guidance
     const params = await context.params;
-    const id = params.id;
+    let id = params.id;
+    const resolved = await prisma.employee.findFirst({
+      where: { OR: [{ id }, { empId: id }] },
+      select: { id: true }
+    });
+    if (resolved) id = resolved.id;
 
     const body = await req.json();
 
@@ -48,7 +83,7 @@ export async function PUT(req, context) {
     }
 
     // Check if roleId or role is being modified in PUT request
-    if (body.roleId !== undefined || body.role !== undefined) {
+    if (('roleId' in body && body.roleId !== undefined) || ('role' in body && body.role !== undefined)) {
       const requesterId = currentUser?.employeeId;
       if (!requesterId) {
         return NextResponse.json(
@@ -131,6 +166,40 @@ export async function PUT(req, context) {
     }
 
     const updated = await updateEmployee(id, body);
+
+    // If status was changed to PENDING_ADMIN, send email to Admins
+    if (body.status === 'PENDING_ADMIN') {
+      try {
+        const admins = await prisma.employee.findMany({
+          where: {
+            role: {
+              roleName: { in: ['ADMIN', 'SUPER_ADMIN', 'SUPER ADMIN', 'SUPERADMIN'] }
+            }
+          },
+          select: { email: true }
+        });
+
+        const adminEmails = admins.map(a => a.email).filter(Boolean);
+        
+        if (adminEmails.length > 0 && process.env.EMAIL_ID) {
+          const empName = `${updated.firstName || ''} ${updated.lastName || ''}`.trim();
+          await transporter.sendMail({
+            from: process.env.EMAIL_ID,
+            to: adminEmails,
+            subject: `Pending Admin Approval: ${empName}`,
+            html: `
+              <h2>Admin Approval Required</h2>
+              <p>The HR team has approved the details for <strong>${empName}</strong> (${updated.empId}).</p>
+              <p>They are now awaiting final Admin approval to activate their account.</p>
+              <p>Please log in to the internal tool to review and approve.</p>
+            `,
+          });
+        }
+      } catch (emailError) {
+        console.error('Failed to send Admin approval email:', emailError);
+      }
+    }
+
     return NextResponse.json(JSON.parse(JSON.stringify(updated)));
   } catch (error) {
     console.error('PUT employee error:', error);
@@ -144,7 +213,13 @@ export async function PUT(req, context) {
 export async function DELETE(req, context) {
   try {
     const params = await context.params;
-    const id = params.id;
+    let id = params.id;
+    const resolved = await prisma.employee.findFirst({
+      where: { OR: [{ id }, { empId: id }] },
+      select: { id: true }
+    });
+    if (resolved) id = resolved.id;
+
     await deleteEmployee(id);
     return NextResponse.json({ success: true });
   } catch (error) {

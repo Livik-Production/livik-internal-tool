@@ -15,6 +15,8 @@ export const metadata = {
   icons: {
     icon: '/asset/livik-logo.png',
   },
+  manifest: '/manifest.json',
+  themeColor: '#004475',
 };
 
 export default function RootLayout({ children }) {

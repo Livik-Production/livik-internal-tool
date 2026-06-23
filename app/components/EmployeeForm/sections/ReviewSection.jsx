@@ -43,6 +43,10 @@ export default function ReviewSection({ form, educations }) {
           Department: {form.department}
         </div>
         <div className="text-sm text-gray-700">
+          Work Mode: {form.workMode || '—'}
+          {form.workMode === 'WFO' && form.wfoOffice ? ` (${form.wfoOffice})` : ''}
+        </div>
+        <div className="text-sm text-gray-700">
           Bank: {form.bankName} • {form.accountNumber}
         </div>
       </div>

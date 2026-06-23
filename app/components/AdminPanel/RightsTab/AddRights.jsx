@@ -22,13 +22,37 @@ const RightsModal = ({
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const moduleOptions = [
+  const [moduleOptions, setModuleOptions] = useState([
     'HR Module ',
     'Finance Module',
     'Asset Module',
     'Admin Module ',
     'Payroll Module',
-  ];
+  ]);
+
+  useEffect(() => {
+    const fetchModules = async () => {
+      try {
+        const response = await fetch('/api/dropdowns?type=modules');
+        if (response.ok) {
+          const result = await response.json();
+          if (result.data && Array.isArray(result.data)) {
+            const activeOptions = result.data
+              .filter(
+                (item) => !item.status || item.status.toLowerCase() === 'active'
+              )
+              .map((item) => item.value || item.label);
+            if (activeOptions.length > 0) {
+              setModuleOptions(activeOptions);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching modules from lookup data:', err);
+      }
+    };
+    fetchModules();
+  }, []);
 
   useEffect(() => {
     if (mode === 'edit' && initialData) {

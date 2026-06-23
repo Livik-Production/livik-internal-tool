@@ -309,7 +309,7 @@ export default function LeaveMainTab({
       <nav
         role="tablist"
         aria-label="Leave sub-tabs"
-        className="flex space-x-1 border-b border-gray-300 mb-3 bg-white sticky top-0 z-20 pt-1 overflow-x-auto no-scroll"
+        className="flex space-x-1 border-b border-gray-300 mb-3 bg-white sticky top-0 z-20 overflow-x-auto no-scroll"
       >
         {leaveSubTabs.map((tab) => (
           <TabButton
@@ -331,9 +331,8 @@ export default function LeaveMainTab({
       {/* TAB CONTENT */}
       <div
         key={activeLeaveTab}
-        className={`transition-all duration-400 ${
-          animatingSubTab ? 'opacity-0 translate-y-4' : 'animate-dashboard-reveal'
-        }`}
+        className={`transition-all duration-400 ${animatingSubTab ? 'opacity-0 translate-y-4' : 'animate-dashboard-reveal'
+          }`}
       >
         {activeLeaveTab === 'attendance' && (
           <AttendanceTab

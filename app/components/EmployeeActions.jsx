@@ -42,3 +42,4 @@ export default function EmployeeActions({ row, onEdit, onDelete }) {
     </div>
   );
 }
+

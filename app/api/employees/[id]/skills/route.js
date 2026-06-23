@@ -3,7 +3,8 @@ import { updateEmployeeSkills } from '../../../../../lib/skillService.js';
 
 export async function PUT(req, { params }) {
   try {
-    const { id } = params;
+    const resolvedParams = await params;
+    const { id } = resolvedParams;
     const body = await req.json();
     const { skills, totalExperience, projectsDone } = body;
     const result = await updateEmployeeSkills(id, skills, {
@@ -14,7 +15,7 @@ export async function PUT(req, { params }) {
   } catch (error) {
     console.error('PUT employee skills error:', error);
     return NextResponse.json(
-      { error: 'Failed to update employee skills' },
+      { error: 'Failed to update employee skills', details: error.message },
       { status: 500 }
     );
   }

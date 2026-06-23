@@ -3,11 +3,15 @@
 import { useState } from 'react';
 import { uploadEmployeeDocument } from '../../../actions/uploadEmployeeDocument';
 import { deleteEmployeeDocument } from '../../../actions/deleteEmployeeDocument';
+import { uploadOtherDocument } from '../../../actions/uploadOtherDocument';
 import { Camera, CreditCard, IdCard, Trash2, UploadCloud, FileText, Loader2, Plus } from 'lucide-react';
 import { showSuccessToast, showErrorToast } from '../../Toast';
 
 /**
  * Reusable Document Upload Component
+ *
+ * @param {string}   empId        - The employee's empId (e.g. "EMP001"), used for S3 folder.
+ * @param {string}   documentType - "AADHAR" | "PAN" | "PROFILE_PHOTO"
  */
 function DocumentUpload({
   label,
@@ -16,7 +20,8 @@ function DocumentUpload({
   onRemove,
   isView,
   icon: Icon,
-  folder = 'employee-documents',
+  empId,
+  documentType,
   accept = "image/jpeg,image/png,image/webp,application/pdf"
 }) {
   const [uploading, setUploading] = useState(false);
@@ -30,8 +35,9 @@ function DocumentUpload({
     try {
       setUploading(true);
       setError('');
-      const url = await uploadEmployeeDocument(file, folder);
-      onUpload(url);
+      const result = await uploadEmployeeDocument(file, empId, documentType);
+      // store the pre-signed S3 URL in the form field for preview
+      onUpload(result.url);
       showSuccessToast(`${label} uploaded successfully`);
     } catch (err) {
       const msg = err.message || 'Upload failed';
@@ -47,7 +53,7 @@ function DocumentUpload({
     try {
       setRemoving(true);
       setError('');
-      await deleteEmployeeDocument(value);
+      await deleteEmployeeDocument(empId, documentType);
       onRemove();
       showSuccessToast(`${label} removed successfully`);
     } catch (err) {
@@ -59,7 +65,10 @@ function DocumentUpload({
     }
   };
 
+  // value is now an S3 key (e.g. "documents/EMP001/aadhar.pdf") or a legacy URL
   const isPDF = value?.toLowerCase().endsWith('.pdf');
+  // If value is a full https URL (legacy blob), use it directly; otherwise it's an S3 key (display as PDF icon or image key)
+  const isFullUrl = value?.startsWith('http://') || value?.startsWith('https://');
 
   return (
     <div className="flex flex-col gap-2">
@@ -76,10 +85,13 @@ function DocumentUpload({
       `}>
         {value ? (
           <div className="relative w-full h-full flex items-center justify-center group/img">
-            {isPDF ? (
+            {/* For S3 keys or PDFs, show a PDF icon. For legacy image URLs show the image. */}
+            {isPDF || !isFullUrl ? (
               <div className="flex flex-col items-center gap-2 p-4">
                 <FileText size={48} className="text-blue-500" />
-                <span className="text-xs text-blue-600 font-medium truncate max-w-[150px]">View Document</span>
+                <span className="text-xs text-blue-600 font-medium truncate max-w-[150px]">
+                  {isPDF ? 'View Document' : value.split('/').pop()}
+                </span>
               </div>
             ) : (
               <img src={value} alt={label} className="max-h-[140px] rounded-lg shadow-sm object-contain" />
@@ -97,13 +109,16 @@ function DocumentUpload({
               </button>
             )}
 
-            <a
-              href={value}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="absolute inset-0 z-0"
-              title="Open in new tab"
-            />
+            {/* For legacy full URLs, link directly. For S3 keys, no direct link (use signed URL via API). */}
+            {isFullUrl && (
+              <a
+                href={value}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="absolute inset-0 z-0"
+                title="Open in new tab"
+              />
+            )}
           </div>
         ) : (
           <div className="flex flex-col items-center text-center p-4">
@@ -117,7 +132,7 @@ function DocumentUpload({
             <p className="text-sm font-medium text-gray-600">
               {uploading ? 'Uploading...' : `Upload ${label}`}
             </p>
-            <p className="text-[11px] text-gray-400 mt-1.5">Max 5MB (JPG, PNG, PDF)</p>
+            <p className="text-[11px] text-gray-400 mt-1.5">Max 10MB (JPG, PNG, PDF)</p>
           </div>
         )}
 
@@ -135,10 +150,24 @@ function DocumentUpload({
   );
 }
 
-function PhotoSection({ form, setField, isView }) {
+/**
+ * PhotoSection — Employee Photos & Documents upload section.
+ *
+ * @param {object} form      - The form state object (from EmployeeForm).
+ * @param {function} setField - Setter to update individual form fields.
+ * @param {boolean} isView   - Read-only mode when true.
+ * @param {string} empId     - The employee's empId, required for S3 folder naming.
+ */
+function PhotoSection({ form, setField, isView, empId }) {
   const [newLabel, setNewLabel] = useState('');
   const [uploadingOther, setUploadingOther] = useState(false);
   const [selectedOtherFile, setSelectedOtherFile] = useState(null);
+
+  // empId can come from the form itself (edit mode) or via prop (view mode)
+  const resolvedEmpId = empId || form.empId || '';
+
+  // In "create new employee" flow, empId hasn't been assigned yet
+  const isCreateMode = !resolvedEmpId;
 
   const handleAddOtherDocument = async () => {
     if (!newLabel.trim()) {
@@ -152,7 +181,7 @@ function PhotoSection({ form, setField, isView }) {
 
     try {
       setUploadingOther(true);
-      const url = await uploadEmployeeDocument(selectedOtherFile, 'employee-other');
+      const url = await uploadOtherDocument(selectedOtherFile);
       const updatedProofs = [...(form.proofs || []), { label: newLabel, url }];
       setField('proofs', updatedProofs);
       setNewLabel('');
@@ -183,41 +212,56 @@ function PhotoSection({ form, setField, isView }) {
     <div className="space-y-6 mb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="bg-white p-5 rounded-2xl border border-gray-300 shadow-sm">
         <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
-          Employee Photos & Documents
+          Employee Photos &amp; Documents
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {isCreateMode && !isView && (
+            <div className="col-span-3 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3 mb-2">
+              <div className="p-1.5 bg-amber-100 rounded-lg text-amber-600 shrink-0">
+                <FileText size={16} />
+              </div>
+              <p className="text-xs text-amber-800 font-medium leading-relaxed">
+                <span className="font-bold">Documents can be uploaded after creating the employee.</span>
+                {' '}Please complete the other steps, click <strong>Create Employee</strong>, then reopen the employee to upload Aadhaar, PAN, and Profile Photo.
+              </p>
+            </div>
+          )}
           {/* Profile Photo */}
           <DocumentUpload
             label="Employee Photo"
             value={form.photo}
-            onUpload={(url) => setField('photo', url)}
+            onUpload={(key) => setField('photo', key)}
             onRemove={() => setField('photo', '')}
-            isView={isView}
+            isView={isView || isCreateMode}
             icon={Camera}
-            folder="employee-photos"
+            empId={resolvedEmpId}
+            documentType="PROFILE_PHOTO"
+            accept="image/jpeg,image/png,image/webp"
           />
 
           {/* Aadhaar Card */}
           <DocumentUpload
             label="Aadhaar Card"
             value={form.aadhaarCard}
-            onUpload={(url) => setField('aadhaarCard', url)}
+            onUpload={(key) => setField('aadhaarCard', key)}
             onRemove={() => setField('aadhaarCard', '')}
-            isView={isView}
+            isView={isView || isCreateMode}
             icon={IdCard}
-            folder="employee-aadhaar"
+            empId={resolvedEmpId}
+            documentType="AADHAR"
           />
 
           {/* PAN Card */}
           <DocumentUpload
             label="PAN Card"
             value={form.panCard}
-            onUpload={(url) => setField('panCard', url)}
+            onUpload={(key) => setField('panCard', key)}
             onRemove={() => setField('panCard', '')}
-            isView={isView}
+            isView={isView || isCreateMode}
             icon={CreditCard}
-            folder="employee-pan"
+            empId={resolvedEmpId}
+            documentType="PAN"
           />
         </div>
 
@@ -316,8 +360,8 @@ function PhotoSection({ form, setField, isView }) {
             <div>
               <h4 className="text-sm font-bold text-blue-800">Document Requirements</h4>
               <p className="text-xs text-blue-600 mt-1 leading-relaxed">
-                Please ensure all documents are clear and legible. Supported formats: JPG and PDF.
-                Maximum file size should not exceed 5MB per document.
+                Please ensure all documents are clear and legible. Supported formats: JPG, PNG and PDF.
+                Maximum file size should not exceed 10MB per document.
               </p>
             </div>
           </div>

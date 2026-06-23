@@ -3,9 +3,10 @@ import IconButton from '../../Buttons/IconButton';
 import CloseButton from '../../Buttons/CloseButton';
 import { showSuccessToast, showErrorToast } from '../../Toast';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import CustomTable from '../../CustomTable';
+import Pagination from '../../Pagination';
 import {
   SquarePen,
   Trash,
@@ -32,6 +33,10 @@ export default function AttendanceTab({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailedModalOpen, setIsDetailedModalOpen] = useState(false);
   const [isMonthDropdownOpen, setIsMonthDropdownOpen] = useState(false);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Initialize with current month and year
   const now = new Date();
@@ -480,6 +485,17 @@ export default function AttendanceTab({
     );
   });
 
+  // Reset pagination when filtered data length or selected month changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filteredData.length, selectedMonth]);
+
+  // Paginated data
+  const paginatedData = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredData.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredData, currentPage, itemsPerPage]);
+
   const columns = [
     { key: 'empId', label: 'Emp ID', className: 'font-medium text-gray-900' },
     { key: 'name', label: 'Name', className: 'text-gray-700' },
@@ -711,14 +727,27 @@ export default function AttendanceTab({
             <p className="text-sm mt-2">Mark attendance to see summary here.</p>
           </div>
         ) : (
-          <CustomTable
-            columns={columns}
-            data={filteredData}
-            rowKey="id"
-            actions={(row) => Actions(row)}
-            actionsHeader="Actions"
-            actionsAlign="right"
-          />
+          <div className="flex flex-col gap-4">
+            <CustomTable
+              columns={columns}
+              data={paginatedData}
+              rowKey="id"
+              actions={(row) => Actions(row)}
+              actionsHeader="Actions"
+              actionsAlign="right"
+            />
+            <Pagination
+              currentPage={currentPage}
+              totalItems={filteredData.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={(newVal) => {
+                setItemsPerPage(newVal);
+                setCurrentPage(1);
+              }}
+              rowsPerPageOptions={[5, 10, 20, 50, 100]}
+            />
+          </div>
         )}
         <div className="bg-gray-50 px-6 py-3 border-t border-gray-200 text-xs text-gray-500 flex gap-6">
           <span className="flex items-center gap-1">

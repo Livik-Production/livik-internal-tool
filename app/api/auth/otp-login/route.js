@@ -24,6 +24,9 @@ export async function POST(req) {
         },
         select: {
           id: true,
+          empId: true,
+          workType: true,
+          workMode: true,
           email: true,
           firstName: true,
           lastName: true,
@@ -84,6 +87,9 @@ export async function POST(req) {
     // 4. Session payload (MUST MATCH middleware expectations)
     const sessionPayload = {
       employeeId: employee.id,
+      empId: employee.empId || null,
+      workType: employee.workType || null,
+      workMode: employee.workMode || null,
       roleId: employee.role?.id,
       roleName: employee.role?.roleName,
       displayName: employee.role?.displayName,

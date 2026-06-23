@@ -232,15 +232,15 @@ const PreviewForm = ({
       </div> */}
 
       <div className="flex justify-center p-3 print:bg-white print:p-0 w-full no-scroll">
-        <div className="w-full border border-[#1f2937] bg-transparent text-sm">
+        <div className="w-full border border-[#1f2937] bg-white text-sm">
           <div className="flex">
             {/* Left Column */}
 
-            <div className="w-1/2 border-r border-[#1f2937] bg-transparent flex flex-col">
+            <div className="w-1/2 shrink-0 border-r border-[#1f2937] bg-white flex flex-col">
               {/* Top Box: Company Info */}
 
-              <div className="p-1.5 border-b border-[#1f2937]">
-                <div className="flex items-start gap-1.5 mb-1">
+              <div className="p-1.5">
+                <div className="flex flex-col items-start gap-2 mb-1">
                   <div className="shrink-0 mt-0">
                     <img
                       src="/asset/livik-logo.png"
@@ -286,11 +286,73 @@ const PreviewForm = ({
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Right Column */}
+
+            <div className="w-1/2 shrink-0 bg-white flex flex-col">
+              {/* Row 1 */}
+              <div className="flex border-b border-[#1f2937]">
+                <div className="w-1/2 shrink-0 p-1 border-r border-[#1f2937] min-h-[40px] flex items-center justify-center">
+                  <p className="text-[11.5px] text-[#374151] leading-tight break-words">
+                    Invoice No. :{' '}
+                    <span className="font-bold text-[#111827] text-xs">
+                      {invoiceNumber || 'INV-2024-001'}
+                    </span>
+                  </p>
+                </div>
+                <div className="w-1/2 shrink-0 p-1 min-h-[40px] flex items-center justify-center">
+                  <p className="text-[11.5px] text-[#374151] leading-tight break-words">
+                    Dated :{' '}
+                    <span className="font-bold text-[#111827] text-xs">
+                      {date
+                        ? new Date(date)
+                          .toLocaleDateString('en-IN', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: '2-digit',
+                          })
+                          .replace(/ /g, '-')
+                        : new Date()
+                          .toLocaleDateString('en-IN', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: '2-digit',
+                          })
+                          .replace(/ /g, '-')}
+                    </span>
+                  </p>
+                </div>
+              </div>
+
+              {/* LUT and Bond Info */}
+              {primaryCurrency === 'USD' && (
+                <div className="border-b border-[#1f2937] px-2.5 space-y-1 p-0.5 flex flex-col justify-center   min-h-[60px]">
+                  <p className="text-[11.5px] text-[#374151] leading-tight">
+                    Country:{' '}
+                    <span className="font-bold text-[#111827] text-xs">
+                      {companyDetails?.exportCountry || 'Malaysia'}
+                    </span>
+                  </p>
+                  <p className="text-[11.5px] text-[#374151] leading-tight">
+                    LUT/Bond No. :{' '}
+                    <span className="font-bold text-[#111827] text-xs">
+                      {companyDetails?.lutBondNo || 'AD330625001940G'}
+                    </span>
+                  </p>
+                  <p className="text-[11.5px] text-[#374151] leading-tight">
+                    From:{' '}
+                    <span className="font-bold text-[#111827] text-xs">
+                      {companyDetails?.lutValidFrom ? new Date(companyDetails.lutValidFrom).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-') : '01-04-2025'} to {companyDetails?.lutValidTo ? new Date(companyDetails.lutValidTo).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-') : '31-03-2026'}
+                    </span>
+                  </p>
+                </div>
+              )}
 
               {/* Bottom Box: Buyer Info */}
 
               <div className="p-2 px-2.5 flex-1 space-y-0.5">
-                <p className="text-[12px] text-[#1f2937] leading-tight">
+                <p className="text-[12px] text-[#1f2937] mb-0.5 leading-tight">
                   Buyer (Bill to)
                 </p>
 
@@ -298,17 +360,23 @@ const PreviewForm = ({
                   {client?.name || 'Buyers Company Name'}
                 </h2>
 
-                <p className="w-[85%] text-[12px] text-[#374151] leading-tight mt-1 break-words">
+                <p className="w-[65%] text-[12px] text-[#374151] leading-tight mt-1 break-words">
                   {client?.address || 'No. 8, Round Road'}
                 </p>
 
                 {client?.address2 && (
-                  <p className="w-[85%] text-[12px] text-[#374151] leading-tight break-words">
+                  <p className="w-[65%] text-[12px] text-[#374151] leading-tight break-words">
                     {client.address2}
                   </p>
                 )}
 
-                <div className="">
+                <div className="mt-1">
+                  <p className="text-[12px] text-[#374151] leading-tight flex">
+                    <span className="w-20">GSTIN/UIN</span>
+
+                    <span>: {client?.gstin || client?.gst || '123456'}</span>
+                  </p>
+
                   <p className="text-[12px] text-[#374151] leading-tight flex py-1">
                     <span className="w-20">State Name</span>
 
@@ -317,69 +385,11 @@ const PreviewForm = ({
                       {client?.stateCode ? `, Code : ${client.stateCode}` : ''}
                     </span>
                   </p>
-                  {clientGst && (
-                    <p className="text-[12px] text-[#374151] leading-tight flex mb-1">
-                      <span className="w-20">GSTIN/UIN</span>
-                      <span>: {clientGst}</span>
-                    </p>
-                  )}
-
-                  {clientCin && (
-                    <p className="text-[12px] text-[#374151] leading-tight flex mb-0">
-                      <span className="w-7">CIN</span>
-                      <span>: {clientCin}</span>
-                    </p>
-                  )}
-
-                  {!clientGst && !clientCin && (
-                    <p className="text-[12px] text-[#374151] leading-tight flex mb-0">
-                      <span className="w-20">GSTIN/UIN</span>
-                      <span>: N/A</span>
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Right Column */}
-
-            <div className="w-1/2 bg-transparent flex flex-col">
-              {/* Row 1 */}
-              <div className="flex border-b border-[#1f2937]">
-                <div className="w-1/2 p-1 border-r border-[#1f2937] min-h-[40px]">
-                  <p className="text-[11.5px] text-[#374151] leading-tight break-words">
-                    Invoice No. :{' '}
-                    <span className="font-bold text-[#111827] text-xs">
-                      {invoiceNumber || 'INV-2024-001'}
-                    </span>
-                  </p>
-                </div>
-                <div className="w-1/2 p-1 min-h-[40px]">
-                  <p className="text-[11.5px] text-[#374151] leading-tight break-words">
-                    Dated :{' '}
-                    <span className="font-bold text-[#111827] text-xs">
-                      {date
-                        ? new Date(date)
-                            .toLocaleDateString('en-IN', {
-                              day: '2-digit',
-                              month: 'short',
-                              year: '2-digit',
-                            })
-                            .replace(/ /g, '-')
-                        : new Date()
-                            .toLocaleDateString('en-IN', {
-                              day: '2-digit',
-                              month: 'short',
-                              year: '2-digit',
-                            })
-                            .replace(/ /g, '-')}
-                    </span>
-                  </p>
                 </div>
               </div>
 
               {/* Row 2 */}
-              <div className="flex border-b border-[#1f2937]">
+              {/* <div className="flex border-b border-[#1f2937]">
                 <div className="w-1/2 p-1 border-r border-[#1f2937] min-h-[40px]">
                   <p className="text-[11.5px] text-[#374151] leading-tight break-words">
                     Delivery Note :{' '}
@@ -392,10 +402,10 @@ const PreviewForm = ({
                     <span className="font-bold text-[#111827] text-xs"></span>
                   </p>
                 </div>
-              </div>
+              </div> */}
 
               {/* Row 3 */}
-              <div className="flex border-b border-[#1f2937]">
+              {/* <div className="flex border-b border-[#1f2937]">
                 <div className="w-1/2 p-1 border-r border-[#1f2937] min-h-[40px]">
                   <p className="text-[11.5px] text-[#374151] leading-tight break-words">
                     Reference No. & Date. :{' '}
@@ -408,10 +418,10 @@ const PreviewForm = ({
                     <span className="font-bold text-[#111827] text-xs"></span>
                   </p>
                 </div>
-              </div>
+              </div> */}
 
               {/* Row 4 */}
-              <div className="flex border-b border-[#1f2937]">
+              {/* <div className="flex border-b border-[#1f2937]">
                 <div className="w-1/2 p-1 border-r border-[#1f2937] min-h-[40px]">
                   <p className="text-[11.5px] text-[#374151] leading-tight break-words">
                     Buyer's Order No. :{' '}
@@ -424,10 +434,10 @@ const PreviewForm = ({
                     <span className="font-bold text-[#111827] text-xs"></span>
                   </p>
                 </div>
-              </div>
+              </div> */}
 
               {/* Row 5 */}
-              <div className="flex border-b border-[#1f2937]">
+              {/* <div className="flex border-b border-[#1f2937]">
                 <div className="w-1/2 p-1 border-r border-[#1f2937] min-h-[40px]">
                   <p className="text-[11.5px] text-[#374151] leading-tight break-words">
                     Dispatch Doc No. :{' '}
@@ -440,10 +450,10 @@ const PreviewForm = ({
                     <span className="font-bold text-[#111827] text-xs"></span>
                   </p>
                 </div>
-              </div>
+              </div> */}
 
               {/* Row 6 */}
-              <div className="flex border-b border-[#1f2937]">
+              {/* <div className="flex border-b border-[#1f2937]">
                 <div className="w-1/2 p-1 border-r border-[#1f2937] min-h-[40px]">
                   <p className="text-[11.5px] text-[#374151] leading-tight break-words">
                     Dispatched through :{' '}
@@ -456,15 +466,15 @@ const PreviewForm = ({
                     <span className="font-bold text-[#111827] text-xs"></span>
                   </p>
                 </div>
-              </div>
+              </div> */}
 
-              {/* Row 7 */}
+              {/* Row 7
               <div className="flex-1 p-1 min-h-[70px]">
                 <p className="text-[11.5px] text-[#374151] leading-tight break-words">
                   Terms of Delivery :{' '}
                   <span className="font-bold text-[#111827] text-xs"></span>
                 </p>
-              </div>
+              </div> */}
             </div>
           </div>
           {/* ITEMS TABLE */}
@@ -472,7 +482,7 @@ const PreviewForm = ({
             {/* Table Header */}
 
             <div className="flex border-b border-[#1f2937] h-8">
-              <div className="w-12 border-r border-[#1f2937] p-1 text-[11px] font-semibold flex flex-col justify-center items-center text-center whitespace-nowrap">
+              <div className="w-12 shrink-0 border-r border-[#1f2937] p-1 text-[11px] font-semibold flex flex-col justify-center items-center text-center whitespace-nowrap">
                 <div style={{ textAlign: 'center', width: '100%' }}>Sl No.</div>
               </div>
               <div className="flex-1 border-r border-[#1f2937] p-1 text-[11px] font-semibold flex flex-col justify-center items-center text-center">
@@ -480,19 +490,19 @@ const PreviewForm = ({
                   Particulars
                 </div>
               </div>
-              <div className="w-24 border-r border-[#1f2937] p-1 text-[11px] font-semibold flex flex-col justify-center items-center text-center">
+              <div className="w-24 shrink-0 border-r border-[#1f2937] p-1 text-[11px] font-semibold flex flex-col justify-center items-center text-center">
                 <div style={{ textAlign: 'center', width: '100%' }}>
                   HSN/SAC
                 </div>
               </div>
-              <div className="w-28 p-1 text-[11px] font-semibold flex flex-col justify-center items-center text-center">
+              <div className="w-28 shrink-0 p-1 text-[11px] font-semibold flex flex-col justify-center items-center text-center">
                 <div style={{ textAlign: 'center', width: '100%' }}>Amount</div>
               </div>
             </div>
 
             {/* Table Body */}
 
-            <div className="flex flex-col min-h-[300px]">
+            <div className="flex flex-col min-h-[240px]">
               {products?.map((product, index) => {
                 const descriptionLines = (product.description || '')
 
@@ -502,7 +512,7 @@ const PreviewForm = ({
 
                 return (
                   <div key={index} className="flex">
-                    <div className="w-12 border-r border-[#1f2937] p-1 pt-2 text-center text-xs">
+                    <div className="w-12 shrink-0 border-r border-[#1f2937] p-1 pt-2 text-center text-xs">
                       {index + 1}
                     </div>
 
@@ -521,11 +531,11 @@ const PreviewForm = ({
                       ))}
                     </div>
 
-                    <div className="w-24 border-r border-[#1f2937] p-1 pt-2 text-center text-[11px] text-[#374151]">
+                    <div className="w-24 shrink-0 border-r border-[#1f2937] p-1 pt-2 text-center text-[11px] text-[#374151]">
                       {product.hsn || product.hsnCode || '12345'}
                     </div>
 
-                    <div className="w-28 p-1 pt-2 text-right text-[12px] font-bold text-[#111827] pr-4">
+                    <div className="w-28 shrink-0 p-1 pt-2 text-center text-[12px] font-bold text-[#111827] pr-4">
                       {Number(
                         product.price || product.amount || 0
                       ).toLocaleString('en-IN', {
@@ -537,35 +547,35 @@ const PreviewForm = ({
                   </div>
                 );
               }) || (
-                <div className="flex">
-                  <div className="w-12 border-r border-[#1f2937] p-1 pt-2 text-center text-xs whitespace-nowrap">
-                    1
-                  </div>
-
-                  <div className="flex-1 border-r border-[#1f2937] p-1 pt-2 px-2">
-                    <div className="font-bold text-[13px] text-[#111827] leading-tight">
-                      Information technology (IT) consulting and support
-                      services
+                  <div className="flex">
+                    <div className="w-12 border-r border-[#1f2937] p-1 pt-2 text-center text-xs whitespace-nowrap">
+                      1
                     </div>
 
-                    <div className="text-[11px] text-[#374151] italic leading-tight mt-0.5">
-                      Web development for Oct-2025
+                    <div className="flex-1 border-r border-[#1f2937] p-1 pt-2 px-2">
+                      <div className="font-bold text-[13px] text-[#111827] leading-tight">
+                        Information technology (IT) consulting and support
+                        services
+                      </div>
+
+                      <div className="text-[11px] text-[#374151] italic leading-tight mt-0.5">
+                        Web development for Oct-2025
+                      </div>
+
+                      <div className="text-[11px] text-[#374151] leading-tight mt-0.5">
+                        Kamesh (1,20,000 / 20*18)
+                      </div>
                     </div>
 
-                    <div className="text-[11px] text-[#374151] leading-tight mt-0.5">
-                      Kamesh (1,20,000 / 20*18)
+                    <div className="w-24 border-r border-[#1f2937] p-1 pt-2 text-center text-[11px] text-[#374151]">
+                      998313
+                    </div>
+
+                    <div className="w-28 p-1 pt-2 text-center text-[12px] font-bold text-[#111827] pr-4">
+                      1,08,000.00
                     </div>
                   </div>
-
-                  <div className="w-24 border-r border-[#1f2937] p-1 pt-2 text-center text-[11px] text-[#374151]">
-                    998313
-                  </div>
-
-                  <div className="w-28 p-1 pt-2 text-right text-[12px] font-bold text-[#111827] pr-4">
-                    1,08,000.00
-                  </div>
-                </div>
-              )}
+                )}
 
               {/* Taxes (directly below items) */}
 
@@ -575,101 +585,101 @@ const PreviewForm = ({
                 (!cgstAmount &&
                   !sgstAmount &&
                   totalAmountWithGST > totalAmount)) && (
-                <div className="flex">
-                  <div className="w-12 border-r border-[#1f2937]"></div>
+                  <div className="flex">
+                    <div className="w-12 border-r border-[#1f2937]"></div>
 
-                  <div className="flex-1 border-r border-[#1f2937] p-1 px-2 pt-6 flex flex-col items-end pr-4">
-                    {discountAmount > 0 && (
-                      <div className="font-bold text-[12px] text-[#111827]">
-                        Discount{' '}
-                        {discountType === 'percentage'
-                          ? `(${discountValue}%)`
-                          : ''}
-                      </div>
-                    )}
-
-                    {cgstAmount > 0 && (
-                      <div className="font-bold text-[12px] text-[#111827] mt-1">
-                        Output CGST {cgstRate}%
-                      </div>
-                    )}
-
-                    {sgstAmount > 0 && (
-                      <div className="font-bold text-[12px] text-[#111827] mt-1">
-                        Output SGST {sgstRate}%
-                      </div>
-                    )}
-
-                    {!cgstAmount &&
-                      !sgstAmount &&
-                      totalAmountWithGST > totalAmount && (
-                        <div className="font-bold text-[12px] text-[#111827] mt-1">
-                          Output IGST 18%
+                    <div className="flex-1 border-r border-[#1f2937] p-1 px-2 pt-6 flex flex-col items-end pr-4">
+                      {discountAmount > 0 && (
+                        <div className="font-bold text-[12px] text-[#111827]">
+                          Discount{' '}
+                          {discountType === 'percentage'
+                            ? `(${discountValue}%)`
+                            : ''}
                         </div>
                       )}
-                  </div>
 
-                  <div className="w-24 border-r border-[#1f2937]"></div>
+                      {cgstAmount > 0 && (
+                        <div className="font-bold text-[12px] text-[#111827] mt-1">
+                          Output CGST {cgstRate}%
+                        </div>
+                      )}
 
-                  <div className="w-28 p-1 px-2 pt-6 text-right flex flex-col font-bold text-[12px] text-[#111827] pr-4">
-                    {discountAmount > 0 && (
-                      <div className="text-[#dc2626]">
-                        -{' '}
-                        {Number(discountAmount).toLocaleString('en-IN', {
-                          minimumFractionDigits: 2,
+                      {sgstAmount > 0 && (
+                        <div className="font-bold text-[12px] text-[#111827] mt-1">
+                          Output SGST {sgstRate}%
+                        </div>
+                      )}
 
-                          maximumFractionDigits: 2,
-                        })}
-                      </div>
-                    )}
+                      {!cgstAmount &&
+                        !sgstAmount &&
+                        totalAmountWithGST > totalAmount && (
+                          <div className="font-bold text-[12px] text-[#111827] mt-1">
+                            Output IGST 18%
+                          </div>
+                        )}
+                    </div>
 
-                    {cgstAmount > 0 && (
-                      <div className="mt-1">
-                        {Number(cgstAmount).toLocaleString('en-IN', {
-                          minimumFractionDigits: 2,
+                    <div className="w-24 border-r border-[#1f2937]"></div>
 
-                          maximumFractionDigits: 2,
-                        })}
-                      </div>
-                    )}
-
-                    {sgstAmount > 0 && (
-                      <div className="mt-1">
-                        {Number(sgstAmount).toLocaleString('en-IN', {
-                          minimumFractionDigits: 2,
-
-                          maximumFractionDigits: 2,
-                        })}
-                      </div>
-                    )}
-
-                    {!cgstAmount &&
-                      !sgstAmount &&
-                      totalAmountWithGST > totalAmount && (
-                        <div className="mt-1">
-                          {Number(
-                            totalAmountWithGST - totalAmount
-                          ).toLocaleString('en-IN', {
+                    <div className="w-28 p-1 px-2 pt-6 text-right flex flex-col font-bold text-[12px] text-[#111827] pr-4">
+                      {discountAmount > 0 && (
+                        <div className="text-[#dc2626]">
+                          -{' '}
+                          {Number(discountAmount).toLocaleString('en-IN', {
                             minimumFractionDigits: 2,
 
                             maximumFractionDigits: 2,
                           })}
                         </div>
                       )}
+
+                      {cgstAmount > 0 && (
+                        <div className="mt-1">
+                          {Number(cgstAmount).toLocaleString('en-IN', {
+                            minimumFractionDigits: 2,
+
+                            maximumFractionDigits: 2,
+                          })}
+                        </div>
+                      )}
+
+                      {sgstAmount > 0 && (
+                        <div className="mt-1">
+                          {Number(sgstAmount).toLocaleString('en-IN', {
+                            minimumFractionDigits: 2,
+
+                            maximumFractionDigits: 2,
+                          })}
+                        </div>
+                      )}
+
+                      {!cgstAmount &&
+                        !sgstAmount &&
+                        totalAmountWithGST > totalAmount && (
+                          <div className="mt-1">
+                            {Number(
+                              totalAmountWithGST - totalAmount
+                            ).toLocaleString('en-IN', {
+                              minimumFractionDigits: 2,
+
+                              maximumFractionDigits: 2,
+                            })}
+                          </div>
+                        )}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {/* Filler space to push Total to bottom, maintaining column borders */}
 
               <div className="flex flex-1 min-h-[100px]">
-                <div className="w-12 border-r border-[#1f2937]"></div>
+                <div className="w-12 shrink-0 border-r border-[#1f2937]"></div>
 
                 <div className="flex-1 border-r border-[#1f2937]"></div>
 
-                <div className="w-24 border-r border-[#1f2937]"></div>
+                <div className="w-24 shrink-0 border-r border-[#1f2937]"></div>
 
-                <div className="w-28"></div>
+                <div className="w-28 shrink-0"></div>
               </div>
             </div>
 
@@ -680,10 +690,10 @@ const PreviewForm = ({
                 Total
               </div>
 
-              <div className="w-24 border-r border-[#1f2937] p-1"></div>
+              <div className="w-24 shrink-0 border-r border-[#1f2937] p-1"></div>
 
               <div className="w-28 p-1 px-2 font-bold text-[13px] text-[#111827] flex justify-between items-center">
-                <span>{primaryCurrency === 'INR' ? '₹' : primaryCurrency}</span>
+                <span>{primaryCurrency === 'INR' ? '₹' : primaryCurrency === 'USD' ? '$' : primaryCurrency}</span>
 
                 <span className="pr-2">
                   {Number(totalAmountWithGST || 499140).toLocaleString(
@@ -717,32 +727,32 @@ const PreviewForm = ({
             </div>
           )}{' '}
           {/* TAX TABLE */}
-          <div className="w-full border-b border-[#1f2937] border-t-0 bg-transparent">
+          <div className="w-full border-b border-[#1f2937] border-t-0 bg-white">
             {/* Table Header */}
 
             <div className="border-b border-[#1f2937]">
               {/* First Header Row */}
 
-              <div className="flex">
+              <div className="flex items-stretch">
                 <div className="flex-1 border-r border-[#1f2937] p-1 text-center text-[11px] font-semibold flex items-center justify-center min-h-[40px]">
-                  HSN/SAC
+
                 </div>
 
-                <div className="w-24 border-r border-[#1f2937] flex items-center justify-center text-center text-[11px] font-semibold p-1 leading-tight px-2">
-                  Taxable Value
+                <div className="w-24 shrink-0 border-r border-[#1f2937] flex items-center justify-center text-center text-[11px] font-semibold p-1 leading-tight px-2">
+                  Taxable <br /> Value
                 </div>
 
                 {cgstAmount > 0 || sgstAmount > 0 ? (
                   <>
                     {/* CGST */}
 
-                    <div className="w-32 border-r border-[#1f2937] flex flex-col text-center text-[11px] font-semibold">
+                    <div className="w-32 shrink-0 border-r border-[#1f2937] flex flex-col text-center text-[11px] font-semibold">
                       <div className="border-b border-[#1f2937] flex-1 flex items-center justify-center p-1">
                         CGST
                       </div>
 
                       <div className="flex flex-1">
-                        <div className="w-12 border-r border-[#1f2937] flex items-center justify-center p-1">
+                        <div className="w-12 shrink-0 border-r border-[#1f2937] flex items-center justify-center p-1">
                           Rate
                         </div>
 
@@ -754,13 +764,13 @@ const PreviewForm = ({
 
                     {/* SGST */}
 
-                    <div className="w-32 border-r border-[#1f2937] flex flex-col text-center text-[11px] font-semibold">
+                    <div className="w-32 shrink-0 border-r border-[#1f2937] flex flex-col text-center text-[11px] font-semibold">
                       <div className="border-b border-[#1f2937] flex-1 flex items-center justify-center p-1">
                         SGST
                       </div>
 
                       <div className="flex flex-1">
-                        <div className="w-12 border-r border-[#1f2937] flex items-center justify-center p-1">
+                        <div className="w-12 shrink-0 border-r border-[#1f2937] flex items-center justify-center p-1">
                           Rate
                         </div>
 
@@ -774,13 +784,13 @@ const PreviewForm = ({
                   <>
                     {/* IGST */}
 
-                    <div className="w-32 border-r border-[#1f2937] flex flex-col text-center text-[11px] font-semibold">
+                    <div className="w-32 shrink-0 border-r border-[#1f2937] flex flex-col text-center text-[11px] font-semibold">
                       <div className="border-b border-[#1f2937] flex-1 flex items-center justify-center p-1">
                         IGST
                       </div>
 
                       <div className="flex flex-1">
-                        <div className="w-12 border-r border-[#1f2937] flex items-center justify-center p-1">
+                        <div className="w-12 shrink-0 border-r border-[#1f2937] flex items-center justify-center p-1">
                           Rate
                         </div>
 
@@ -792,132 +802,13 @@ const PreviewForm = ({
                   </>
                 )}
 
-                <div className="w-24 flex items-center justify-center text-center text-[11px] font-semibold p-1 leading-tight px-2">
-                  Total Tax Amount
+                <div className="w-24 shrink-0 flex items-center justify-center text-center text-[11px] font-semibold p-1 leading-tight px-2">
+                  Total Tax <br /> Amount
                 </div>
               </div>
             </div>
 
-            {/* Table Body */}
-
-            <div>
-              {products?.map((product, index) => {
-                const productTaxable = product.price || product.amount || 0;
-
-                return (
-                  <div
-                    key={index}
-                    className="flex border-b border-[#1f2937] min-h-[30px] text-[11px] text-[#111827]"
-                  >
-                    <div className="flex-1 border-r border-[#1f2937] p-1 flex items-center pl-2">
-                      {product.hsn || product.hsnCode || '12345'}
-                    </div>
-
-                    <div className="w-24 border-r border-[#1f2937] p-1 text-right flex items-center justify-end pr-2">
-                      {formatCurrency(
-                        productTaxable,
-
-                        product.currency || 'INR'
-                      ).replace(/[^0-9.,]/g, '')}
-                    </div>
-
-                    {cgstAmount > 0 || sgstAmount > 0 ? (
-                      <>
-                        <div className="w-32 border-r border-[#1f2937] flex">
-                          <div className="w-12 border-r border-[#1f2937] p-1 flex items-center justify-center">
-                            {cgstRate || 9}%
-                          </div>
-
-                          <div className="flex-1 p-1 text-right flex items-center justify-end pr-2">
-                            {Number(
-                              (productTaxable * (cgstRate || 9)) / 100
-                            ).toLocaleString('en-IN', {
-                              minimumFractionDigits: 2,
-
-                              maximumFractionDigits: 2,
-                            })}
-                          </div>
-                        </div>
-
-                        <div className="w-32 border-r border-[#1f2937] flex">
-                          <div className="w-12 border-r border-[#1f2937] p-1 flex items-center justify-center">
-                            {sgstRate || 9}%
-                          </div>
-
-                          <div className="flex-1 p-1 text-right flex items-center justify-end pr-2">
-                            {Number(
-                              (productTaxable * (sgstRate || 9)) / 100
-                            ).toLocaleString('en-IN', {
-                              minimumFractionDigits: 2,
-
-                              maximumFractionDigits: 2,
-                            })}
-                          </div>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="w-32 border-r border-[#1f2937] flex">
-                        <div className="w-12 border-r border-[#1f2937] p-1 flex items-center justify-center">
-                          18%
-                        </div>
-
-                        <div className="flex-1 p-1 text-right flex items-center justify-end pr-2">
-                          {Number((productTaxable * 18) / 100).toLocaleString(
-                            'en-IN',
-
-                            {
-                              minimumFractionDigits: 2,
-
-                              maximumFractionDigits: 2,
-                            }
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="w-24 p-1 text-right flex items-center justify-end pr-2">
-                      {Number(
-                        (productTaxable *
-                          (cgstAmount > 0 || sgstAmount > 0
-                            ? (cgstRate || 9) + (sgstRate || 9)
-                            : 18)) /
-                          100
-                      ).toLocaleString('en-IN', {
-                        minimumFractionDigits: 2,
-
-                        maximumFractionDigits: 2,
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-
-              {(!products || products.length === 0) && (
-                <div className="flex border-b border-[#1f2937] min-h-[30px] text-[11px] text-[#111827]">
-                  <div className="flex-1 border-r border-[#1f2937] p-1 flex items-center pl-2">
-                    998313
-                  </div>
-
-                  <div className="w-24 border-r border-[#1f2937] p-1 text-right flex items-center justify-end pr-2">
-                    4,23,000.00
-                  </div>
-
-                  <div className="w-32 border-r border-[#1f2937] flex">
-                    <div className="w-12 border-r border-[#1f2937] p-1 flex items-center justify-center">
-                      18%
-                    </div>
-
-                    <div className="flex-1 p-1 text-right flex items-center justify-end pr-2">
-                      76,140.00
-                    </div>
-                  </div>
-
-                  <div className="w-24 p-1 text-right flex items-center justify-end pr-2">
-                    76,140.00
-                  </div>
-                </div>
-              )}
-            </div>
+            {/* Table Body - Removed individual items to only show total */}
 
             {/* Table Footer */}
 
@@ -926,7 +817,7 @@ const PreviewForm = ({
                 Total
               </div>
 
-              <div className="w-24 border-r border-[#1f2937] p-1 text-right flex items-center justify-end pr-2">
+              <div className="w-24 shrink-0 border-r border-[#1f2937] p-1 text-right flex items-center justify-end pr-2">
                 {formatCurrency(
                   subtotalAfterDiscount || totalAmount || 423000,
 
@@ -936,8 +827,10 @@ const PreviewForm = ({
 
               {cgstAmount > 0 || sgstAmount > 0 ? (
                 <>
-                  <div className="w-32 border-r border-[#1f2937] flex">
-                    <div className="w-12 border-r border-[#1f2937] p-1"></div>
+                  <div className="w-32 shrink-0 border-r border-[#1f2937] flex">
+                    <div className="w-12 shrink-0 border-r border-[#1f2937] p-1 flex items-center justify-center">
+                      {cgstRate || 9}%
+                    </div>
 
                     <div className="flex-1 p-1 text-right flex items-center justify-end pr-2">
                       {formatCurrency(cgstAmount || 0, primaryCurrency).replace(
@@ -948,8 +841,10 @@ const PreviewForm = ({
                     </div>
                   </div>
 
-                  <div className="w-32 border-r border-[#1f2937] flex">
-                    <div className="w-12 border-r border-[#1f2937] p-1"></div>
+                  <div className="w-32 shrink-0 border-r border-[#1f2937] flex">
+                    <div className="w-12 shrink-0 border-r border-[#1f2937] p-1 flex items-center justify-center">
+                      {sgstRate || 9}%
+                    </div>
 
                     <div className="flex-1 p-1 text-right flex items-center justify-end pr-2">
                       {formatCurrency(sgstAmount || 0, primaryCurrency).replace(
@@ -961,8 +856,10 @@ const PreviewForm = ({
                   </div>
                 </>
               ) : (
-                <div className="w-32 border-r border-[#1f2937] flex">
-                  <div className="w-12 border-r border-[#1f2937] p-1"></div>
+                <div className="w-32 shrink-0 border-r border-[#1f2937] flex">
+                  <div className="w-12 shrink-0 border-r border-[#1f2937] p-1 flex items-center justify-center">
+                    18%
+                  </div>
 
                   <div className="flex-1 p-1 text-right flex items-center justify-end pr-2">
                     {formatCurrency(
@@ -974,7 +871,7 @@ const PreviewForm = ({
                 </div>
               )}
 
-              <div className="w-24 p-1 text-right flex items-center justify-end pr-2">
+              <div className="w-24 shrink-0 p-1 text-right flex items-center justify-end pr-2">
                 {formatCurrency(
                   cgstAmount > 0 || sgstAmount > 0
                     ? (cgstAmount || 0) + (sgstAmount || 0)
@@ -986,7 +883,7 @@ const PreviewForm = ({
             </div>
           </div>
           {/* TAX AMOUNT IN WORDS */}
-          <div className="w-full border-b border-[#1f2937] py-2 px-2 bg-transparent text-[10px] text-[#374151] flex items-center">
+          <div className="w-full border-b border-[#1f2937] py-2 px-2 bg-white text-[10px] text-[#374151] flex items-center">
             <span className="mr-2">Tax Amount (in words) :</span>
 
             <span className="font-bold text-[#111827]">
@@ -1060,13 +957,24 @@ const PreviewForm = ({
                 </div>
 
                 <div className="flex mt-0.5">
-                  <span className="w-32">Branch & IFSC Code</span>
+                  <span className="w-32">Branch </span>
+
+                  <span className="font-bold">
+                    :{' '}
+                    {companyDetails?.branchName
+                      ? `${companyDetails.branchName}`
+                      : 'RM Colony, Dindigul'}
+                  </span>
+                </div>
+
+                <div className="flex mt-0.5">
+                  <span className="w-32">IFSC Code </span>
 
                   <span className="font-bold">
                     :{' '}
                     {companyDetails?.ifscCode
                       ? `${companyDetails.ifscCode}`
-                      : 'RM Colony, Dindigul & HDFC000053'}
+                      : 'HDFC000053'}
                   </span>
                 </div>
 
@@ -1093,26 +1001,6 @@ const PreviewForm = ({
             </div>
           </div>
         </div>
-
-        {/* PRINT SETTINGS */}
-
-        <style jsx global>{`
-          @media print {
-            body {
-              background: white;
-
-              -webkit-print-color-adjust: exact;
-
-              print-color-adjust: exact;
-            }
-
-            @page {
-              size: A4;
-
-              margin: 20mm;
-            }
-          }
-        `}</style>
       </div>
 
       <div className="text-center text-[11px] text-[#1f2937] py-2">
@@ -1121,5 +1009,5 @@ const PreviewForm = ({
     </div>
   );
 };
-
 export default PreviewForm;
+// export default PreviewForm;

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import CustomTable from '../../../components/CustomTable';
 import Button from '../../../components/Buttons/Button';
 import Loader from '../../../components/Loader'; // ✅ ADD THIS
@@ -14,6 +15,7 @@ import { useMemo } from 'react';
 import HyperlinkButton from '../../../components/Buttons/HyperlinkButton';
 
 const CustomersTable = () => {
+  const router = useRouter();
   const [customers, setCustomers] = useState([]);
   const [isLoading, setIsLoading] = useState(true); // ✅ START AS true
   const [searchTerm, setSearchTerm] = useState('');
@@ -167,7 +169,7 @@ const CustomersTable = () => {
       className: 'text-left',
       render: (row) => (
         <HyperlinkButton
-          onClick={() => openViewModal(row)}
+          onClick={() => router.push(`/dashboard/admin/customer/${row.id}`)}
           title="click to view customer details"
         >
           {row.id.slice(0, 6)}
@@ -200,11 +202,13 @@ const CustomersTable = () => {
       label: 'Address',
       className: 'text-center',
       render: (row) => (
-        <div className="text-center">
-          <div className="font-medium text-gray-900">
+        <div className="text-center max-w-[200px] mx-auto">
+          <div className="font-medium text-gray-900 line-clamp-1">
             {row.city}, {row.state}
           </div>
-          <div className="text-xs text-gray-500">{row.address1}</div>
+          <div className="text-xs text-gray-500 line-clamp-1" title={row.address1}>
+            {row.address1}
+          </div>
         </div>
       ),
     },
@@ -231,6 +235,27 @@ const CustomersTable = () => {
           </div>
         </div>
       ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      className: 'text-center',
+      render: (row) => {
+        const isActive = row.status?.toLowerCase() !== 'inactive';
+        return (
+          <div className="flex justify-center">
+            <span
+              className={`px-3 py-1 rounded-full text-xs font-medium ${
+                isActive
+                  ? 'bg-green-100 text-green-700'
+                  : 'bg-red-100 text-red-700'
+              }`}
+            >
+              {isActive ? 'Active' : 'Inactive'}
+            </span>
+          </div>
+        );
+      },
     },
   ];
 

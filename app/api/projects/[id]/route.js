@@ -3,7 +3,7 @@ import { updateProject, deleteProject } from '../../../../lib/projectService';
 
 export async function PUT(req, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await req.json();
     const updatedProject = await updateProject(id, body);
     return NextResponse.json(updatedProject);
@@ -18,7 +18,7 @@ export async function PUT(req, { params }) {
 
 export async function DELETE(req, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     await deleteProject(id);
     return NextResponse.json({ message: 'Project deleted successfully' });
   } catch (error) {

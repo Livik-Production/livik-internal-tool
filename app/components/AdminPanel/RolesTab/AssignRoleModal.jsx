@@ -66,9 +66,15 @@ export default function AssignRoleModal({
     if (formData.employeeId.trim()) {
       const query = formData.employeeId.toLowerCase();
       const filtered = employees.filter(
-        (emp) =>
-          (emp.id || '').toLowerCase().includes(query) ||
-          (emp.name || '').toLowerCase().includes(query)
+        (emp) => {
+          const statusUpper = (emp.status || emp.__raw?.status || '').toUpperCase();
+          const isPending = statusUpper === 'PENDING' || statusUpper === 'PENDING_ADMIN';
+          if (isPending) return false;
+          return (
+            (emp.id || '').toLowerCase().includes(query) ||
+            (emp.name || '').toLowerCase().includes(query)
+          );
+        }
       );
       setFilteredEmployees(filtered);
       setShowSuggestions(filtered.length > 0);

@@ -34,6 +34,10 @@ export async function PUT(request) {
       accountNumber,
       ifscCode,
       swiftCode,
+      exportCountry,
+      lutBondNo,
+      lutValidFrom,
+      lutValidTo,
     } = body;
 
     // Validate required fields
@@ -75,6 +79,10 @@ export async function PUT(request) {
       accountNumber: accountNumber || null,
       ifscCode: ifscCode || null,
       swiftCode: swiftCode || null,
+      exportCountry: exportCountry || null,
+      lutBondNo: lutBondNo || null,
+      lutValidFrom: lutValidFrom ? new Date(lutValidFrom) : null,
+      lutValidTo: lutValidTo ? new Date(lutValidTo) : null,
     };
 
     if (existingDetail) {

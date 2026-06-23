@@ -8,7 +8,7 @@ import {
   CheckCircle,
   X,
 } from 'lucide-react';
-import { handleDownloadInvoicePDF } from './DownloadInvoicePDF';
+
 import Button from '../../Buttons/Button';
 import PrimaryButton from '../../Buttons/PrimaryButton';
 import CloseButton from '../../Buttons/CloseButton';

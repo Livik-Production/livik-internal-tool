@@ -9,7 +9,7 @@ out/
 /lib/generated/prisma
 
 # env files
-# .env
+.env
 
 
 .next/

@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import CustomTable from '../../../components/CustomTable';
 import Button from '../../Buttons/Button';
 import IconButton from '../../Buttons/IconButton';
+import Loader from '../../Loader';
 import {
   SquarePen,
   Trash,
@@ -11,11 +12,164 @@ import {
   Search,
   SortAsc,
   SortDesc,
+  PieChart,
+  BarChart2,
+  TrendingUp,
 } from 'lucide-react';
 import CustomAlertForm from '../../../components/CustomAlertForm';
 import Pagination from '../../../components/Pagination';
 import { showSuccessToast, showErrorToast } from '../../../components/Toast';
 import FilterDropdown from '../../Buttons/FilterDropdown';
+
+function DonutChart({ data }) {
+  const total = React.useMemo(() => data.reduce((sum, item) => sum + item.value, 0), [data]);
+  let accumulatedAngle = 0;
+
+  if (total === 0) {
+    return (
+      <div className="flex items-center justify-center w-full h-40 text-gray-400 italic text-xs border-2 border-dashed border-gray-100 rounded-xl bg-gray-50/30">
+        No expense data to display
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col sm:flex-row items-center gap-6 w-full h-full">
+      <div className="relative w-36 h-36 flex-shrink-0 animate-in fade-in zoom-in duration-300">
+        <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
+          {data.map((item, index) => {
+            const percentage = (item.value / total) * 100;
+            if (percentage === 0) return null;
+            const angle = (percentage / 100) * 360;
+            const largeArcFlag = angle > 180 ? 1 : 0;
+
+            const x1 = 50 + 40 * Math.cos((accumulatedAngle * Math.PI) / 180);
+            const y1 = 50 + 40 * Math.sin((accumulatedAngle * Math.PI) / 180);
+
+            const x2 = 50 + 40 * Math.cos(((accumulatedAngle + angle) * Math.PI) / 180);
+            const y2 = 50 + 40 * Math.sin(((accumulatedAngle + angle) * Math.PI) / 180);
+
+            const path = [
+              `M 50 50`,
+              `L ${x1} ${y1}`,
+              `A 40 40 0 ${largeArcFlag} 1 ${x2} ${y2}`,
+              `Z`,
+            ].join(' ');
+
+            accumulatedAngle += angle;
+
+            return (
+              <path
+                key={index}
+                d={path}
+                fill={item.color}
+                stroke="white"
+                strokeWidth="1.5"
+                className="hover:opacity-90 transition-all duration-300 cursor-pointer"
+              >
+                <title>{`${item.name}: ₹${item.value.toLocaleString()} (${item.percentage.toFixed(1)}%)`}</title>
+              </path>
+            );
+          })}
+          <circle cx="50" cy="50" r="26" fill="white" />
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="text-center">
+            <p className="text-[9px] text-gray-400 uppercase font-black tracking-wider mb-0.5">
+              Total
+            </p>
+            <p className="text-xs font-black text-gray-900 leading-none font-bold">
+              ₹{total >= 100000 ? `${(total / 100000).toFixed(1)}L` : total >= 1000 ? `${Math.round(total / 1000)}k` : total.toLocaleString()}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex-grow w-full max-h-[144px] overflow-y-auto pr-1 no-scrollbar border-l border-gray-100 pl-4 sm:pl-6">
+        <div className="space-y-1.5">
+          {data.map((item, index) => (
+            <div
+              key={index}
+              className="flex items-center justify-between group hover:bg-gray-50/50 px-1.5 py-1 rounded transition-colors duration-200"
+            >
+              <div className="flex items-center min-w-0 mr-4">
+                <div
+                  className="w-2.5 h-2.5 rounded-full flex-shrink-0 mr-2 shadow-sm"
+                  style={{ backgroundColor: item.color }}
+                />
+                <span
+                  className="text-xs font-medium text-gray-600 truncate max-w-[120px]"
+                  title={item.name}
+                >
+                  {item.name}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <span className="text-xs font-bold text-gray-900">
+                  ₹{item.value.toLocaleString()}
+                </span>
+                <span className="text-[9px] font-bold text-[#004475] bg-blue-50 px-1.5 py-0.5 rounded-full border border-blue-100/30">
+                  {item.percentage.toFixed(0)}%
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TrendBarChart({ data }) {
+  const maxAmount = React.useMemo(() => Math.max(...data.map((d) => d.amount), 1), [data]);
+  
+  if (data.length === 0) {
+    return (
+      <div className="flex items-center justify-center w-full h-40 text-gray-400 italic text-xs border-2 border-dashed border-gray-100 rounded-xl bg-gray-50/30">
+        No expense trend data
+      </div>
+    );
+  }
+
+  const isHighDensity = data.length > 8;
+
+  return (
+    <div className="w-full h-full flex flex-col justify-between">
+      <div className="flex-1 w-full overflow-x-auto no-scrollbar pb-2 pt-4">
+        <div
+          className="flex items-end justify-between h-32 px-2 min-w-max"
+          style={{ width: isHighDensity ? `${data.length * 45}px` : '100%' }}
+        >
+          {data.map((item, index) => (
+            <div
+              key={index}
+              className="flex flex-col items-center flex-1 min-w-[36px] group relative"
+            >
+              <div className="h-24 w-full flex items-end justify-center px-1">
+                <div
+                  className="relative w-full max-w-[14px] bg-gradient-to-t from-[#004475] to-[#33a8d9] rounded-t hover:from-[#00335a] hover:to-[#2890c0] transition-all duration-300 shadow-sm"
+                  style={{ height: `${Math.max((item.amount / maxAmount) * 100, 4)}%` }}
+                >
+                  <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-[9px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-lg pointer-events-none font-bold">
+                    ₹{item.amount.toLocaleString()}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-2 text-center h-6 flex items-start justify-center">
+                <span
+                  className={`text-[9px] text-gray-500 font-bold whitespace-nowrap ${isHighDensity ? 'rotate-45 origin-left mt-0.5 pl-1' : ''}`}
+                >
+                  {item.label}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const AllExpenseTab = ({
   expenses = [],
@@ -44,6 +198,77 @@ const AllExpenseTab = ({
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(15);
+
+  const chartCategories = React.useMemo(() => {
+    const categoriesMap = {};
+    let totalAmt = 0;
+    expenses.forEach((exp) => {
+      const cat = exp.category || 'Uncategorized';
+      const amt = typeof exp.amount === 'number' ? exp.amount : parseFloat(exp.amount || 0);
+      categoriesMap[cat] = (categoriesMap[cat] || 0) + amt;
+      totalAmt += amt;
+    });
+
+    const PIE_COLORS = [
+      '#004475',
+      '#33a8d9',
+      '#f59e0b',
+      '#10b981',
+      '#ec4899',
+      '#8b5cf6',
+      '#ef4444',
+      '#14b8a6',
+    ];
+
+    return Object.entries(categoriesMap)
+      .map(([name, value], index) => ({
+        name,
+        value,
+        percentage: totalAmt > 0 ? (value / totalAmt) * 100 : 0,
+        color: PIE_COLORS[index % PIE_COLORS.length],
+      }))
+      .sort((a, b) => b.value - a.value);
+  }, [expenses]);
+
+  const trendData = React.useMemo(() => {
+    const validExpenses = expenses.filter(e => e.expenseDate || e.date);
+    if (validExpenses.length === 0) return [];
+    
+    const dates = validExpenses.map(e => new Date(e.expenseDate || e.date));
+    const minDate = new Date(Math.min(...dates));
+    const maxDate = new Date(Math.max(...dates));
+    
+    const sameMonth = minDate.getMonth() === maxDate.getMonth() && minDate.getFullYear() === maxDate.getFullYear();
+    
+    const groups = {};
+    validExpenses.forEach(exp => {
+      const d = new Date(exp.expenseDate || exp.date);
+      const amt = typeof exp.amount === 'number' ? exp.amount : parseFloat(exp.amount || 0);
+      
+      let key;
+      if (sameMonth) {
+        key = d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+      } else {
+        key = d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }).replace(' ', " '");
+      }
+      
+      groups[key] = (groups[key] || 0) + amt;
+    });
+    
+    return Object.entries(groups)
+      .map(([label, amount]) => {
+        let dateObj;
+        if (sameMonth) {
+          dateObj = new Date(`${label} ${minDate.getFullYear()}`);
+        } else {
+          const [m, y] = label.split(" '");
+          dateObj = new Date(`1 ${m} 20${y}`);
+        }
+        return { label, amount, dateObj };
+      })
+      .sort((a, b) => a.dateObj - b.dateObj)
+      .map(({ label, amount }) => ({ label, amount }));
+  }, [expenses]);
 
   const handleItemsPerPageChange = (newCount) => {
     setItemsPerPage(newCount);
@@ -320,29 +545,8 @@ const AllExpenseTab = ({
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center items-center py-16 bg-white rounded-lg border border-gray-100 shadow-sm">
-          <div className="flex flex-col items-center">
-            <svg
-              className="animate-spin h-8 w-8 text-blue-600 mb-2"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              />
-            </svg>
-            <p className="text-gray-600">Loading expenses...</p>
-          </div>
+        <div className="flex justify-center items-center py-16 bg-white rounded-lg border border-gray-100 shadow-sm min-h-[400px]">
+          <Loader label="Loading expenses..." size="md" fullScreen={false} />
         </div>
       ) : expenses.length === 0 ? (
         <div className="text-center py-12 text-gray-600 bg-white rounded-lg border border-gray-100 shadow-sm">
@@ -366,6 +570,33 @@ const AllExpenseTab = ({
         </div>
       ) : (
         <>
+          {/* Charts Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 bg-white p-5 border border-gray-200 rounded-2xl shadow-sm mb-4 animate-dashboard-reveal">
+            <div className="border border-gray-100 rounded-xl p-4 bg-gray-50/30 flex flex-col h-full min-h-[220px]">
+              <div className="flex items-center gap-2 mb-3">
+                <PieChart size={16} className="text-[#004475]" />
+                <h4 className="text-sm font-bold text-gray-800 uppercase tracking-wider">
+                  Category Breakdown
+                </h4>
+              </div>
+              <div className="flex-grow flex items-center justify-center">
+                <DonutChart data={chartCategories} />
+              </div>
+            </div>
+
+            <div className="border border-gray-100 rounded-xl p-4 bg-gray-50/30 flex flex-col h-full min-h-[220px]">
+              <div className="flex items-center gap-2 mb-3">
+                <BarChart2 size={16} className="text-[#004475]" />
+                <h4 className="text-sm font-bold text-gray-800 uppercase tracking-wider">
+                  Expense Trend
+                </h4>
+              </div>
+              <div className="flex-grow flex items-center justify-center">
+                <TrendBarChart data={trendData} />
+              </div>
+            </div>
+          </div>
+
           <CustomTable
             columns={columns}
             data={currentData}

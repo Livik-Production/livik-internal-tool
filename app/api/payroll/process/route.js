@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import { getMonthlyAttendanceSummary } from '../../../../lib/attendanceService';
 import sendMail from '../../../../utils/emailService';
 import { payrollCreatedMessage } from '../../../../utils/messageTemplates';
+import { NotificationService } from '../../../../services/notification.service';
 
 export async function POST(req) {
   try {
@@ -286,6 +287,19 @@ export async function POST(req) {
           );
         }
       });
+
+      // Send In-App Notifications
+      if (payrollRecords.length > 0) {
+        await NotificationService.createBulkNotifications(
+          payrollRecords.map((r) => r.employeeId),
+          {
+            title: 'Payslip Generated',
+            message: `Your payslip for ${monthNameFull} ${year} has been generated. You can download it now.`,
+            type: 'PAYROLL',
+          }
+        ).catch(err => console.error('Failed to notify employees of payroll creation', err));
+      }
+
     } catch (emailError) {
       console.error('Error initiating email notifications:', emailError);
     }

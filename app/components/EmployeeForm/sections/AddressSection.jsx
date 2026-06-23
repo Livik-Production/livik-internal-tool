@@ -31,7 +31,7 @@ export default function AddressSection({ form, setField, errors, isView }) {
       </h2>
       <div className="md:col-span-2">
         <label className="text-[13px] text-gray-600 font-semibold">
-          Present Address <span className='text-red-500'>*</span>
+          Present Address
         </label>
         <textarea
           value={form.presentAddress}

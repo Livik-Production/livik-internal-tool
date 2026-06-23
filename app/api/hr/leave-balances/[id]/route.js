@@ -3,7 +3,8 @@ import { updateLeaveBalances } from '../../../../../lib/leaveService';
 
 export async function PUT(req, { params }) {
   try {
-    const { id: employeeId } = params;
+    const resolvedParams = await params;
+    const { id: employeeId } = resolvedParams;
     const body = await req.json();
     const { balances } = body;
 
