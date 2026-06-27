@@ -4,7 +4,7 @@ import PrimaryButton from '../../Buttons/PrimaryButton';
 
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, SquarePen, Trash, CalendarCheck } from 'lucide-react';
+import { X, SquarePen, Trash, CalendarCheck, PlusCircle } from 'lucide-react';
 import { showSuccessToast, showErrorToast } from '../../Toast';
 import CustomAlertForm from '../../CustomAlertForm';
 import IconButton from '../../Buttons/IconButton';
@@ -19,6 +19,8 @@ const BalanceDetailModal = ({
   onEditMonth,
   pendingLeave = null, // Optional: for previewing impact
   isAdmin = false,
+  onOpenEdit,
+  onOpenAdd,
 }) => {
   const [balanceHistory, setBalanceHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
@@ -220,6 +222,10 @@ const BalanceDetailModal = ({
           remarks: item.remarks || '',
           total,
           isProjected,
+          createdAt: item.createdAt || item.created_at,
+          updatedAt: item.updatedAt || item.updated_at,
+          createdBy: item.createdBy || item.createBy || item.created_by,
+          updatedBy: item.updatedBy || item.UpdatedBy || item.updated_by,
         };
       });
 
@@ -268,9 +274,7 @@ const BalanceDetailModal = ({
 
   const customTitle = (
     <div className="font-normal text-base block w-full justify-start items-start">
-      <h3 className="text-xl font-bold text-gray-900">
-        Leave Balance Details
-      </h3>
+      <h3 className="text-xl font-bold text-gray-900">Leave Balance Details</h3>
       <div className="flex justify-start gap-4">
         <div className="flex items-center gap-2 mt-1">
           <span className="text-sm text-gray-600 font-semibold">
@@ -286,16 +290,13 @@ const BalanceDetailModal = ({
             <span className="font-semibold">Balance Leaves : </span>
             <span className="text-green-600 font-medium">
               {Math.max(0, yearlySummary.cl - yearlySummary.clUsed) +
-                Math.max(
-                  0,
-                  yearlySummary.sl - yearlySummary.slUsed
-                )}{' '}
+                Math.max(0, yearlySummary.sl - yearlySummary.slUsed)}{' '}
               days
             </span>
           </div>
           <div className="text-xs text-gray-500 flex items-center h-5 mt-0.5">
-            SL: {Math.max(0, yearlySummary.sl - yearlySummary.slUsed)} |
-            CL: {Math.max(0, yearlySummary.cl - yearlySummary.clUsed)}
+            SL: {Math.max(0, yearlySummary.sl - yearlySummary.slUsed)} | CL:{' '}
+            {Math.max(0, yearlySummary.cl - yearlySummary.clUsed)}
           </div>
         </div>
       </div>
@@ -312,27 +313,49 @@ const BalanceDetailModal = ({
       >
         <div className="p-3 px-4">
           {/* Year Filter */}
-          <div className="mb-4 flex items-center gap-3">
-            <label className="text-xs font-bold text-gray-600 uppercase tracking-tight">
-              Filter by Year:
-            </label>
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {availableYears.length > 0 ? (
-                availableYears.map((year) => (
-                  <option key={year} value={year}>
-                    {year}
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <label className="text-xs font-bold text-gray-600 uppercase tracking-tight">
+                Filter by Year:
+              </label>
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {availableYears.length > 0 ? (
+                  availableYears.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))
+                ) : (
+                  <option value={new Date().getFullYear()}>
+                    {new Date().getFullYear()}
                   </option>
-                ))
-              ) : (
-                <option value={new Date().getFullYear()}>
-                  {new Date().getFullYear()}
-                </option>
+                )}
+              </select>
+            </div>
+            <div className="flex items-center gap-1">
+              {isAdmin && onOpenAdd && (
+                <button
+                  onClick={() => onOpenAdd(selectedYear)}
+                  className="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 hover:scale-110 rounded-full transition-all cursor-pointer"
+                  title="Add New Month/Year Balance"
+                >
+                  <PlusCircle size={18} />
+                </button>
               )}
-            </select>
+              {/* {isAdmin && onOpenEdit && (
+                <button
+                  onClick={() => onOpenEdit(selectedYear)}
+                  className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 hover:scale-110 rounded-full transition-all cursor-pointer"
+                  title="Update Current Selected Month/Year Balance"
+                >
+                  <SquarePen size={18} />
+                </button>
+              )} */}
+            </div>
           </div>
 
           <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3">
@@ -372,13 +395,35 @@ const BalanceDetailModal = ({
                       className={`hover:bg-gray-50/50 transition-colors ${row.isProjected ? 'bg-blue-50/40' : ''}`}
                     >
                       <td className="px-5 py-3 font-semibold text-gray-700">
-                        <div className="flex items-center gap-2">
-                          {row.label}
-                          {row.isProjected && (
-                            <span className="flex items-center gap-1 bg-blue-100 text-blue-700 text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter">
-                              <CalendarCheck size={10} />
-                              Projected
-                            </span>
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            {row.label}
+                            {row.isProjected && (
+                              <span className="flex items-center gap-1 bg-blue-100 text-blue-700 text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter">
+                                <CalendarCheck size={10} />
+                                Projected
+                              </span>
+                            )}
+                          </div>
+                          {(row.createdAt ||
+                            row.updatedAt ||
+                            row.createdBy) && (
+                            <div className="flex flex-col text-[9px] text-gray-400 font-medium whitespace-nowrap mt-0.5 leading-tight">
+                              <span>
+                                Created:{' '}
+                                {row.createdAt
+                                  ? new Date(row.createdAt).toLocaleDateString()
+                                  : ''}{' '}
+                                {row.createdBy ? `by ${row.createdBy}` : ''}
+                              </span>
+                              {row.updatedAt && (
+                                <span>
+                                  Updated:{' '}
+                                  {new Date(row.updatedAt).toLocaleDateString()}{' '}
+                                  {row.updatedBy ? `by ${row.updatedBy}` : ''}
+                                </span>
+                              )}
+                            </div>
                           )}
                         </div>
                       </td>

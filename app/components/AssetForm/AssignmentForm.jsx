@@ -6,7 +6,8 @@ import {
   fetchEmployees,
   selectEmployeesItems,
 } from '../../../store/slices/employeesSlice';
-import { SquarePen, LogOut, Eye, X } from 'lucide-react';
+import { fetchAssets } from '../../../store/slices/assetsSlice';
+import { SquarePen, LogOut, Eye, X, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
 import TabButton from '../Buttons/TabButton';
@@ -18,6 +19,7 @@ import CustomAlertForm from '../CustomAlertForm';
 import Pagination from '../Pagination';
 import CustomTable from '../CustomTable';
 import HyperlinkButton from '../Buttons/HyperlinkButton';
+import Loader from '../Loader';
 
 export default function AssignmentForm({
   assets = [],
@@ -26,6 +28,7 @@ export default function AssignmentForm({
   onUpdateAssignment,
   onViewDetail,
   isViewOnly = false,
+  isLoading = false,
 }) {
   const dispatch = useDispatch();
   const employees = useSelector(selectEmployeesItems);
@@ -163,7 +166,9 @@ export default function AssignmentForm({
     empName,
     assignDate,
     notes,
-    assignmentId = null
+    assignmentId = null,
+    assignmentType = 'EMPLOYEE',
+    locationId = null
   ) => {
     try {
       if (assignmentId) {
@@ -174,20 +179,33 @@ export default function AssignmentForm({
             employeeName: empName,
             assignmentDate: assignDate,
             assignmentNotes: notes,
+            assignmentType,
+            locationId,
           });
         }
-        handleCloseEditForm();
         toast.success('Assignment updated successfully!');
+        handleCloseEditForm();
+        dispatch(fetchAssets());
       } else {
         if (onAssign) {
-          await onAssign(assetId, empId, empName, assignDate, notes);
+          await onAssign(
+            assetId,
+            empId,
+            empName,
+            assignDate,
+            notes,
+            assignmentType,
+            locationId
+          );
         }
+        toast.success('Asset assigned successfully!');
+        handleCloseAssignForm();
 
         setInnerTab('assigned');
         setQuery('');
-        handleCloseAssignForm();
         setSelectedAssignment(null);
         setAssignedCurrentPage(1);
+        dispatch(fetchAssets());
       }
     } catch (error) {
       console.error('Error in assignment:', error);
@@ -218,15 +236,21 @@ export default function AssignmentForm({
 
   const handleEditAssignment = (asset) => {
     setSelectedAssignment({
-      id: asset.id,
+      id: asset.assignmentId,
       assetId: asset.id,
       assetTag: asset.assetTag || asset.tag,
       employeeId: asset.assignedTo?.empId || '',
       employeeName: asset.assignedTo?.name || '',
       assignmentDate:
-        asset.assignmentDate || new Date().toISOString().split('T')[0],
+        (asset.assignmentDate &&
+          new Date(asset.assignmentDate).toISOString().split('T')[0]) ||
+        new Date().toISOString().split('T')[0],
       assignmentNotes: asset.assignmentNotes || '',
       assignedFrom: asset.assignedFrom || 'IT Department',
+      assignmentType:
+        asset.assignedTo?.empId === 'LOCATION' ? 'LOCATION' : 'EMPLOYEE',
+      locationId:
+        asset.assignedTo?.empId === 'LOCATION' ? asset.assignedTo?.dbId : '',
     });
     setShowEditForm(true);
   };
@@ -239,17 +263,15 @@ export default function AssignmentForm({
   const confirmUnassign = async () => {
     try {
       if (assetToUnassign && onUnassign) {
-        setIsUnassigning(true);
-        await onUnassign(assetToUnassign.assignmentId);
+        const assignmentId = assetToUnassign.assignmentId;
+        setShowUnassignConfirm(false);
+        setAssetToUnassign(null);
+        setUnassignedCurrentPage(1);
+        await onUnassign(assignmentId);
       }
-      setShowUnassignConfirm(false);
-      setAssetToUnassign(null);
-      setUnassignedCurrentPage(1);
     } catch (error) {
       console.error('Error unassigning:', error);
       toast.error('Failed to unassign asset. Please try again.');
-    } finally {
-      setIsUnassigning(false);
     }
   };
 
@@ -331,12 +353,13 @@ export default function AssignmentForm({
             <div className="font-medium text-gray-700">{warrantyInfo.text}</div>
             {warrantyInfo.daysRemaining !== null && (
               <div
-                className={`px-2 py-1 rounded-full text-xs font-semibold ${warrantyInfo.isExpired
+                className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                  warrantyInfo.isExpired
                     ? 'bg-red-100 text-red-800'
                     : warrantyInfo.isNearExpiry
                       ? 'bg-yellow-100 text-yellow-800'
                       : 'bg-green-100 text-green-800'
-                  }`}
+                }`}
               >
                 {warrantyInfo.isExpired
                   ? `Expired ${Math.abs(warrantyInfo.daysRemaining)} days ago`
@@ -408,7 +431,9 @@ export default function AssignmentForm({
       render: (asset) =>
         asset.assignedTo ? (
           <span className="font-medium">
-            {asset.assignedTo.name} ({asset.assignedTo.empId})
+            {asset.assignedTo.empId === 'LOCATION'
+              ? asset.assignedTo.name
+              : `${asset.assignedTo.name} (${asset.assignedTo.empId})`}
           </span>
         ) : (
           <span className="text-gray-400">—</span>
@@ -418,8 +443,8 @@ export default function AssignmentForm({
       key: 'assignedFrom',
       label: 'ASSIGNED FROM',
       render: (asset) =>
-        asset.__raw?.updatedAt ? (
-          new Date(asset.__raw.updatedAt).toLocaleDateString('en-GB')
+        asset.assignmentDate ? (
+          new Date(asset.assignmentDate).toLocaleDateString('en-GB')
         ) : (
           <span className="text-gray-400">—</span>
         ),
@@ -429,12 +454,13 @@ export default function AssignmentForm({
       label: 'STATUS',
       render: (asset) => (
         <span
-          className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${asset.status === 'Assigned'
+          className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+            asset.status === 'Assigned'
               ? 'bg-green-100 text-green-800'
               : asset.status === 'In Repair'
                 ? 'bg-red-100 text-red-800'
                 : 'bg-gray-100 text-gray-800'
-            }`}
+          }`}
         >
           {asset.status}
         </span>
@@ -461,6 +487,14 @@ export default function AssignmentForm({
       </IconButton>
     </div>
   );
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center py-20 min-h-[400px]">
+        <Loader label="Loading assignments..." size="md" fullScreen={false} />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-lg shadow-lg">
@@ -500,21 +534,9 @@ export default function AssignmentForm({
               placeholder="Search assets..."
               className="px-3 py-2 pl-10 border border-gray-300 rounded-lg text-sm w-64 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
-            <svg
-              className="absolute left-3 top-2.5 h-4 w-4 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
             {query && (
-              <div className="absolute right-2 top-1.5">
+              <div className="absolute right-2 top-0.5">
                 <IconButton
                   onClick={() => {
                     setQuery('');

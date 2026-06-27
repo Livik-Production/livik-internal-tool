@@ -1,6 +1,12 @@
 'use client';
 
-import { SquarePen, UploadCloud, FileText, Loader2, Trash2 } from 'lucide-react';
+import {
+  SquarePen,
+  UploadCloud,
+  FileText,
+  Loader2,
+  Trash2,
+} from 'lucide-react';
 import { useState, useEffect } from 'react';
 import Button from '../Buttons/Button';
 import PrimaryButton from '../Buttons/PrimaryButton';
@@ -240,12 +246,22 @@ const assetTypeConfigs = {
   },
 };
 
-const generateAssetTag = (assetType, existingAssets = []) => {
-  const config = assetTypeConfigs[assetType] || assetTypeConfigs['Other'];
-  const prefix = `${config.keyword}-`;
-  const padding = 3;
-  const yearSuffix = String(new Date().getFullYear()).slice(-2);
-  const suffix = `-${yearSuffix}`;
+const generateAssetTag = (assetType, existingAssets = [], formats = {}) => {
+  const customConfig = formats[`asset_${assetType}`];
+
+  let prefix, padding, suffix;
+
+  if (customConfig) {
+    prefix = customConfig.prefix || '';
+    padding = customConfig.padding || 3;
+    suffix = customConfig.suffix || '';
+  } else {
+    const config = assetTypeConfigs[assetType] || assetTypeConfigs['Other'];
+    prefix = `${config.keyword}-`;
+    padding = 3;
+    const yearSuffix = String(new Date().getFullYear()).slice(-2);
+    suffix = `-${yearSuffix}`;
+  }
 
   const relevantAssets = existingAssets.filter((asset) => {
     const tag = asset.assetTag || asset.tag;
@@ -253,7 +269,12 @@ const generateAssetTag = (assetType, existingAssets = []) => {
   });
 
   if (relevantAssets.length === 0) {
-    return `${prefix}${String(1).padStart(padding, '0')}${suffix}`;
+    let defaultStart = 1;
+    if (customConfig && customConfig.nextNumber) {
+      const dbNext = parseInt(customConfig.nextNumber, 10);
+      if (!isNaN(dbNext) && dbNext > 0) defaultStart = dbNext;
+    }
+    return `${prefix}${String(defaultStart).padStart(padding, '0')}${suffix}`;
   }
 
   let maxSeq = 0;
@@ -261,7 +282,9 @@ const generateAssetTag = (assetType, existingAssets = []) => {
     const tag = asset.assetTag || asset.tag;
     if (tag && tag.startsWith(prefix) && tag.endsWith(suffix)) {
       let temp = tag.slice(prefix.length);
-      temp = temp.slice(0, -suffix.length);
+      if (suffix.length > 0) {
+        temp = temp.slice(0, -suffix.length);
+      }
       const seq = parseInt(temp, 10);
       if (!isNaN(seq) && seq > maxSeq) {
         maxSeq = seq;
@@ -269,7 +292,14 @@ const generateAssetTag = (assetType, existingAssets = []) => {
     }
   });
 
-  const nextSequence = maxSeq + 1;
+  let nextSequence = maxSeq + 1;
+  if (customConfig && customConfig.nextNumber) {
+    const dbNext = parseInt(customConfig.nextNumber, 10);
+    if (!isNaN(dbNext) && dbNext > nextSequence) {
+      nextSequence = dbNext;
+    }
+  }
+
   return `${prefix}${String(nextSequence).padStart(padding, '0')}${suffix}`;
 };
 
@@ -310,33 +340,37 @@ const AssetDocumentUpload = ({
     toast.success(`${label} removed successfully`);
   };
 
-  const isImage = value && (
-    value.toLowerCase().endsWith('.jpg') || 
-    value.toLowerCase().endsWith('.jpeg') || 
-    value.toLowerCase().endsWith('.png') || 
-    value.toLowerCase().endsWith('.webp') ||
-    value.includes('.jpg') ||
-    value.includes('.jpeg') ||
-    value.includes('.png') ||
-    value.includes('.webp')
-  );
+  const isImage =
+    value &&
+    (value.toLowerCase().endsWith('.jpg') ||
+      value.toLowerCase().endsWith('.jpeg') ||
+      value.toLowerCase().endsWith('.png') ||
+      value.toLowerCase().endsWith('.webp') ||
+      value.includes('.jpg') ||
+      value.includes('.jpeg') ||
+      value.includes('.png') ||
+      value.includes('.webp'));
 
   return (
     <div className="flex flex-col gap-2 w-full">
-      <span className="text-xs font-semibold text-gray-600 block">
-        {label}
-      </span>
+      <span className="text-xs font-semibold text-gray-600 block">{label}</span>
 
-      <div className={`
+      <div
+        className={`
         relative group rounded-xl border-2 border-dashed transition-all duration-300 min-h-[160px] flex flex-col items-center justify-center p-4
         ${value ? 'border-blue-200 bg-blue-50/30' : 'border-gray-200 hover:border-blue-400 hover:bg-gray-50'}
         ${uploading ? 'opacity-70 animate-pulse cursor-wait' : ''}
         ${isView ? 'bg-gray-50' : 'cursor-pointer'}
-      `}>
+      `}
+      >
         {value ? (
           <div className="relative w-full h-full flex items-center justify-center group/img">
             {isImage ? (
-              <img src={value} alt={label} className="max-h-[140px] rounded-lg shadow-sm object-contain" />
+              <img
+                src={value}
+                alt={label}
+                className="max-h-[140px] rounded-lg shadow-sm object-contain"
+              />
             ) : (
               <div className="flex flex-col items-center gap-2 p-4 text-center">
                 <FileText size={48} className="text-[#33a8d9]" />
@@ -377,7 +411,9 @@ const AssetDocumentUpload = ({
             <p className="text-sm font-medium text-gray-600">
               {uploading ? 'Uploading...' : `Upload ${label}`}
             </p>
-            <p className="text-[11px] text-gray-400 mt-1.5">Max 5MB (JPG, PNG, PDF)</p>
+            <p className="text-[11px] text-gray-400 mt-1.5">
+              Max 5MB (JPG, PNG, PDF)
+            </p>
           </div>
         )}
 
@@ -390,7 +426,11 @@ const AssetDocumentUpload = ({
           />
         )}
       </div>
-      {error && <p className="text-[11px] text-red-500 mt-1 font-medium bg-red-50 px-2 py-1 rounded">{error}</p>}
+      {error && (
+        <p className="text-[11px] text-red-500 mt-1 font-medium bg-red-50 px-2 py-1 rounded">
+          {error}
+        </p>
+      )}
     </div>
   );
 };
@@ -424,37 +464,54 @@ const AssetForm = ({
   });
 
   useEffect(() => {
-    if (initialData) {
-      setFormData(initialData);
-    } else {
-      const config = assetTypeConfigs[assetType];
-      let initialSpecs = {};
+    const initForm = async () => {
+      if (initialData) {
+        setFormData(initialData);
+      } else {
+        const config = assetTypeConfigs[assetType];
+        let initialSpecs = {};
 
-      if (config && config.specs) {
-        config.specs.forEach((spec) => {
-          initialSpecs[spec.name] =
-            spec.type === 'checkbox' ? spec.defaultValue || false : '';
+        if (config && config.specs) {
+          config.specs.forEach((spec) => {
+            initialSpecs[spec.name] =
+              spec.type === 'checkbox' ? spec.defaultValue || false : '';
+          });
+        }
+
+        let formats = {};
+        try {
+          const res = await fetch('/api/number-formats');
+          if (res.ok) {
+            formats = await res.json();
+          }
+        } catch (error) {
+          console.error('Failed to fetch number formats', error);
+        }
+
+        const newAssetTag = generateAssetTag(
+          assetType,
+          existingAssets,
+          formats
+        );
+
+        setFormData({
+          assetTag: newAssetTag,
+          deviceType: assetType,
+          brand: '',
+          modelName: '',
+          serialNumber: '',
+          vendor: '',
+          purchaseDate: new Date().toISOString().split('T')[0],
+          purchaseCost: '',
+          warrantyUntil: '',
+          invoiceFile: '',
+          warrantyFile: '',
+          notes: '',
+          specs: initialSpecs,
         });
       }
-
-      const newAssetTag = generateAssetTag(assetType, existingAssets);
-
-      setFormData({
-        assetTag: newAssetTag,
-        deviceType: assetType,
-        brand: '',
-        modelName: '',
-        serialNumber: '',
-        vendor: '',
-        purchaseDate: new Date().toISOString().split('T')[0],
-        purchaseCost: '',
-        warrantyUntil: '',
-        invoiceFile: '',
-        warrantyFile: '',
-        notes: '',
-        specs: initialSpecs,
-      });
-    }
+    };
+    initForm();
   }, [assetType, initialData, existingAssets]);
 
   const handleChange = (e) => {
@@ -670,8 +727,12 @@ const AssetForm = ({
               <AssetDocumentUpload
                 label="Invoice Document"
                 value={formData.invoiceFile || ''}
-                onUpload={(url) => setFormData((prev) => ({ ...prev, invoiceFile: url }))}
-                onRemove={() => setFormData((prev) => ({ ...prev, invoiceFile: '' }))}
+                onUpload={(url) =>
+                  setFormData((prev) => ({ ...prev, invoiceFile: url }))
+                }
+                onRemove={() =>
+                  setFormData((prev) => ({ ...prev, invoiceFile: '' }))
+                }
                 isView={isViewMode}
                 assetTag={formData.assetTag}
                 documentType="invoice"
@@ -682,8 +743,12 @@ const AssetForm = ({
               <AssetDocumentUpload
                 label="Warranty Document"
                 value={formData.warrantyFile || ''}
-                onUpload={(url) => setFormData((prev) => ({ ...prev, warrantyFile: url }))}
-                onRemove={() => setFormData((prev) => ({ ...prev, warrantyFile: '' }))}
+                onUpload={(url) =>
+                  setFormData((prev) => ({ ...prev, warrantyFile: url }))
+                }
+                onRemove={() =>
+                  setFormData((prev) => ({ ...prev, warrantyFile: '' }))
+                }
                 isView={isViewMode}
                 assetTag={formData.assetTag}
                 documentType="warranty"
@@ -778,9 +843,15 @@ const AssetForm = ({
             )}
             {initialData?.createdAt && (
               <div className="flex flex-col text-[10px] text-gray-400 font-medium">
-                <span>Created: {new Date(initialData.createdAt).toLocaleString()}</span>
+                <span>
+                  Created: {new Date(initialData.createdAt).toLocaleString()}
+                  {initialData.createdBy && ` by ${initialData.createdBy}`}
+                </span>
                 {initialData.updatedAt && (
-                  <span>Updated: {new Date(initialData.updatedAt).toLocaleString()}</span>
+                  <span>
+                    Updated: {new Date(initialData.updatedAt).toLocaleString()}
+                    {initialData.updatedBy && ` by ${initialData.updatedBy}`}
+                  </span>
                 )}
               </div>
             )}
@@ -794,12 +865,17 @@ const AssetForm = ({
                 </Button>
                 <PrimaryButton
                   onClick={handleSubmit}
-                  className="min-w-[120px]"
+                  className="min-w-[120px] flex items-center justify-center gap-2"
                   disabled={isSubmitting}
                 >
-                  {isSubmitting
-                    ? 'Saving...'
-                    : `${initialData ? 'Update' : 'Add'} ${assetType} Asset`}
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    `${initialData ? 'Update' : 'Add'} ${assetType} Asset`
+                  )}
                 </PrimaryButton>
               </>
             ) : (

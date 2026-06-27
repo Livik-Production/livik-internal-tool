@@ -60,7 +60,7 @@ const ExpensesTable = ({
   // Filter months based on range: Sep-2025 to Current Month
   const filteredMonthOptions = monthOptions.filter((m) => {
     if (selectedYear === 'all') return true;
-    
+
     const monthVal = parseInt(m.value);
     const selectedYearInt = parseInt(selectedYear);
     const currentMonthNum = now.getMonth() + 1;
@@ -171,8 +171,10 @@ const ExpensesTable = ({
     });
   };
 
-  const handleDeleteSuccess = (deletedId) => {
+  const handleDeleteSuccess = async (deletedId) => {
+    setIsLoading(true);
     setExpenses((prev) => prev.filter((e) => e.id !== deletedId));
+    await fetchData();
   };
   const handleTabChange = (tab) => {
     if (tab === activeTab) return;

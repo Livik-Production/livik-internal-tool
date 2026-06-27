@@ -7,10 +7,16 @@ import {
   Wrench,
   AlertTriangle,
   ExternalLink,
+  Users,
+  MapPin,
 } from 'lucide-react';
 import Loader from '../Loader';
 
-export default function Overview({ assets = [], isViewOnly = false, isLoading = false }) {
+export default function Overview({
+  assets = [],
+  isViewOnly = false,
+  isLoading = false,
+}) {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-20 min-h-[400px]">
@@ -44,6 +50,20 @@ export default function Overview({ assets = [], isViewOnly = false, isLoading = 
     return status === 'In Repair';
   }).length;
 
+  const assignedToEmployees = assets.filter((a) => {
+    return (
+      getAssetProperty(a, 'status') === 'Assigned' &&
+      a.assignedTo?.empId !== 'LOCATION'
+    );
+  }).length;
+
+  const assignedToLocations = assets.filter((a) => {
+    return (
+      getAssetProperty(a, 'status') === 'Assigned' &&
+      a.assignedTo?.empId === 'LOCATION'
+    );
+  }).length;
+
   const warrantyExpiringCount = assets.filter((a) => {
     const warrantyDateStr = getAssetProperty(a, 'warranty');
     if (!warrantyDateStr) return false;
@@ -74,6 +94,20 @@ export default function Overview({ assets = [], isViewOnly = false, isLoading = 
       value: inMaintenance.toString(),
       trend: 'Repairing',
       icon: Wrench,
+      color: '#33a8d9',
+    },
+    {
+      title: 'Assigned (Staff)',
+      value: assignedToEmployees.toString(),
+      trend: 'In Use',
+      icon: Users,
+      color: '#33a8d9',
+    },
+    {
+      title: 'Assigned (Location)',
+      value: assignedToLocations.toString(),
+      trend: 'In Use',
+      icon: MapPin,
       color: '#33a8d9',
     },
     {
@@ -220,7 +254,7 @@ export default function Overview({ assets = [], isViewOnly = false, isLoading = 
       <div className="w-full">
         <div className="flex items-center justify-between"></div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
           {statistics.map((stat, i) => (
             <div
               key={i}

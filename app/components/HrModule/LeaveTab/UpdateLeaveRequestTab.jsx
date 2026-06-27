@@ -1,30 +1,16 @@
 'use client';
-import Button from '../../Buttons/Button';
 import PrimaryButton from '../../Buttons/PrimaryButton';
 import HyperlinkButton from '../../Buttons/HyperlinkButton';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
-import { createPortal } from 'react-dom';
-import CustomTable from '../../CustomTable';
-import CustomAlertForm from '../../CustomAlertForm';
+import { useState, useEffect, useMemo } from 'react';
+import { useSelector } from 'react-redux';
 import Loader from '../../Loader';
 import Pagination from '../../Pagination';
 import { showSuccessToast, showErrorToast } from '../../Toast';
-import {
-  ChevronDown,
-  Eye,
-  Plus,
-  Search,
-  SquarePen,
-  Trash,
-  X,
-  CalendarCheck,
-  Loader2,
-} from 'lucide-react';
+import { Search, SquarePen, Trash, CalendarCheck, Loader2 } from 'lucide-react';
 import BalanceDetailModal from './BalanceDetailModal';
 import FilterDropdown from '../../Buttons/FilterDropdown';
 import IconButton from '../../Buttons/IconButton';
-import CloseButton from '../../Buttons/CloseButton';
 import CustomModalForm from '../../CustomModalForm';
 
 const UpdateLeaveRequestTab = ({
@@ -34,6 +20,7 @@ const UpdateLeaveRequestTab = ({
   isAdmin = false,
 }) => {
   const [data, setData] = useState([]);
+  const authUser = useSelector((state) => state.auth?.user);
   const [searchQuery, setSearchQuery] = useState(''); // Local State
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -48,6 +35,7 @@ const UpdateLeaveRequestTab = ({
     remarks: '',
   });
   const [balanceDetailModalOpen, setBalanceDetailModalOpen] = useState(false);
+  const [openedFromDetails, setOpenedFromDetails] = useState(false);
   const [selectedBalanceData, setSelectedBalanceData] = useState(null);
   const [balanceHistory, setBalanceHistory] = useState([]);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
@@ -57,6 +45,8 @@ const UpdateLeaveRequestTab = ({
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  // Pagination states
 
   useEffect(() => {
     const fetchHolidays = async () => {
@@ -106,15 +96,18 @@ const UpdateLeaveRequestTab = ({
     };
   };
 
-  const handleUpdateClick = (row) => {
+  const handleUpdateClick = (row, yearOverride, monthOverride) => {
     const cl = getLeaveInfo(row.leaveBalances, 'CL');
     const sl = getLeaveInfo(row.leaveBalances, 'SL');
+
+    const finalYear = yearOverride || selectedYear;
+    const finalMonth = monthOverride || selectedMonth;
 
     setSelectedRow(row);
     setFormData({
       cl_balance: '0',
       sl_balance: '0',
-      monthYear: `${String(new Date().getMonth() + 1).padStart(2, '0')}/${new Date().getFullYear()}`,
+      monthYear: `${String(finalMonth).padStart(2, '0')}/${finalYear}`,
       remarks: '',
     });
 
@@ -223,6 +216,8 @@ const UpdateLeaveRequestTab = ({
           sl: slValue,
           lop: 0,
           remarks: formData.remarks,
+          createdBy: authUser?.name || 'Unknown',
+          updatedBy: authUser?.name || 'Unknown',
         }),
       });
 
@@ -265,9 +260,12 @@ const UpdateLeaveRequestTab = ({
 
       // Close modal immediately for better UX
       setShowModal(false);
+      if (openedFromDetails) {
+        setBalanceDetailModalOpen(true);
+      }
 
-      // Update data in background
-      await fetchBalances(true);
+      // Update data with loader
+      await fetchBalances(false);
 
       // Notify success
       showSuccessToast('Balances updated successfully');
@@ -411,6 +409,18 @@ const UpdateLeaveRequestTab = ({
               className="px-3 py-2 pl-10 border border-gray-300 rounded-lg text-sm w-64 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
             />
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-900" />
+            {searchQuery && (
+              <IconButton
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2 top-0.5 shadow-none bg-transparent hover:bg-transparent"
+                title="Clear search"
+              >
+                <X
+                  size={14}
+                  className="text-gray-400 hover:text-red-500 hover:scale-110"
+                />
+              </IconButton>
+            )}
           </div>
           {/* Month Selector */}
           <div className="w-40 ">
@@ -613,10 +623,23 @@ const UpdateLeaveRequestTab = ({
                       <td className="py-3 text-center whitespace-nowrap">
                         <div className="flex justify-center gap-2">
                           <IconButton
-                            onClick={() => handleUpdateClick(row)}
+                            onClick={() => {
+                              setOpenedFromDetails(false);
+                              handleUpdateClick(row);
+                            }}
                             title="Update Balances"
                           >
                             <CalendarCheck size={16} />
+                          </IconButton>
+                          <IconButton
+                            onClick={() => {
+                              setOpenedFromDetails(false);
+                              handleUpdateClick(row);
+                            }}
+                            title="Edit Balances"
+                            disabled={!canControlAllEmployees}
+                          >
+                            <SquarePen size={16} />
                           </IconButton>
                         </div>
                       </td>
@@ -655,15 +678,16 @@ const UpdateLeaveRequestTab = ({
       {/* Update Balances Modal */}
       <CustomModalForm
         open={showModal}
-        onCancel={() => setShowModal(false)}
+        onCancel={() => {
+          setShowModal(false);
+          if (openedFromDetails) setBalanceDetailModalOpen(true);
+        }}
         widthClass="max-w-lg"
         title={
           selectedRow ? (
             <div className="font-normal text-base block w-full">
               <h3 className="text-xl font-bold text-gray-900">
-                {isEditMode
-                  ? 'Edit Leave Balances'
-                  : 'Add Leave Balances'}
+                {isEditMode ? 'Edit Leave Balances' : 'Add Leave Balances'}
               </h3>
               <p className="text-sm text-gray-900 font-semibold mt-1">
                 {selectedRow.firstName} {selectedRow.lastName}
@@ -677,8 +701,7 @@ const UpdateLeaveRequestTab = ({
                   <span className="text-green-600 font-medium">
                     {(() => {
                       const selectedYear =
-                        parseInt(formData.monthYear.split('/')[1]) ||
-                        2025;
+                        parseInt(formData.monthYear.split('/')[1]) || 2025;
                       const yearData = balanceHistory.filter(
                         (item) => item.year === selectedYear
                       );
@@ -749,181 +772,179 @@ const UpdateLeaveRequestTab = ({
       >
         <form onSubmit={handleFormSubmit} className="p-3">
           <div className="space-y-6">
-                  {/* Year and Month Selection */}
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* Year Selector */}
-                    <div className="ml-2">
-                      <label className="block text-xs font-bold text-gray-900 mb-2 uppercase tracking-wide">
-                        Select Year
-                      </label>
-                      <FilterDropdown
-                        options={(() => {
-                          const now = new Date();
-                          const currentYear = now.getFullYear();
-                          const years = [];
-                          for (let y = 2025; y <= currentYear; y++) {
-                            years.push({
-                              value: y.toString(),
-                              label: y.toString(),
-                            });
-                          }
-                          return years;
-                        })()}
-                        value={(
-                          parseInt(formData.monthYear.split('/')[1]) || 2025
-                        ).toString()}
-                        onChange={(val) => {
-                          const year = parseInt(val);
-                          const currentMonth = parseInt(
-                            formData.monthYear.split('/')[0]
-                          );
-                          let newMonth = currentMonth;
-                          if (year === 2025 && currentMonth < 9) newMonth = 9;
-                          setFormData({
-                            ...formData,
-                            monthYear: `${String(newMonth).padStart(2, '0')}/${year}`,
-                          });
-                        }}
-                        placeholder="Select Year"
-                      />
-                    </div>
+            {/* Year and Month Selection */}
+            <div className="grid grid-cols-2 gap-4">
+              {/* Year Selector */}
+              <div className="ml-2">
+                <label className="block text-xs font-bold text-gray-900 mb-2 uppercase tracking-wide">
+                  Select Year
+                </label>
+                <FilterDropdown
+                  options={(() => {
+                    const now = new Date();
+                    const currentYear = now.getFullYear();
+                    const years = [];
+                    for (let y = 2025; y <= currentYear; y++) {
+                      years.push({
+                        value: y.toString(),
+                        label: y.toString(),
+                      });
+                    }
+                    return years;
+                  })()}
+                  value={(
+                    parseInt(formData.monthYear.split('/')[1]) || 2025
+                  ).toString()}
+                  onChange={(val) => {
+                    const year = parseInt(val);
+                    const currentMonth = parseInt(
+                      formData.monthYear.split('/')[0]
+                    );
+                    let newMonth = currentMonth;
+                    if (year === 2025 && currentMonth < 9) newMonth = 9;
+                    setFormData({
+                      ...formData,
+                      monthYear: `${String(newMonth).padStart(2, '0')}/${year}`,
+                    });
+                  }}
+                  placeholder="Select Year"
+                />
+              </div>
 
-                    {/* Month Selector */}
-                    <div>
-                      <label className="block text-xs font-bold text-gray-900 mb-2 uppercase tracking-wide">
-                        Select Month
-                      </label>
-                      <FilterDropdown
-                        options={Array.from({ length: 12 }, (_, i) => {
-                          const monthIndex = i + 1;
-                          const currentYear = parseInt(
-                            formData.monthYear.split('/')[1]
-                          );
-                          // Disable if year is 2025 and month < 9 (Sept)
-                          const isDisabled =
-                            currentYear === 2025 && monthIndex < 9;
+              {/* Month Selector */}
+              <div>
+                <label className="block text-xs font-bold text-gray-900 mb-2 uppercase tracking-wide">
+                  Select Month
+                </label>
+                <FilterDropdown
+                  options={Array.from({ length: 12 }, (_, i) => {
+                    const monthIndex = i + 1;
+                    const currentYear = parseInt(
+                      formData.monthYear.split('/')[1]
+                    );
+                    // Disable if year is 2025 and month < 9 (Sept)
+                    const isDisabled = currentYear === 2025 && monthIndex < 9;
 
-                          const date = new Date(2000, i, 1);
-                          const monthName = date.toLocaleString('default', {
-                            month: 'long',
-                          });
-                          return {
-                            value: monthIndex.toString(),
-                            label: monthName,
-                            disabled: isDisabled,
-                          };
-                        }).filter((opt) => !opt.disabled)}
-                        value={(
-                          parseInt(formData.monthYear.split('/')[0]) || 1
-                        ).toString()}
-                        onChange={(val) => {
-                          const monthIndex = parseInt(val);
-                          const currentYear = parseInt(
-                            formData.monthYear.split('/')[1]
-                          );
-                          setFormData({
-                            ...formData,
-                            monthYear: `${String(monthIndex).padStart(2, '0')}/${currentYear}`,
-                          });
-                        }}
-                        placeholder="Select Month"
-                      />
-                    </div>
-                  </div>
+                    const date = new Date(2000, i, 1);
+                    const monthName = date.toLocaleString('default', {
+                      month: 'long',
+                    });
+                    return {
+                      value: monthIndex.toString(),
+                      label: monthName,
+                      disabled: isDisabled,
+                    };
+                  }).filter((opt) => !opt.disabled)}
+                  value={(
+                    parseInt(formData.monthYear.split('/')[0]) || 1
+                  ).toString()}
+                  onChange={(val) => {
+                    const monthIndex = parseInt(val);
+                    const currentYear = parseInt(
+                      formData.monthYear.split('/')[1]
+                    );
+                    setFormData({
+                      ...formData,
+                      monthYear: `${String(monthIndex).padStart(2, '0')}/${currentYear}`,
+                    });
+                  }}
+                  placeholder="Select Month"
+                />
+              </div>
+            </div>
 
-                  {/* CL & SL Row */}
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* CL */}
-                    <div>
-                      <label className="block text-xs font-bold text-gray-900 mb-2 uppercase tracking-wide">
-                        Casual Leave (CL)
-                      </label>
-                      <input
-                        type="number"
-                        step="any"
-                        value={formData.cl_balance}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            cl_balance: e.target.value,
-                          })
-                        }
-                        placeholder="Enter Balance"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                        required
-                      />
-                    </div>
+            {/* CL & SL Row */}
+            <div className="grid grid-cols-2 gap-4">
+              {/* CL */}
+              <div>
+                <label className="block text-xs font-bold text-gray-900 mb-2 uppercase tracking-wide">
+                  Casual Leave (CL)
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  value={formData.cl_balance}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      cl_balance: e.target.value,
+                    })
+                  }
+                  placeholder="Enter Balance"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  required
+                />
+              </div>
 
-                    {/* SL */}
-                    <div>
-                      <label className="block text-xs font-bold text-gray-900 mb-2 uppercase tracking-wide">
-                        Sick Leave (SL)
-                      </label>
-                      <input
-                        type="number"
-                        step="any"
-                        value={formData.sl_balance}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            sl_balance: e.target.value,
-                          })
-                        }
-                        placeholder="Enter Balance"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                        required
-                      />
-                    </div>
-                  </div>
+              {/* SL */}
+              <div>
+                <label className="block text-xs font-bold text-gray-900 mb-2 uppercase tracking-wide">
+                  Sick Leave (SL)
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  value={formData.sl_balance}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      sl_balance: e.target.value,
+                    })
+                  }
+                  placeholder="Enter Balance"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  required
+                />
+              </div>
+            </div>
 
-                  {/* Remarks Field */}
-                  <div>
-                    <label className="block text-xs font-bold text-gray-900 mb-2 uppercase tracking-wide">
-                      Remarks
-                    </label>
-                    <textarea
-                      value={formData.remarks}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          remarks: e.target.value,
-                        })
-                      }
-                      placeholder="Enter remarks or reason for update"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none h-20"
-                    />
-                  </div>
-                </div>
+            {/* Remarks Field */}
+            <div>
+              <label className="block text-xs font-bold text-gray-900 mb-2 uppercase tracking-wide">
+                Remarks
+              </label>
+              <textarea
+                value={formData.remarks}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    remarks: e.target.value,
+                  })
+                }
+                placeholder="Enter remarks or reason for update"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none h-20"
+              />
+            </div>
+          </div>
 
-                <div className="mt-3 flex gap-3">
-                  <PrimaryButton
-                    type="button"
-                    onClick={() => setShowModal(false)}
-                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-900 font-semibold rounded-lg hover:bg-gray-300 transition"
-                    disabled={isUpdating}
-                  >
-                    Cancel
-                  </PrimaryButton>
-                  <PrimaryButton
-                    type="submit"
-                    className="flex-1 px-4 py-2 bg-[#004475] text-white font-bold uppercase tracking-wide rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all disabled:opacity-50 active:scale-[0.98] flex items-center justify-center gap-2"
-                    disabled={isUpdating}
-                  >
-                    {isUpdating ? (
-                      <>
-                        <Loader2 size={16} className="animate-spin" />
-                        Updating...
-                      </>
-                    ) : (
-                      <>
-                        {isEditMode
-                          ? 'Update Leave Balance'
-                          : 'Add Leave Balance'}
-                      </>
-                    )}
-                  </PrimaryButton>
-                </div>
-              </form>
+          <div className="mt-3 flex gap-3">
+            <PrimaryButton
+              type="button"
+              onClick={() => {
+                setShowModal(false);
+                if (openedFromDetails) setBalanceDetailModalOpen(true);
+              }}
+              className="flex-1 px-4 py-2 border border-gray-300 text-gray-900 font-semibold rounded-lg hover:bg-gray-300 transition"
+              disabled={isUpdating}
+            >
+              Cancel
+            </PrimaryButton>
+            <PrimaryButton
+              type="submit"
+              className="flex-1 px-4 py-2 bg-[#004475] text-white font-bold uppercase tracking-wide rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all disabled:opacity-50 active:scale-[0.98] flex items-center justify-center gap-2"
+              disabled={isUpdating}
+            >
+              {isUpdating ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                <>{isEditMode ? 'Update Leave Balance' : 'Add Leave Balance'}</>
+              )}
+            </PrimaryButton>
+          </div>
+        </form>
       </CustomModalForm>
 
       {/* Balance Detail Modal */}
@@ -934,7 +955,40 @@ const UpdateLeaveRequestTab = ({
           onClose={() => setBalanceDetailModalOpen(false)}
           companyHolidays={companyHolidays}
           isAdmin={isAdmin}
+          onOpenEdit={(viewModalYear) => {
+            setBalanceDetailModalOpen(false);
+            setOpenedFromDetails(true);
+
+            let editYear = viewModalYear || selectedYear;
+            let editMonth = 1; // Default to January for past/other years
+            const currentActualYear = new Date().getFullYear();
+
+            if (editYear === 2025) {
+              editMonth = 9; // For 2025 alone start from Sept
+            } else if (editYear === currentActualYear) {
+              editMonth = selectedMonth; // Current year uses present running month (or filtered month)
+            }
+
+            handleUpdateClick(selectedBalanceData, editYear, editMonth);
+          }}
+          onOpenAdd={(viewModalYear) => {
+            setBalanceDetailModalOpen(false);
+            setOpenedFromDetails(true);
+
+            let addYear = viewModalYear || selectedYear;
+            let addMonth = 1; // Default to January for past/other years
+            const currentActualYear = new Date().getFullYear();
+
+            if (addYear === 2025) {
+              addMonth = 9; // For 2025 alone start from Sept
+            } else if (addYear === currentActualYear) {
+              addMonth = selectedMonth; // Current year uses present running month (or filtered month)
+            }
+
+            handleUpdateClick(selectedBalanceData, addYear, addMonth);
+          }}
           onEditMonth={(emp, month, year, cl, sl, remarks) => {
+            setOpenedFromDetails(true);
             setSelectedRow(emp);
             setFormData({
               cl_balance: String(cl || 0),

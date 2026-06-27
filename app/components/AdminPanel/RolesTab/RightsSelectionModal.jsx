@@ -75,15 +75,24 @@ export default function RightsSelectionModal({
       const rightsData = await response.json();
       const groupedByModule = {};
       rightsData.forEach((right) => {
-        if (!groupedByModule[right.module]) {
-          groupedByModule[right.module] = [];
+        const rawModule = right.module || 'General';
+        const trimmedModule = rawModule.trim();
+        const lowerModule = trimmedModule.toLowerCase();
+
+        if (!groupedByModule[lowerModule]) {
+          groupedByModule[lowerModule] = {
+            originalModule: trimmedModule,
+            rights: new Set(),
+          };
         }
-        groupedByModule[right.module].push(right.displayName);
+        if (right.displayName) {
+          groupedByModule[lowerModule].rights.add(right.displayName.trim());
+        }
       });
 
-      const moduleRightsArray = Object.keys(groupedByModule).map((module) => ({
-        module,
-        rights: groupedByModule[module],
+      const moduleRightsArray = Object.values(groupedByModule).map((group) => ({
+        module: group.originalModule,
+        rights: Array.from(group.rights),
       }));
 
       setModuleRights(moduleRightsArray);

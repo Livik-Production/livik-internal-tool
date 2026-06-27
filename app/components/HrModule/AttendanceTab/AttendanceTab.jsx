@@ -383,6 +383,9 @@ export default function AttendanceTab({
         date: initialDate,
         status: initialStatus,
         remarks: initialRemarks,
+        audit: summaryRow.dailyAudit
+          ? summaryRow.dailyAudit[initialDate]
+          : null,
       });
       setDateSearchQuery('');
       setIsEditModalOpen(true);
@@ -462,6 +465,7 @@ export default function AttendanceTab({
   // Confirm delete dialog state
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [deleteSaving, setDeleteSaving] = useState(false);
 
   const handleDelete = (id) => {
     const row = data.find((r) => r.id === id);
@@ -469,11 +473,14 @@ export default function AttendanceTab({
     setConfirmDeleteOpen(true);
   };
 
-  const performDelete = () => {
+  const performDelete = async () => {
+    setConfirmDeleteOpen(false);
+    setLoading(true);
+    await new Promise((resolve) => setTimeout(resolve, 800));
     setData((prev) => prev.filter((r) => r.id !== confirmDeleteId));
     showSuccessToast('Attendance record deleted successfully!');
-    setConfirmDeleteOpen(false);
     setConfirmDeleteId(null);
+    setLoading(false);
   };
 
   // Filter based on search query
@@ -604,10 +611,10 @@ export default function AttendanceTab({
             <IconButton
               type="button"
               onClick={() => setLocalSearch('')}
-              className="absolute right-3 top-2 shadow-none bg-transparent hover:bg-transparent"
+              className="absolute right-2 top-0.5 shadow-none bg-transparent hover:bg-transparent"
               title="Clear search"
             >
-              <X size={14} className="text-gray-400 hover:text-gray-600" />
+              <X size={14} className="text-gray-400 hover:text-red-500" />
             </IconButton>
           )}
         </div>
@@ -789,6 +796,7 @@ export default function AttendanceTab({
       <ConfirmDialog
         open={confirmDeleteOpen}
         title="Delete Attendance Record"
+        loading={deleteSaving}
         description="Are you sure you want to delete this attendance record? This action cannot be undone."
         confirmLabel="Delete"
         cancelLabel="Cancel"
@@ -865,6 +873,10 @@ export default function AttendanceTab({
                                   setCurrentEditData({
                                     ...currentEditData,
                                     date: opt.value,
+                                    audit:
+                                      data.find(
+                                        (r) => r.empId === currentEditData.empId
+                                      )?.dailyAudit?.[opt.value] || null,
                                   });
                                   setDateSearchQuery(opt.label);
                                   setIsDateOptionsOpen(false);
@@ -966,6 +978,43 @@ export default function AttendanceTab({
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm h-20 resize-none"
                   />
                 </div>
+
+                {(currentEditData.audit?.createdAt ||
+                  currentEditData.audit?.updatedAt ||
+                  currentEditData.audit?.createdBy ||
+                  currentEditData.audit?.createBy ||
+                  currentEditData.audit?.created_by) && (
+                  <div className="flex flex-col text-[10px] text-gray-400 font-medium whitespace-nowrap mt-2">
+                    <span>
+                      Created:{' '}
+                      {currentEditData.audit.createdAt
+                        ? new Date(
+                            currentEditData.audit.createdAt
+                          ).toLocaleString()
+                        : ''}{' '}
+                      {currentEditData.audit.createdBy ||
+                      currentEditData.audit.createBy ||
+                      currentEditData.audit.created_by
+                        ? `by ${currentEditData.audit.createdBy || currentEditData.audit.createBy || currentEditData.audit.created_by}`
+                        : ''}
+                    </span>
+                    {(currentEditData.audit.updatedAt ||
+                      currentEditData.audit.updated_at) && (
+                      <span>
+                        Updated:{' '}
+                        {new Date(
+                          currentEditData.audit.updatedAt ||
+                            currentEditData.audit.updated_at
+                        ).toLocaleString()}{' '}
+                        {currentEditData.audit.updatedBy ||
+                        currentEditData.audit.UpdatedBy ||
+                        currentEditData.audit.updated_by
+                          ? `by ${currentEditData.audit.updatedBy || currentEditData.audit.UpdatedBy || currentEditData.audit.updated_by}`
+                          : ''}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="px-4 py-3 flex justify-end gap-3 border-t border-gray-200">

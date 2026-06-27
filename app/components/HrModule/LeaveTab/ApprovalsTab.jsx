@@ -280,10 +280,13 @@ const ApprovalsTab = ({ onViewLeaveDetails }) => {
             {searchQuery && (
               <IconButton
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2 top-1.5 shadow-none bg-transparent hover:bg-transparent"
+                className="absolute right-2 top-0.5 shadow-none bg-transparent hover:bg-transparent"
                 title="Clear search"
               >
-                <X size={14} className="text-gray-400 hover:text-[#004475]" />
+                <X
+                  size={14}
+                  className="text-gray-400 hover:text-red-500 hover:scale-110"
+                />
               </IconButton>
             )}
           </div>
@@ -343,11 +346,7 @@ const ApprovalsTab = ({ onViewLeaveDetails }) => {
               </p>
             </div>
           ) : (
-            <CustomTable
-              columns={columns}
-              data={paginatedData}
-              rowKey="id"
-            />
+            <CustomTable columns={columns} data={paginatedData} rowKey="id" />
           )}
         </div>
         {!loading && !error && filteredData.length > 0 && (

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { X, Search, User } from 'lucide-react';
 import Button from '../../Buttons/Button';
 import PrimaryButton from '../../Buttons/PrimaryButton';
@@ -40,10 +40,40 @@ export default function AssignRoleModal({
 
   const [errors, setErrors] = useState({});
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showNameSuggestions, setShowNameSuggestions] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [filteredEmployees, setFilteredEmployees] = useState([]);
   const suggestionsRef = useRef(null);
+  const suggestionsNameRef = useRef(null);
   const modalRef = useRef(null);
+
+  const activeEmployees = useMemo(() => {
+    return employees.filter((emp) => {
+      const statusUpper = (emp.status || emp.__raw?.status || '').toUpperCase();
+      const isPending =
+        statusUpper === 'PENDING' || statusUpper === 'PENDING_ADMIN';
+      return !isPending;
+    });
+  }, [employees]);
+
+  const filteredEmployees = useMemo(() => {
+    const query = (formData.employeeId || '').trim().toLowerCase();
+    if (!query) return activeEmployees;
+    return activeEmployees.filter(
+      (emp) =>
+        (emp.id || '').toLowerCase().includes(query) ||
+        (emp.name || '').toLowerCase().includes(query)
+    );
+  }, [formData.employeeId, activeEmployees]);
+
+  const filteredNameEmployees = useMemo(() => {
+    const query = (formData.employeeName || '').trim().toLowerCase();
+    if (!query) return activeEmployees;
+    return activeEmployees.filter(
+      (emp) =>
+        (emp.id || '').toLowerCase().includes(query) ||
+        (emp.name || '').toLowerCase().includes(query)
+    );
+  }, [formData.employeeName, activeEmployees]);
 
   useEffect(() => {
     if (isOpen) {
@@ -57,32 +87,10 @@ export default function AssignRoleModal({
       });
       setErrors({});
       setShowSuggestions(false);
-      setFilteredEmployees([]);
+      setShowNameSuggestions(false);
       setShowConfirm(false);
     }
   }, [isOpen, preselectedRole]);
-
-  useEffect(() => {
-    if (formData.employeeId.trim()) {
-      const query = formData.employeeId.toLowerCase();
-      const filtered = employees.filter(
-        (emp) => {
-          const statusUpper = (emp.status || emp.__raw?.status || '').toUpperCase();
-          const isPending = statusUpper === 'PENDING' || statusUpper === 'PENDING_ADMIN';
-          if (isPending) return false;
-          return (
-            (emp.id || '').toLowerCase().includes(query) ||
-            (emp.name || '').toLowerCase().includes(query)
-          );
-        }
-      );
-      setFilteredEmployees(filtered);
-      setShowSuggestions(filtered.length > 0);
-    } else {
-      setFilteredEmployees([]);
-      setShowSuggestions(false);
-    }
-  }, [formData.employeeId, employees]);
 
   useEffect(() => {
     const handleClickOutsideSuggestions = (event) => {
@@ -91,6 +99,12 @@ export default function AssignRoleModal({
         !suggestionsRef.current.contains(event.target)
       ) {
         setShowSuggestions(false);
+      }
+      if (
+        suggestionsNameRef.current &&
+        !suggestionsNameRef.current.contains(event.target)
+      ) {
+        setShowNameSuggestions(false);
       }
     };
 
@@ -140,6 +154,7 @@ export default function AssignRoleModal({
       currentRole: employee.role || null,
     }));
     setShowSuggestions(false);
+    setShowNameSuggestions(false);
 
     if (errors.employeeId || errors.employeeName) {
       setErrors((prev) => ({
@@ -279,11 +294,8 @@ export default function AssignRoleModal({
                   placeholder="Search by ID or name..."
                   disabled={isLoading}
                   autoComplete="off"
-                  onFocus={() => {
-                    if (formData.employeeId.trim()) {
-                      setShowSuggestions(true);
-                    }
-                  }}
+                  onFocus={() => setShowSuggestions(true)}
+                  onClick={() => setShowSuggestions(true)}
                 />
               </div>
 
@@ -323,7 +335,7 @@ export default function AssignRoleModal({
               )}
             </div>
 
-            <div>
+            <div className="relative" ref={suggestionsNameRef}>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
                 Employee Name *
               </label>
@@ -340,8 +352,39 @@ export default function AssignRoleModal({
                   placeholder="Enter employee name"
                   disabled={isLoading}
                   autoComplete="off"
+                  onFocus={() => setShowNameSuggestions(true)}
+                  onClick={() => setShowNameSuggestions(true)}
                 />
               </div>
+
+              {showNameSuggestions && filteredNameEmployees.length > 0 && (
+                <div className="absolute z-10 w-full mt-2 bg-white border border-gray-100 rounded-xl shadow-xl max-h-60 overflow-y-auto overflow-x-hidden border-t-0 p-1">
+                  {filteredNameEmployees.map((employee) => (
+                    <button
+                      key={employee.id}
+                      type="button"
+                      onClick={() => handleSelectEmployee(employee)}
+                      className="w-full px-3 py-2.5 text-left hover:bg-blue-50/50 rounded-lg focus:bg-blue-50/50 focus:outline-none flex items-center gap-3 transition-colors group/item"
+                    >
+                      <div className="p-2 bg-gray-100 rounded-lg group-hover/item:bg-white group-focus/item:bg-white transition-colors">
+                        <User className="h-4 w-4 text-gray-500 group-hover/item:text-blue-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-gray-900 truncate text-sm">
+                          {employee.name}
+                        </div>
+                        <div className="text-xs text-gray-500 truncate">
+                          ID: {employee.id}
+                        </div>
+                      </div>
+                      <div className="text-[10px] text-blue-600 font-bold bg-blue-50 px-2 py-1 rounded-md opacity-0 group-hover/item:opacity-100 transition-opacity">
+                        SELECT
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+
               {errors.employeeName && (
                 <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1">
                   <span className="w-1 h-1 rounded-full bg-red-500"></span>

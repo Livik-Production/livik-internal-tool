@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { useSelector } from 'react-redux';
 import Loader from '../../Loader';
 import { SquarePen, Eye, Plus } from 'lucide-react';
 import CustomTable from '../../CustomTable';
@@ -13,6 +14,7 @@ import Pagination from '../../Pagination';
 
 const SalarySetupTab = ({ isViewOnly = false }) => {
   const [isLoading, setIsLoading] = useState(true);
+  const authUser = useSelector((state) => state.auth?.user);
   const [isPayrollAdmin] = useState(true);
 
   const [employees, setEmployees] = useState([]);
@@ -114,6 +116,8 @@ const SalarySetupTab = ({ isViewOnly = false }) => {
         basicPay: data.basicPay,
         hra: data.hra,
         otherAllowances: data.otherAllowances,
+        createdBy: authUser?.name || 'Unknown',
+        updatedBy: authUser?.name || 'Unknown',
       };
 
       const response = await fetch('/api/payroll/salary-setup', {

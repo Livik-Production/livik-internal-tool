@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Sidebar from './Sidebar';
 import { MenuIcon, XIcon } from 'lucide-react';
 import { usePathname } from 'next/navigation';
@@ -11,28 +11,46 @@ import ProfileSetupWizardContract from '../components/EmployeePortal/ProfileSetu
 
 export default function DashboardLayoutContent({ children }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isBellOpen, setIsBellOpen] = useState(false);
   const pathname = usePathname();
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
   const closeSidebar = () => setIsSidebarOpen(false);
 
+  useEffect(() => {
+    const handleBellChange = (e) => {
+      setIsBellOpen(e.detail.open);
+    };
+    window.addEventListener('bell-state-change', handleBellChange);
+    return () =>
+      window.removeEventListener('bell-state-change', handleBellChange);
+  }, []);
+
   const authUser = useSelector(selectAuthUser);
-  
+
   // Check if this is a new employee who needs to complete their profile.
   // Only show wizard for PENDING employees who haven't filled their details.
   // Active / PENDING_ADMIN employees must never be redirected to the wizard.
   const statusUpper = authUser?.status?.toUpperCase();
   const isPending = statusUpper === 'PENDING';
   const isActive = statusUpper === 'ACTIVE' || statusUpper === 'PENDING_ADMIN';
-  const isContract = (authUser?.workType || '').toString().toUpperCase() === 'CONTRACT';
+  const isContract =
+    (authUser?.workType || '').toString().toUpperCase() === 'CONTRACT';
   const hasCompletedSetup = isContract
     ? !!(authUser?.name && authUser?.mobile && authUser?.bondRemarks)
-    : !!(authUser?.aadhaarNumber && authUser?.panNumber && authUser?.dateOfBirth && authUser?.presentAddress);
+    : !!(
+        authUser?.aadhaarNumber &&
+        authUser?.panNumber &&
+        authUser?.dateOfBirth &&
+        authUser?.presentAddress
+      );
 
   // Show setup wizard only for truly pending+incomplete employees
-  if (authUser && isPending && !isActive && !hasCompletedSetup) {
+  // Active / PENDING_ADMIN employees must never be redirected to the wizard.
+  if (authUser && isPending && !isActive) {
     const wt = (authUser.workType || '').toString().toUpperCase();
-    if (wt === 'CONTRACT') return <ProfileSetupWizardContract rawEmployeeData={authUser} />;
+    if (wt === 'CONTRACT')
+      return <ProfileSetupWizardContract rawEmployeeData={authUser} />;
     return <ProfileSetupWizard rawEmployeeData={authUser} />;
   }
 
@@ -63,14 +81,17 @@ export default function DashboardLayoutContent({ children }) {
 
       {/* Sidebar Container */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out md:translate-x-0 md:bg-white md:static md:h-screen md:sticky md:top-0 ${
+        className={`fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-gray-200 transform transition-all duration-300 ease-in-out md:translate-x-0 md:bg-white md:static md:h-screen md:sticky md:top-0 ${
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        } ${isBellOpen ? 'blur-[6px] pointer-events-none' : ''}`}
       >
-        <div className="h-full overflow-y-auto">
+        <div className="h-full overflow-y-auto relative">
           <Suspense fallback={null}>
             <Sidebar onLinkClick={closeSidebar} />
           </Suspense>
+          {isBellOpen && (
+            <div className="absolute inset-0 bg-black/20 z-50 pointer-events-none" />
+          )}
         </div>
       </aside>
 

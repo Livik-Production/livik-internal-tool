@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Plus,
   Trash2,
@@ -14,18 +15,19 @@ import {
   AlertCircle,
   Layers,
   ListFilter,
+  Loader2,
 } from 'lucide-react';
 import CustomAlertForm from '../CustomAlertForm';
 import Loader from '../Loader';
 import IconButton from '../Buttons/IconButton';
 
-// ─── Reusable inline-edit input ──────────────────────────────────────────────
 const InlineEditInput = ({
   value,
   onSave,
   onCancel,
   placeholder = '',
   autoFocus = true,
+  isSaving = false,
 }) => {
   const [text, setText] = useState(value);
   const inputRef = useRef(null);
@@ -40,9 +42,9 @@ const InlineEditInput = ({
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      if (text.trim()) onSave(text.trim());
+      if (text.trim() && !isSaving) onSave(text.trim());
     }
-    if (e.key === 'Escape') onCancel();
+    if (e.key === 'Escape' && !isSaving) onCancel();
   };
 
   return (
@@ -54,18 +56,25 @@ const InlineEditInput = ({
         onChange={(e) => setText(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
-        className="flex-1 px-2.5 py-1.5 border border-gray-300 rounded-lg text-sm text-slate-800 bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+        disabled={isSaving}
+        className="flex-1 px-2.5 py-1.5 border border-gray-300 rounded-lg text-sm text-slate-800 bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all disabled:opacity-50"
       />
       <button
-        onClick={() => text.trim() && onSave(text.trim())}
-        className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+        onClick={() => text.trim() && !isSaving && onSave(text.trim())}
+        disabled={isSaving || !text.trim()}
+        className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50"
         title="Save"
       >
-        <Check size={14} strokeWidth={3} />
+        {isSaving ? (
+          <Loader2 size={14} className="animate-spin" />
+        ) : (
+          <Check size={14} strokeWidth={3} />
+        )}
       </button>
       <button
         onClick={onCancel}
-        className="p-1.5 text-gray-400 hover:bg-gray-100 rounded-lg transition-colors"
+        disabled={isSaving}
+        className="p-1.5 text-gray-400 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
         title="Cancel"
       >
         <X size={14} strokeWidth={3} />
@@ -82,6 +91,12 @@ export default function LookupDataTab() {
   const [toast, setToast] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [valueSearchTerm, setValueSearchTerm] = useState('');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -110,6 +125,14 @@ export default function LookupDataTab() {
   const [deleteCategoryTarget, setDeleteCategoryTarget] = useState(null);
   const [showDeleteCategoryConfirm, setShowDeleteCategoryConfirm] =
     useState(false);
+
+  // Loading states for CRUD operations
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+  const [isRenamingCategory, setIsRenamingCategory] = useState(false);
+  const [isDeletingCategory, setIsDeletingCategory] = useState(false);
+  const [isCreatingValue, setIsCreatingValue] = useState(false);
+  const [isSavingValue, setIsSavingValue] = useState(false);
+  const [isDeletingValue, setIsDeletingValue] = useState(false);
 
   // Fetch all dropdown values from DB and group them on mount
   const fetchDropdowns = async () => {
@@ -191,10 +214,10 @@ export default function LookupDataTab() {
     );
     if (exists) {
       showToast('This value already exists in this category.', 'error');
-      setNewValueText('');
       return;
     }
 
+    setIsCreatingValue(true);
     try {
       const res = await fetch('/api/dropdowns', {
         method: 'POST',
@@ -224,14 +247,16 @@ export default function LookupDataTab() {
         )
       );
       showToast('Value added successfully.');
+      setNewValueText('');
     } catch (error) {
       showToast(error.message, 'error');
+    } finally {
+      setIsCreatingValue(false);
     }
-
-    setNewValueText('');
   };
 
   const handleEditValueSave = async (valueId, newLabel) => {
+    setIsSavingValue(true);
     try {
       const res = await fetch(`/api/dropdowns/${valueId}`, {
         method: 'PUT',
@@ -258,10 +283,12 @@ export default function LookupDataTab() {
         )
       );
       showToast('Value updated successfully.');
+      setEditingValueId(null);
     } catch (error) {
       showToast(error.message, 'error');
+    } finally {
+      setIsSavingValue(false);
     }
-    setEditingValueId(null);
   };
 
   const handleToggleValueActive = async (valueId) => {
@@ -311,6 +338,7 @@ export default function LookupDataTab() {
 
   const confirmDeleteValue = async () => {
     if (!deleteValueTarget) return;
+    setIsDeletingValue(true);
     try {
       const res = await fetch(`/api/dropdowns/${deleteValueTarget}`, {
         method: 'DELETE',
@@ -329,33 +357,43 @@ export default function LookupDataTab() {
         )
       );
       showToast('Value deleted successfully.');
+      setShowDeleteValueConfirm(false);
+      setDeleteValueTarget(null);
     } catch (error) {
       showToast(error.message, 'error');
+    } finally {
+      setIsDeletingValue(false);
     }
-    setShowDeleteValueConfirm(false);
-    setDeleteValueTarget(null);
   };
 
-  const handleAddCategory = () => {
+  const handleAddCategory = async () => {
     if (!newCategoryName.trim()) return;
 
-    const categoryId = newCategoryName
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, '_');
-    const newCat = {
-      id: categoryId,
-      name: newCategoryName.trim(),
-      description: newCategoryDesc.trim() || 'Custom dropdown category',
-      icon: '📋',
-      values: [],
-    };
+    setIsCreatingCategory(true);
+    try {
+      // Simulate database delay for category creation
+      await new Promise((resolve) => setTimeout(resolve, 800));
 
-    setCategories((prev) => [...prev, newCat]);
-    setSelectedCategoryId(newCat.id);
-    setNewCategoryName('');
-    setNewCategoryDesc('');
-    setIsAddingCategory(false);
+      const categoryId = newCategoryName
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, '_');
+      const newCat = {
+        id: categoryId,
+        name: newCategoryName.trim(),
+        description: newCategoryDesc.trim() || 'Custom dropdown category',
+        icon: '📋',
+        values: [],
+      };
+
+      setCategories((prev) => [...prev, newCat]);
+      setSelectedCategoryId(newCat.id);
+      setNewCategoryName('');
+      setNewCategoryDesc('');
+      setIsAddingCategory(false);
+    } finally {
+      setIsCreatingCategory(false);
+    }
   };
 
   const handleDeleteCategory = (catId) => {
@@ -366,6 +404,7 @@ export default function LookupDataTab() {
   const confirmDeleteCategory = async () => {
     if (!deleteCategoryTarget) return;
 
+    setIsDeletingCategory(true);
     try {
       const res = await fetch(`/api/dropdowns?type=${deleteCategoryTarget}`, {
         method: 'DELETE',
@@ -386,12 +425,13 @@ export default function LookupDataTab() {
         setSelectedCategoryId(remaining[0]?.id || '');
       }
       showToast('Category values deleted successfully.');
+      setShowDeleteCategoryConfirm(false);
+      setDeleteCategoryTarget(null);
     } catch (error) {
       showToast(error.message, 'error');
+    } finally {
+      setIsDeletingCategory(false);
     }
-
-    setShowDeleteCategoryConfirm(false);
-    setDeleteCategoryTarget(null);
   };
 
   const handleRenameCategory = async (catId, newName) => {
@@ -416,8 +456,9 @@ export default function LookupDataTab() {
 
     const hasValues = selectedCategory?.values.length > 0;
 
-    if (hasValues) {
-      try {
+    setIsRenamingCategory(true);
+    try {
+      if (hasValues) {
         const res = await fetch('/api/dropdowns', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -430,21 +471,25 @@ export default function LookupDataTab() {
         if (!res.ok) throw new Error(data.error || 'Failed to rename category');
 
         showToast('Category renamed successfully.');
-      } catch (error) {
-        showToast(error.message, 'error');
-        return;
+      } else {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        showToast('Category renamed successfully.');
       }
-    } else {
-      showToast('Category renamed successfully.');
-    }
 
-    setCategories((prev) =>
-      prev.map((c) =>
-        c.id === catId ? { ...c, id: newCategoryId, name: formattedNewName } : c
-      )
-    );
-    setSelectedCategoryId(newCategoryId);
-    setIsEditingCategoryName(false);
+      setCategories((prev) =>
+        prev.map((c) =>
+          c.id === catId
+            ? { ...c, id: newCategoryId, name: formattedNewName }
+            : c
+        )
+      );
+      setSelectedCategoryId(newCategoryId);
+      setIsEditingCategoryName(false);
+    } catch (error) {
+      showToast(error.message, 'error');
+    } finally {
+      setIsRenamingCategory(false);
+    }
   };
 
   const handleNewValueKeyDown = (e) => {
@@ -457,6 +502,14 @@ export default function LookupDataTab() {
       setNewValueText('');
     }
   };
+
+  const isAnyActionLoading =
+    isCreatingCategory ||
+    isRenamingCategory ||
+    isDeletingCategory ||
+    isCreatingValue ||
+    isSavingValue ||
+    isDeletingValue;
 
   if (loading) {
     return (
@@ -510,7 +563,8 @@ export default function LookupDataTab() {
             </span>
             <button
               onClick={() => setIsAddingCategory(true)}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm font-bold rounded-lg border border-blue-200 bg-[#004475] text-white hover:bg-[#003a66] transition-all flex-shrink-0 shadow-sm"
+              disabled={isAnyActionLoading}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm font-bold rounded-lg border border-blue-200 bg-[#004475] text-white hover:bg-[#003a66] transition-all flex-shrink-0 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
               title="New Category"
             >
               <Plus size={12} strokeWidth={3} />
@@ -531,6 +585,7 @@ export default function LookupDataTab() {
                   return (
                     <button
                       key={cat.id}
+                      disabled={isAnyActionLoading}
                       onClick={() => {
                         setSelectedCategoryId(cat.id);
                         setValueSearchTerm('');
@@ -538,7 +593,7 @@ export default function LookupDataTab() {
                         setEditingValueId(null);
                         setIsEditingCategoryName(false);
                       }}
-                      className={`flex flex-row items-center gap-3 p-3 rounded-xl border transition-all text-left duration-200 min-h-[64px] ${
+                      className={`flex flex-row items-center gap-3 p-3 rounded-xl border transition-all text-left duration-200 min-h-[64px] disabled:opacity-50 disabled:cursor-not-allowed ${
                         isSelected
                           ? 'bg-[#004475] text-white border-[#004475] shadow-md'
                           : 'bg-white text-slate-700 border-gray-300 hover:bg-slate-50 hover:border-gray-400'
@@ -546,9 +601,14 @@ export default function LookupDataTab() {
                     >
                       <span className="text-2xl flex-shrink-0">{cat.icon}</span>
                       <div className="flex-1 min-w-0">
-                        <span className="text-xs font-semibold block truncate w-full">{cat.name}</span>
-                        <span className={`text-[10px] block mt-0.5 ${isSelected ? 'text-blue-200' : 'text-slate-500'}`}>
-                          {cat.values.length} value{cat.values.length !== 1 ? 's' : ''}
+                        <span className="text-xs font-semibold block truncate w-full">
+                          {cat.name}
+                        </span>
+                        <span
+                          className={`text-[10px] block mt-0.5 ${isSelected ? 'text-blue-200' : 'text-slate-500'}`}
+                        >
+                          {cat.values.length} value
+                          {cat.values.length !== 1 ? 's' : ''}
                         </span>
                       </div>
                     </button>
@@ -568,6 +628,7 @@ export default function LookupDataTab() {
                     {isEditingCategoryName ? (
                       <InlineEditInput
                         value={selectedCategory.name}
+                        isSaving={isRenamingCategory}
                         onSave={(newName) =>
                           handleRenameCategory(selectedCategory.id, newName)
                         }
@@ -578,7 +639,7 @@ export default function LookupDataTab() {
                         <h3 className="text-lg font-bold text-slate-800 ml-5">
                           {selectedCategory.name}
                         </h3>
-                        
+
                         {/* Active Stats Pill */}
                         <span className="px-2.5 py-0.5 ml-30 bg-emerald-50 text-emerald-600 rounded-full text-xs font-bold border border-emerald-100 flex-shrink-0">
                           {activeCount}/{totalCount} Active
@@ -587,7 +648,8 @@ export default function LookupDataTab() {
                         {/* Add Value button inline [+] */}
                         <button
                           onClick={() => setIsAddingValue(true)}
-                          className="ml-30 p-1.5 text-gray-500 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors flex-shrink-0"
+                          disabled={isAnyActionLoading}
+                          className="ml-30 p-1.5 text-gray-500 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed"
                           title="Add Value"
                         >
                           <Plus size={16} strokeWidth={3} />
@@ -596,7 +658,8 @@ export default function LookupDataTab() {
                         {/* Rename Category button [✏️] */}
                         <button
                           onClick={() => setIsEditingCategoryName(true)}
-                          className="p-1.5 text-gray-500 hover:text-[#004475] hover:bg-slate-100 rounded-lg transition-colors flex-shrink-0"
+                          disabled={isAnyActionLoading}
+                          className="p-1.5 text-gray-500 hover:text-[#004475] hover:bg-slate-100 rounded-lg transition-colors flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed"
                           title="Rename Category"
                         >
                           <SquarePen size={14} />
@@ -604,8 +667,11 @@ export default function LookupDataTab() {
 
                         {/* Delete Category button [🗑️] */}
                         <IconButton
-                          onClick={() => handleDeleteCategory(selectedCategory.id)}
-                          className="p-1.5 hover:bg-red-50 transition-colors text-red-500 flex-shrink-0"
+                          onClick={() =>
+                            handleDeleteCategory(selectedCategory.id)
+                          }
+                          disabled={isAnyActionLoading}
+                          className="p-1.5 hover:bg-red-50 transition-colors text-red-500 flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed"
                           title="Delete Category"
                         >
                           <Trash2 size={16} />
@@ -628,22 +694,28 @@ export default function LookupDataTab() {
                           onChange={(e) => setNewValueText(e.target.value)}
                           onKeyDown={handleNewValueKeyDown}
                           placeholder="Type value & press Enter"
-                          className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-slate-800 bg-white focus:ring-2 focus:ring-blue-500 outline-none flex-1 transition-all"
+                          disabled={isCreatingValue}
+                          className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-slate-800 bg-white focus:ring-2 focus:ring-blue-500 outline-none flex-1 transition-all disabled:opacity-50"
                         />
                         <button
                           onClick={handleAddValue}
-                          disabled={!newValueText.trim()}
+                          disabled={!newValueText.trim() || isCreatingValue}
                           className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0"
                           title="Add"
                         >
-                          <Check size={16} strokeWidth={3} />
+                          {isCreatingValue ? (
+                            <Loader2 className="animate-spin" size={16} />
+                          ) : (
+                            <Check size={16} strokeWidth={3} />
+                          )}
                         </button>
                         <button
                           onClick={() => {
                             setIsAddingValue(false);
                             setNewValueText('');
                           }}
-                          className="p-1.5 text-gray-400 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+                          disabled={isCreatingValue}
+                          className="p-1.5 text-gray-400 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0 disabled:opacity-30"
                           title="Close"
                         >
                           <X size={16} strokeWidth={3} />
@@ -651,7 +723,6 @@ export default function LookupDataTab() {
                       </div>
                     </div>
                   )}
-
 
                   {/* Values list */}
                   <div className="flex-1 overflow-y-auto no-scrollbar px-6 py-4">
@@ -683,6 +754,7 @@ export default function LookupDataTab() {
                                 {editingValueId === val.id ? (
                                   <InlineEditInput
                                     value={val.label}
+                                    isSaving={isSavingValue}
                                     onSave={(newLabel) =>
                                       handleEditValueSave(val.id, newLabel)
                                     }
@@ -704,11 +776,12 @@ export default function LookupDataTab() {
                               {/* Status pill */}
                               <button
                                 onClick={() => handleToggleValueActive(val.id)}
+                                disabled={isAnyActionLoading}
                                 className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all flex-shrink-0 border ${
                                   val.isActive
                                     ? 'bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100'
                                     : 'bg-gray-100 text-gray-500 border-gray-300 hover:bg-gray-200'
-                                }`}
+                                } disabled:opacity-50 disabled:cursor-not-allowed`}
                                 title={
                                   val.isActive
                                     ? 'Click to deactivate'
@@ -722,14 +795,16 @@ export default function LookupDataTab() {
                               <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
                                 <button
                                   onClick={() => setEditingValueId(val.id)}
-                                  className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                  disabled={isAnyActionLoading}
+                                  className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                                   title="Edit"
                                 >
                                   <SquarePen size={14} />
                                 </button>
                                 <IconButton
                                   onClick={() => handleDeleteValue(val.id)}
-                                  className="p-1.5 hover:bg-red-50 transition-colors text-red-500"
+                                  disabled={isAnyActionLoading}
+                                  className="p-1.5 hover:bg-red-50 transition-colors text-red-500 disabled:opacity-30 disabled:cursor-not-allowed"
                                   title="Delete"
                                 >
                                   <Trash2 size={14} />
@@ -761,8 +836,9 @@ export default function LookupDataTab() {
                                 No values yet
                               </p>
                               <p className="text-xs text-gray-400 mt-1">
-                                Click the inline &quot;+&quot; button in the header above to create dropdown
-                                options for this category
+                                Click the inline &quot;+&quot; button in the
+                                header above to create dropdown options for this
+                                category
                               </p>
                             </>
                           )}
@@ -812,8 +888,10 @@ export default function LookupDataTab() {
       <CustomAlertForm
         isOpen={showDeleteValueConfirm}
         onClose={() => {
-          setShowDeleteValueConfirm(false);
-          setDeleteValueTarget(null);
+          if (!isDeletingValue) {
+            setShowDeleteValueConfirm(false);
+            setDeleteValueTarget(null);
+          }
         }}
         onConfirm={confirmDeleteValue}
         title="Delete Value"
@@ -821,6 +899,7 @@ export default function LookupDataTab() {
         type="danger"
         confirmText="Delete"
         cancelText="Cancel"
+        isSubmitting={isDeletingValue}
         details={
           deleteValueTarget && (
             <div className="text-sm">
@@ -841,8 +920,10 @@ export default function LookupDataTab() {
       <CustomAlertForm
         isOpen={showDeleteCategoryConfirm}
         onClose={() => {
-          setShowDeleteCategoryConfirm(false);
-          setDeleteCategoryTarget(null);
+          if (!isDeletingCategory) {
+            setShowDeleteCategoryConfirm(false);
+            setDeleteCategoryTarget(null);
+          }
         }}
         onConfirm={confirmDeleteCategory}
         title="Delete Category"
@@ -850,6 +931,7 @@ export default function LookupDataTab() {
         type="danger"
         confirmText="Delete Category"
         cancelText="Cancel"
+        isSubmitting={isDeletingCategory}
         details={
           deleteCategoryTarget && (
             <div className="text-sm">
@@ -867,73 +949,90 @@ export default function LookupDataTab() {
         }
       />
       {/* ── Add Category Modal ── */}
-      {isAddingCategory && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl border border-gray-300 p-6 w-full max-w-sm shadow-2xl animate-in zoom-in duration-200 text-left">
-            <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-              <span>Create New Category</span>
-            </h3>
-            <div className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-600">Category Name</label>
-                <input
-                  type="text"
-                  value={newCategoryName}
-                  onChange={(e) => setNewCategoryName(e.target.value)}
-                  placeholder="e.g. Project Status"
-                  autoFocus
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleAddCategory();
-                    if (e.key === 'Escape') {
-                      setIsAddingCategory(false);
-                      setNewCategoryName('');
-                      setNewCategoryDesc('');
-                    }
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-slate-800 bg-white focus:ring-2 focus:ring-blue-500 outline-none"
-                />
+      {isAddingCategory &&
+        mounted &&
+        createPortal(
+          <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl border border-gray-300 p-6 w-full max-w-sm shadow-2xl animate-in zoom-in duration-200 text-left">
+              <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <span>Create New Category</span>
+              </h3>
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-600">
+                    Category Name
+                  </label>
+                  <input
+                    type="text"
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    placeholder="e.g. Project Status"
+                    autoFocus
+                    disabled={isCreatingCategory}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleAddCategory();
+                      if (e.key === 'Escape' && !isCreatingCategory) {
+                        setIsAddingCategory(false);
+                        setNewCategoryName('');
+                        setNewCategoryDesc('');
+                      }
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-slate-800 bg-white focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-600">
+                    Description (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={newCategoryDesc}
+                    onChange={(e) => setNewCategoryDesc(e.target.value)}
+                    placeholder="Short description"
+                    disabled={isCreatingCategory}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleAddCategory();
+                      if (e.key === 'Escape' && !isCreatingCategory) {
+                        setIsAddingCategory(false);
+                        setNewCategoryName('');
+                        setNewCategoryDesc('');
+                      }
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-slate-800 bg-white focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50"
+                  />
+                </div>
               </div>
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-600">Description (Optional)</label>
-                <input
-                  type="text"
-                  value={newCategoryDesc}
-                  onChange={(e) => setNewCategoryDesc(e.target.value)}
-                  placeholder="Short description"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleAddCategory();
-                    if (e.key === 'Escape') {
-                      setIsAddingCategory(false);
-                      setNewCategoryName('');
-                      setNewCategoryDesc('');
-                    }
+              <div className="flex justify-end gap-3 mt-6 border-t border-gray-100 pt-4">
+                <button
+                  onClick={() => {
+                    setIsAddingCategory(false);
+                    setNewCategoryName('');
+                    setNewCategoryDesc('');
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-slate-800 bg-white focus:ring-2 focus:ring-blue-500 outline-none"
-                />
+                  disabled={isCreatingCategory}
+                  className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 rounded-xl transition-all disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAddCategory}
+                  disabled={!newCategoryName.trim() || isCreatingCategory}
+                  className="px-5 py-2 text-sm font-bold text-white bg-[#004475] hover:bg-[#003a66] rounded-xl shadow-sm disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center min-w-[140px]"
+                >
+                  {isCreatingCategory ? (
+                    <>
+                      <Loader2 className="animate-spin mr-2" size={16} />
+                      <span>Creating...</span>
+                    </>
+                  ) : (
+                    'Create Category'
+                  )}
+                </button>
               </div>
             </div>
-            <div className="flex justify-end gap-3 mt-6 border-t border-gray-100 pt-4">
-              <button
-                onClick={() => {
-                  setIsAddingCategory(false);
-                  setNewCategoryName('');
-                  setNewCategoryDesc('');
-                }}
-                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 rounded-xl transition-all"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleAddCategory}
-                disabled={!newCategoryName.trim()}
-                className="px-5 py-2 text-sm font-bold text-white bg-[#004475] hover:bg-[#003a66] rounded-xl shadow-sm disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-              >
-                Create Category
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

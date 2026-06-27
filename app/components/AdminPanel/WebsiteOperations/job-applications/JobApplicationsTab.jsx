@@ -10,6 +10,7 @@ import {
   Users,
   Clock,
   MapPin,
+  X,
 } from 'lucide-react';
 import CustomTable from '../../../CustomTable';
 import IconButton from '../../../Buttons/IconButton';
@@ -345,8 +346,20 @@ export default function JobApplicationsTab({
                   setSearchQuery(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004475]/20 focus:border-[#004475] w-64"
+                className="pl-9 pr-10 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004475]/20 focus:border-[#004475] w-64"
               />
+              {searchQuery && (
+                <IconButton
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2 top-0.5 shadow-none bg-transparent hover:bg-transparent"
+                  title="Clear search"
+                >
+                  <X
+                    size={14}
+                    className="text-gray-400 hover:text-red-500 hover:scale-110"
+                  />
+                </IconButton>
+              )}
             </div>
 
             <div className="flex items-center gap-2">

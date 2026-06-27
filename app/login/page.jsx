@@ -271,10 +271,17 @@ function OtpLogin({ onBack, forgotPasswordMode = false }) {
           body: JSON.stringify({ mobile, otp }),
         });
 
+        if (!res.headers.get('content-type')?.includes('application/json')) {
+          setError(
+            `Unexpected server error (${res.status}). Please try again later.`
+          );
+          return;
+        }
         const data = await res.json();
 
         if (!res.ok) {
-          throw new Error(data.message || 'Invalid OTP');
+          setError(data.message || 'Invalid OTP');
+          return;
         }
 
         // Forgot password flow
@@ -291,7 +298,11 @@ function OtpLogin({ onBack, forgotPasswordMode = false }) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ mobile }),
         });
-        const pwdData = await pwdRes.json();
+
+        let pwdData = { exists: false, hasPassword: false };
+        if (pwdRes.headers.get('content-type')?.includes('application/json')) {
+          pwdData = await pwdRes.json();
+        }
 
         if (pwdData.exists && pwdData.hasPassword) {
           const result = await dispatch(fetchCurrentUser());
@@ -330,10 +341,19 @@ function OtpLogin({ onBack, forgotPasswordMode = false }) {
           body: JSON.stringify({ mobile }),
         });
 
+        if (!res.headers.get('content-type')?.includes('application/json')) {
+          setResendCountdown(0);
+          setError(
+            `Unexpected server error (${res.status}). Please try again later.`
+          );
+          return;
+        }
         const data = await res.json();
 
         if (!res.ok) {
-          throw new Error(data.message || 'Failed to send OTP');
+          setResendCountdown(0);
+          setError(data.message || 'Failed to send OTP');
+          return;
         }
 
         setOtpSent(true);
@@ -369,13 +389,14 @@ function OtpLogin({ onBack, forgotPasswordMode = false }) {
 
   return (
     <div className="w-full max-w-[450px] text-center animate-fadeIn px-5">
-      <div className="mb-2 text-left">
+      <div className="mb-6 text-left">
         <button
           type="button"
-          className="text-sm text-[#1E90FF] underline"
           onClick={onBack}
+          className="inline-flex items-center gap-1 text-sm font-medium text-blue-500 hover:text-blue-400 hover:underline transition-colors duration-200"
         >
-          &larr; Back to password login
+          <span>←</span>
+          <span>Back to Password Login</span>
         </button>
       </div>
 
@@ -530,6 +551,11 @@ export default function LoginPage() {
           }),
         });
 
+        if (!res.headers.get('content-type')?.includes('application/json')) {
+          throw new Error(
+            `Unexpected server error (${res.status}). Please try again later.`
+          );
+        }
         const data = await res.json();
 
         if (res.status === 409 && data.passwordNotSet) {
@@ -670,6 +696,28 @@ export default function LoginPage() {
               }}
             >
               Login With OTP
+            </button>
+          </div>
+
+          <div className="relative flex py-4 items-center">
+            <div className="flex-grow border-t border-gray-600/30"></div>
+            <span className="flex-shrink mx-4 text-gray-400 text-[14px]">
+              or
+            </span>
+            <div className="flex-grow border-t border-gray-600/30"></div>
+          </div>
+
+          <div className="text-center text-[14px] font-medium text-gray-300">
+            Don't have an account?{' '}
+            <button
+              type="button"
+              className="text-[#1E90FF] hover:text-[#5eb8ff] underline cursor-pointer font-bold outline-none"
+              onClick={() => {
+                setShowMobileLogin(true);
+                setForgotPasswordMode(false);
+              }}
+            >
+              Sign Up
             </button>
           </div>
         </form>

@@ -8,7 +8,7 @@ import { NotificationService } from '../../../../services/notification.service';
 
 export async function POST(req) {
   try {
-    const { month } = await req.json(); // e.g., "2026-01"
+    const { month, createdBy, updatedBy } = await req.json(); // e.g., "2026-01"
 
     if (!month) {
       return NextResponse.json({ error: 'Month is required' }, { status: 400 });
@@ -224,6 +224,8 @@ export async function POST(req) {
           totalDeductions: totalDeductionsAll,
           totalNet: totalNetAll,
           status: 'PROCESSED',
+          createdBy: createdBy || null,
+          updatedBy: updatedBy || null,
         },
       });
 
@@ -297,9 +299,10 @@ export async function POST(req) {
             message: `Your payslip for ${monthNameFull} ${year} has been generated. You can download it now.`,
             type: 'PAYROLL',
           }
-        ).catch(err => console.error('Failed to notify employees of payroll creation', err));
+        ).catch((err) =>
+          console.error('Failed to notify employees of payroll creation', err)
+        );
       }
-
     } catch (emailError) {
       console.error('Error initiating email notifications:', emailError);
     }

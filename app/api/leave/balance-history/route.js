@@ -216,7 +216,17 @@ export async function GET(req) {
 export async function POST(req) {
   try {
     const body = await req.json();
-    const { employeeId, month, year, cl, sl, lop } = body;
+    const {
+      employeeId,
+      month,
+      year,
+      cl,
+      sl,
+      lop,
+      remarks,
+      createdBy,
+      updatedBy,
+    } = body;
 
     if (!employeeId || month === undefined || year === undefined) {
       return NextResponse.json(
@@ -241,11 +251,16 @@ export async function POST(req) {
           cl: parseFloat(cl || 0),
           sl: parseFloat(sl || 0),
           lop: parseFloat(lop || 0),
+          remarks: remarks || null,
+          createdBy: createdBy || null,
+          updatedBy: updatedBy || null,
         },
         update: {
           cl: parseFloat(cl || 0),
           sl: parseFloat(sl || 0),
           lop: parseFloat(lop || 0),
+          remarks: remarks || null,
+          updatedBy: updatedBy || null,
         },
       })
     );

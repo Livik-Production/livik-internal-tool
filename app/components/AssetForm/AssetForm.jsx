@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Trash, SquarePen, X } from 'lucide-react';
+import { Trash, SquarePen, X, Search } from 'lucide-react';
 import CustomAlertForm from '../CustomAlertForm';
 import Pagination from '../Pagination';
 import CustomTable from '../CustomTable';
@@ -26,6 +26,7 @@ export default function AssetsForm({
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [assetToDelete, setAssetToDelete] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -114,12 +115,13 @@ export default function AssetsForm({
     return filtered.slice(startIndex, startIndex + itemsPerPage);
   }, [filtered, currentPage, itemsPerPage]);
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (onDelete && assetToDelete) {
-      onDelete(assetToDelete.id);
+      const targetId = assetToDelete.id;
+      setShowDeleteConfirm(false);
+      setAssetToDelete(null);
+      await onDelete(targetId);
     }
-    setShowDeleteConfirm(false);
-    setAssetToDelete(null);
   };
 
   const handleItemsPerPageChange = (newItemsPerPage) => {
@@ -241,21 +243,9 @@ export default function AssetsForm({
                 placeholder="Search all fields..."
                 className="px-3 py-2 pl-10 border border-gray-300 rounded-md text-sm w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              <svg
-                className="absolute left-3 top-2.5 h-4 w-4 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
               {query && (
-                <div className="absolute right-2 top-1.5">
+                <div className="absolute right-2 top-0.5">
                   <IconButton
                     onClick={() => {
                       setQuery('');
@@ -345,6 +335,7 @@ export default function AssetsForm({
         type="danger"
         confirmText="Delete"
         cancelText="Keep Asset"
+        isSubmitting={isDeleting}
       />
     </div>
   );

@@ -212,9 +212,8 @@ const ClientSelectionModal = ({
         setSelectedProducts(products);
         setTotalAmount(initialData.subTotal || 0); // Use subTotal from invoice
 
-        // Don't show subsequent modals immediately, let user go through flow
-        // Or could auto-advance if desired, but safer to start at step 1
-        setShowProductModal(false);
+        // If initialData is present (editing or duplicating), go directly to Step 2 (Product Selection)
+        setShowProductModal(true);
         setShowGSTModal(false);
       } else {
         // Reset for new invoice
@@ -426,7 +425,9 @@ const ClientSelectionModal = ({
                   <div className="flex items-center gap-4 min-w-0 w-1/5 pr-4">
                     <input
                       type="radio"
-                      checked={getClientId(selectedClient) === getClientId(client)}
+                      checked={
+                        getClientId(selectedClient) === getClientId(client)
+                      }
                       onChange={() => handleToggleSelectClient(client)}
                       onClick={(e) => e.stopPropagation()}
                       className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 cursor-pointer flex-shrink-0"

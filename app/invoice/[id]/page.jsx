@@ -1,6 +1,7 @@
 import PreviewForm from '../../components/Finance/InvoiceTab/PreviewForm';
 import { getInvoiceById } from '../../../lib/invoiceService';
 import { notFound } from 'next/navigation';
+import { prisma } from '../../../lib/prisma';
 
 export default async function InvoicePage({ params }) {
   const { id } = await params;
@@ -9,6 +10,11 @@ export default async function InvoicePage({ params }) {
   if (!invoiceData) {
     notFound();
   }
+
+  const companyDetailsRecord = await prisma.companyDetails.findFirst();
+  const initialCompanyDetails = companyDetailsRecord
+    ? JSON.parse(JSON.stringify(companyDetailsRecord))
+    : null;
 
   // Parse if it was returned as Mongoose document or stringified JSON
   const invoice = JSON.parse(JSON.stringify(invoiceData));
@@ -23,6 +29,7 @@ export default async function InvoicePage({ params }) {
       city: invoice.customer?.city || invoice.city || 'City',
       state: invoice.customer?.state || invoice.state || 'State',
       gst: invoice.customer?.gstnNumber || invoice.gst || '',
+      cin: invoice.customer?.cinNumber || invoice.cin || '',
       email: invoice.customer?.email || '',
       mobile: invoice.customer?.mobile || '',
     },
@@ -142,7 +149,11 @@ export default async function InvoicePage({ params }) {
       `,
         }}
       />
-      <PreviewForm invoiceData={mappedData} letterPad="with" />
+      <PreviewForm
+        invoiceData={mappedData}
+        letterPad="with"
+        initialCompanyDetails={initialCompanyDetails}
+      />
     </div>
   );
 }

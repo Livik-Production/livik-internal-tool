@@ -23,6 +23,7 @@ import {
   FileText,
   Target,
   Loader2,
+  X,
 } from 'lucide-react';
 import TabButton from '../Buttons/TabButton';
 import PrimaryButton from '../Buttons/PrimaryButton';
@@ -57,21 +58,20 @@ function ProjectCard({ project, onEdit, onDelete, onTeamClick, onComplete }) {
   // Calculate progress (mock or real based on available data)
   const progress = project.progress || 65;
 
-  const tags = parseTags(project.tags)
-    .filter(
-      (tag) =>
-        !tag.startsWith('AGREEMENT_FILE:') &&
-        !tag.startsWith('CATEGORY:') &&
-        tag !== 'ON TRACK'
-    );
+  const tags = parseTags(project.tags).filter(
+    (tag) =>
+      !tag.startsWith('AGREEMENT_FILE:') &&
+      !tag.startsWith('CATEGORY:') &&
+      tag !== 'ON TRACK'
+  );
   const mainTag = tags.length > 0 ? tags[0] : 'GENERAL';
 
   return (
-    <div
-      className="p-3 bg-gray-50/50 rounded-3xl transition-all duration-500 relative border border-gray-300 hover:scale-[1.01] hover:shadow-xl shadow-sm flex flex-col xl:flex-row gap-2 group"
-    >
+    <div className="p-3 bg-gray-50/50 rounded-3xl transition-all duration-500 relative border border-gray-300 hover:scale-[1.01] hover:shadow-xl shadow-sm flex flex-col xl:flex-row gap-2 group">
       {/* LEFT COLUMN: Dark Blue Box */}
-      <div className={`flex-1 rounded-2xl p-5 md:p-5 flex flex-col justify-between relative overflow-hidden ${isCompleted ? 'bg-[#0f291e]' : 'bg-[#0b1727]'}`}>
+      <div
+        className={`flex-1 rounded-2xl p-5 md:p-5 flex flex-col justify-between relative overflow-hidden ${isCompleted ? 'bg-[#0f291e]' : 'bg-[#0b1727]'}`}
+      >
         {/* Top Right Action Area */}
         <div className="absolute top-4 right-4 flex items-center gap-3 z-20">
           {!isCompleted && (
@@ -82,7 +82,10 @@ function ProjectCard({ project, onEdit, onDelete, onTeamClick, onComplete }) {
           <div className="flex items-center gap-2 transition-all">
             {onEdit && (
               <IconButton
-                onClick={(e) => { e.stopPropagation(); onEdit?.(project); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit?.(project);
+                }}
                 className="p-2 bg-white/10 backdrop-blur text-gray-300 cursor-pointer hover:bg-white/20 hover:text-white rounded-lg transition-all"
                 title="Edit Project"
               >
@@ -90,7 +93,10 @@ function ProjectCard({ project, onEdit, onDelete, onTeamClick, onComplete }) {
               </IconButton>
             )}
             <IconButton
-              onClick={(e) => { e.stopPropagation(); onDelete?.(project); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete?.(project);
+              }}
               className="p-2 bg-white/10 backdrop-blur text-red-400 cursor-pointer hover:bg-red-500/20 hover:text-red-300 rounded-lg transition-all"
               title="Delete Project"
             >
@@ -199,19 +205,26 @@ function ProjectCard({ project, onEdit, onDelete, onTeamClick, onComplete }) {
             <div className="flex flex-col gap-2 justify-center">
               <div className="flex items-center gap-1.5 text-green-400 bg-green-900/30 px-3 py-1.5 rounded-full border border-green-800/50 shadow-sm w-fit mt-auto mb-auto">
                 <CheckCircle2 size={16} />
-                <span className="text-[10px] font-bold uppercase tracking-widest">Completed</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest">
+                  Completed
+                </span>
               </div>
             </div>
           ) : (
             onComplete && (
               <div className="flex flex-col gap-2 justify-center">
                 <button
-                  onClick={(e) => { e.stopPropagation(); onComplete?.(project); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onComplete?.(project);
+                  }}
                   className="flex items-center gap-1.5 text-blue-400 bg-blue-900/30 hover:bg-blue-800/50 hover:text-white px-3 py-1.5 rounded-full border border-blue-800/50 shadow-sm w-fit mt-auto mb-auto transition-all cursor-pointer"
                   title="Mark as Completed"
                 >
                   <CheckCircle2 size={16} />
-                  <span className="text-[10px] font-bold uppercase tracking-widest">Mark Complete</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest">
+                    Mark Complete
+                  </span>
                 </button>
               </div>
             )
@@ -287,14 +300,13 @@ function ProjectCard({ project, onEdit, onDelete, onTeamClick, onComplete }) {
 
           <PrimaryButton
             onClick={() => onTeamClick?.(project)}
-            className={`w-full text-sm font-bold px-5 py-2.5 rounded-xl transition-all shadow-sm hover:shadow ${(project.members?.length || 0) > 0
-              ? 'bg-[#004cf0] text-white hover:bg-[#003bcc]'
-              : 'bg-blue-50 text-[#004cf0] hover:bg-blue-100'
-              }`}
+            className={`w-full text-sm font-bold px-5 py-2.5 rounded-xl transition-all shadow-sm hover:shadow ${
+              (project.members?.length || 0) > 0
+                ? 'bg-[#004cf0] text-white hover:bg-[#003bcc]'
+                : 'bg-blue-50 text-[#004cf0] hover:bg-blue-100'
+            }`}
           >
-            {(project.members?.length || 0) > 0
-              ? 'Manage Team'
-              : 'Assign Team'}
+            {(project.members?.length || 0) > 0 ? 'Manage Team' : 'Assign Team'}
           </PrimaryButton>
         </div>
       </div>
@@ -302,21 +314,26 @@ function ProjectCard({ project, onEdit, onDelete, onTeamClick, onComplete }) {
   );
 }
 
+import { UserPlus } from 'lucide-react';
+
 function ProjectTeamModal({
   open,
   onClose,
   project,
   onMemberClick,
   onUnassign,
+  onAssign,
 }) {
+  const [activeTab, setActiveTab] = useState('assigned');
   const [searchTerm, setSearchTerm] = useState('');
 
   const teamMembers = (project?.members || []).map((m) => {
     const firstName = m.employee?.firstName || '';
     const lastName = m.employee?.lastName || '';
-    const fullName = firstName || lastName
-      ? `${firstName} ${lastName}`.trim()
-      : 'Unknown Employee';
+    const fullName =
+      firstName || lastName
+        ? `${firstName} ${lastName}`.trim()
+        : 'Unknown Employee';
     const initials = fullName
       .split(' ')
       .filter(Boolean)
@@ -338,37 +355,12 @@ function ProjectTeamModal({
     };
   });
 
-  const filteredMembers = teamMembers.filter(
+  const filteredMembers = displayMembers.filter(
     (m) =>
       m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       m.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
       m.skills.some((s) => s.toLowerCase().includes(searchTerm.toLowerCase()))
   );
-
-  const handleExportRoster = () => {
-    if (!project || !teamMembers.length) return;
-
-    const headers = ['Name', 'Role', 'Skills'];
-    const rows = teamMembers.map((m) => [m.name, m.role, m.skills.join('; ')]);
-
-    const csvContent = [
-      headers.join(','),
-      ...rows.map((row) => row.map((val) => `"${val}"`).join(',')),
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute(
-      'download',
-      `${project.name.replace(/\s+/g, '_')}_Roster.csv`
-    );
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
 
   const footer = (
     <div className="flex items-center justify-end w-full gap-4 px-2"></div>
@@ -380,7 +372,7 @@ function ProjectTeamModal({
       onCancel={onClose}
       title={
         <div className="flex flex-col">
-          <span className="text-xl font-bold text-gray-900">Project Team</span>
+          <span className="text-xl font-bold text-gray-900">Manage Team</span>
           <span className="text-xs font-medium text-gray-500 mt-0.5">
             {project?.name}
           </span>
@@ -390,8 +382,32 @@ function ProjectTeamModal({
       footer={footer}
     >
       <div className="flex flex-col h-full">
+        {/* Tabs */}
+        <div className="flex items-center border-b border-gray-200 px-6 pt-2 bg-gray-50/50">
+          <button
+            onClick={() => setActiveTab('assigned')}
+            className={`px-4 py-3 text-sm font-bold border-b-2 transition-all ${
+              activeTab === 'assigned'
+                ? 'border-[#004475] text-[#004475]'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Assigned Team ({teamMembers.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('bench')}
+            className={`px-4 py-3 text-sm font-bold border-b-2 transition-all ${
+              activeTab === 'bench'
+                ? 'border-[#004475] text-[#004475]'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Bench Talent
+          </button>
+        </div>
+
         {/* Search & Filter */}
-        <div className="px-6 py-4 flex items-center gap-3 border-b border-gray-100 bg-gray-50/50">
+        <div className="px-6 py-4 flex items-center gap-3 border-b border-gray-100">
           <div className="relative flex-1">
             <Search
               className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
@@ -399,12 +415,25 @@ function ProjectTeamModal({
             />
             <input
               type="text"
-              placeholder="Search assigned members..."
+              placeholder={
+                activeTab === 'assigned'
+                  ? 'Search assigned members...'
+                  : 'Search bench talent...'
+              }
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-[#004475] transition-all"
             />
           </div>
+          {activeTab === 'assigned' && (
+            <button
+              onClick={() => setActiveTab('bench')}
+              className="flex items-center gap-2 px-4 py-2 bg-[#004cf0] text-white rounded-xl text-sm font-bold hover:bg-[#003bcc] transition-all shrink-0"
+            >
+              <UserPlus size={16} />
+              Add Team
+            </button>
+          )}
         </div>
 
         {/* Member List */}
@@ -456,16 +485,29 @@ function ProjectTeamModal({
                 </div>
               </div>
 
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onUnassign?.(member);
-                }}
-                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                title="Unassign Member"
-              >
-                <UserMinus size={18} />
-              </button>
+              {activeTab === 'assigned' ? (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onUnassign?.(member);
+                  }}
+                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                  title="Unassign Member"
+                >
+                  <UserMinus size={18} />
+                </button>
+              ) : (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAssign?.(member);
+                  }}
+                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                  title="Assign Member"
+                >
+                  <UserPlus size={18} />
+                </button>
+              )}
             </div>
           ))}
 
@@ -473,7 +515,9 @@ function ProjectTeamModal({
             <div className="py-12 text-center flex flex-col items-center gap-3">
               <Users className="text-gray-200" size={48} />
               <p className="text-sm font-medium text-gray-500">
-                No team members assigned to this project
+                {activeTab === 'assigned'
+                  ? 'No team members assigned to this project'
+                  : 'No available talent found'}
               </p>
             </div>
           )}
@@ -529,7 +573,7 @@ function CreateProjectModal({ open, onClose, onSubmit }) {
       setErrors(errs);
       return;
     }
-    
+
     setIsSubmitting(true);
     try {
       const tags = [form.industry.toUpperCase() || 'GENERAL', 'ON TRACK'];
@@ -561,7 +605,11 @@ function CreateProjectModal({ open, onClose, onSubmit }) {
       >
         Cancel
       </button>
-      <PrimaryButton type="submit" form="create-project-form" disabled={isSubmitting}>
+      <PrimaryButton
+        type="submit"
+        form="create-project-form"
+        disabled={isSubmitting}
+      >
         {isSubmitting ? (
           <>
             <Loader2 size={18} className="animate-spin" />
@@ -759,10 +807,11 @@ function CreateProjectModal({ open, onClose, onSubmit }) {
               <label className={labelCls}>Agreement Certificate</label>
               <div className="flex flex-col gap-2">
                 <div
-                  className={`flex flex-col items-center justify-center gap-2 w-full py-4 border-2 border-dashed rounded-xl cursor-pointer transition-all ${dragOver
-                    ? 'border-[#004475] bg-blue-50'
-                    : 'border-gray-300 bg-gray-50 hover:border-gray-400'
-                    }`}
+                  className={`flex flex-col items-center justify-center gap-2 w-full py-4 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
+                    dragOver
+                      ? 'border-[#004475] bg-blue-50'
+                      : 'border-gray-300 bg-gray-50 hover:border-gray-400'
+                  }`}
                   onDragOver={(e) => {
                     e.preventDefault();
                     setDragOver(true);
@@ -835,10 +884,11 @@ function CreateProjectModal({ open, onClose, onSubmit }) {
                     key={p}
                     type="button"
                     onClick={() => handleChange('priority', p)}
-                    className={`py-2.5 text-sm font-bold rounded-xl border transition-all ${form.priority === p
-                      ? 'bg-white border-blue-600 text-blue-600 shadow-sm'
-                      : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'
-                      }`}
+                    className={`py-2.5 text-sm font-bold rounded-xl border transition-all ${
+                      form.priority === p
+                        ? 'bg-white border-blue-600 text-blue-600 shadow-sm'
+                        : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'
+                    }`}
                   >
                     {p}
                   </button>
@@ -949,7 +999,11 @@ function EditProjectModal({ open, onClose, project, onUpdate, isUpdating }) {
       >
         Cancel
       </button>
-      <PrimaryButton type="submit" form="edit-project-form" disabled={isUpdating}>
+      <PrimaryButton
+        type="submit"
+        form="edit-project-form"
+        disabled={isUpdating}
+      >
         {isUpdating ? 'Updating...' : 'Update Project'}
         <Rocket size={18} />
       </PrimaryButton>
@@ -1142,10 +1196,11 @@ function EditProjectModal({ open, onClose, project, onUpdate, isUpdating }) {
               <label className={labelCls}>Agreement Certificate</label>
               <div className="flex flex-col gap-2">
                 <div
-                  className={`flex flex-col items-center justify-center gap-2 w-full py-4 border-2 border-dashed rounded-xl cursor-pointer transition-all ${dragOver
-                    ? 'border-[#004475] bg-blue-50'
-                    : 'border-gray-300 bg-gray-50 hover:border-gray-400'
-                    }`}
+                  className={`flex flex-col items-center justify-center gap-2 w-full py-4 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
+                    dragOver
+                      ? 'border-[#004475] bg-blue-50'
+                      : 'border-gray-300 bg-gray-50 hover:border-gray-400'
+                  }`}
                   onDragOver={(e) => {
                     e.preventDefault();
                     setDragOver(true);
@@ -1217,10 +1272,11 @@ function EditProjectModal({ open, onClose, project, onUpdate, isUpdating }) {
                     key={p}
                     type="button"
                     onClick={() => handleChange('priority', p)}
-                    className={`py-2.5 text-sm font-bold rounded-xl border transition-all ${form.priority === p
-                      ? 'bg-white border-blue-600 text-blue-600 shadow-sm'
-                      : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'
-                      }`}
+                    className={`py-2.5 text-sm font-bold rounded-xl border transition-all ${
+                      form.priority === p
+                        ? 'bg-white border-blue-600 text-blue-600 shadow-sm'
+                        : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'
+                    }`}
                   >
                     {p}
                   </button>
@@ -1259,10 +1315,12 @@ export default function ProjectPortfolio({
   const [lastCreatedProject, setLastCreatedProject] = useState(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [localLoading, setLocalLoading] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(6);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isUnassigning, setIsUnassigning] = useState(false);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -1308,6 +1366,7 @@ export default function ProjectPortfolio({
 
   const handleConfirmUnassign = async () => {
     if (selectedProject && memberToUnassign) {
+      setIsUnassigning(true);
       try {
         const res = await fetch('/api/projects/assign', {
           method: 'DELETE',
@@ -1349,6 +1408,63 @@ export default function ProjectPortfolio({
       } catch (err) {
         showErrorToast('An error occurred during unassignment.');
         console.error('Unassign error:', err);
+      } finally {
+        setIsUnassigning(false);
+      }
+    }
+  };
+
+  const handleAssignClick = async (member) => {
+    if (selectedProject && member) {
+      try {
+        const res = await fetch('/api/projects/assign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            projectId: selectedProject.id,
+            employeeId: member.id,
+            role: member.designation || 'Staff',
+          }),
+        });
+
+        if (res.ok) {
+          const newAssignment = await res.json();
+          // The API returns the assignment, we need to mock the employee object
+          // since the modal member has the employee data
+          const addedMember = {
+            ...newAssignment,
+            employeeId: member.id,
+            employee: member,
+            role: member.designation || 'Staff',
+          };
+
+          const updatedMembers = [
+            ...(selectedProject.members || []),
+            addedMember,
+          ];
+
+          const updatedProject = {
+            ...selectedProject,
+            members: updatedMembers,
+            team: updatedMembers.map((m) =>
+              m.employee
+                ? `${m.employee.firstName} ${m.employee.lastName}`
+                : 'Unknown'
+            ),
+          };
+
+          setProjectData((prev) =>
+            prev.map((p) => (p.id === selectedProject.id ? updatedProject : p))
+          );
+
+          setSelectedProject(updatedProject);
+          showSuccessToast('Team member assigned successfully!');
+        } else {
+          showErrorToast('Failed to assign team member.');
+        }
+      } catch (err) {
+        showErrorToast('An error occurred during assignment.');
+        console.error('Assign error:', err);
       }
     }
   };
@@ -1361,11 +1477,14 @@ export default function ProjectPortfolio({
           method: 'DELETE',
         });
         if (res.ok) {
+          setDeleteConfirmOpen(false);
+          setProjectToDelete(null);
+          setLocalLoading(true);
+          await new Promise((resolve) => setTimeout(resolve, 800));
           setProjectData((prev) =>
             prev.filter((p) => p.id !== projectToDelete.id)
           );
-          setDeleteConfirmOpen(false);
-          setProjectToDelete(null);
+          setLocalLoading(false);
           showSuccessToast('Project deleted successfully!');
         } else {
           showErrorToast('Failed to delete project.');
@@ -1400,23 +1519,27 @@ export default function ProjectPortfolio({
       });
       if (res.ok) {
         const updated = await res.json();
+        setEditOpen(false);
+        setLocalLoading(true);
+        await new Promise((resolve) => setTimeout(resolve, 800));
         setProjectData((prev) =>
           prev.map((p) =>
             p.id === updated.id
               ? {
-                ...updated,
-                id: updated.id,
-                start: updated.startDate,
-                team: updated.members
-                  ? updated.members.map(
-                    (m) =>
-                      `${m.employee?.firstName} ${m.employee?.lastName}`
-                  )
-                  : p.team,
-              }
+                  ...updated,
+                  id: updated.id,
+                  start: updated.startDate,
+                  team: updated.members
+                    ? updated.members.map(
+                        (m) =>
+                          `${m.employee?.firstName} ${m.employee?.lastName}`
+                      )
+                    : p.team,
+                }
               : p
           )
         );
+        setLocalLoading(false);
         showSuccessToast('Project updated successfully!');
         return true;
       } else {
@@ -1432,7 +1555,7 @@ export default function ProjectPortfolio({
     }
   };
 
-  if (loading) {
+  if (loading || localLoading) {
     return <Loader label="Loading projects..." size="lg" fullScreen={false} />;
   }
 
@@ -1489,8 +1612,20 @@ export default function ProjectPortfolio({
                 placeholder="Quick search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-[#004475] transition-all w-64 shadow-sm"
+                className="pl-10 pr-10 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-[#004475] transition-all w-64 shadow-sm"
               />
+              {searchTerm && (
+                <IconButton
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-2 top-1 shadow-none bg-transparent hover:bg-transparent"
+                  title="Clear search"
+                >
+                  <X
+                    size={14}
+                    className="text-gray-400 hover:text-red-500 hover:scale-110"
+                  />
+                </IconButton>
+              )}
             </div>
             <PrimaryButton
               onClick={() => setCreateOpen(true)}
@@ -1521,8 +1656,20 @@ export default function ProjectPortfolio({
                 placeholder="Quick search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-[#004475] transition-all w-64 shadow-sm"
+                className="pl-10 pr-10 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-[#004475] transition-all w-64 shadow-sm"
               />
+              {searchTerm && (
+                <IconButton
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-2 top-1 shadow-none bg-transparent hover:bg-transparent"
+                  title="Clear search"
+                >
+                  <X
+                    size={14}
+                    className="text-gray-400 hover:text-red-500 hover:scale-110"
+                  />
+                </IconButton>
+              )}
             </div>
           </div>
         </div>
@@ -1539,7 +1686,11 @@ export default function ProjectPortfolio({
               onEdit={subTab === 'in-progress' ? handleEditClick : null}
               onDelete={handleDeleteClick}
               onTeamClick={handleTeamClick}
-              onComplete={subTab === 'in-progress' ? () => handleUpdateProject({ ...proj, status: 'Completed' }) : null}
+              onComplete={
+                subTab === 'in-progress'
+                  ? () => handleUpdateProject({ ...proj, status: 'Completed' })
+                  : null
+              }
             />
           ))}
       </div>
@@ -1579,6 +1730,9 @@ export default function ProjectPortfolio({
               });
               if (res.ok) {
                 const created = await res.json();
+                setCreateOpen(false);
+                setLocalLoading(true);
+                await new Promise((resolve) => setTimeout(resolve, 800));
                 setProjectData((prev) => [
                   ...prev,
                   {
@@ -1588,6 +1742,7 @@ export default function ProjectPortfolio({
                     team: [],
                   },
                 ]);
+                setLocalLoading(false);
                 setLastCreatedProject(created);
                 setCreateSuccessOpen(true);
                 showSuccessToast('Project created successfully!');
@@ -1628,6 +1783,7 @@ export default function ProjectPortfolio({
           project={selectedProject}
           onMemberClick={handleMemberClick}
           onUnassign={handleUnassignClick}
+          onAssign={handleAssignClick}
         />
       )}
 
@@ -1667,6 +1823,7 @@ export default function ProjectPortfolio({
         <ConfirmDialog
           open={unassignConfirmOpen}
           title="Unassign Team Member"
+          loading={isUnassigning}
           description={
             <p>
               Are you sure you want to remove{' '}

@@ -24,6 +24,10 @@ export default function AssetViewModal({ asset, onClose }) {
       warrantyFile: asset.warrantyFile || '',
       notes: asset.notes,
       specs: asset.specs || {},
+      createdAt: asset.createdAt || asset.created_at,
+      updatedAt: asset.updatedAt || asset.updated_at,
+      createdBy: asset.createdBy || asset.createBy || asset.created_by,
+      updatedBy: asset.updatedBy || asset.UpdatedBy || asset.updated_by,
     };
   };
 

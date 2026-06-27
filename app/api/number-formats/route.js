@@ -50,7 +50,13 @@ export async function GET() {
 export async function PUT(request) {
   try {
     const body = await request.json();
-    const modules = ['invoice', 'employee', 'contract_employee', 'asset'];
+    const modules = ['invoice', 'employee', 'contract_employee'];
+    // Add dynamic asset keys from the request body
+    Object.keys(body).forEach((key) => {
+      if (key.startsWith('asset_') && !modules.includes(key)) {
+        modules.push(key);
+      }
+    });
     const updatedSettings = {};
 
     // Get old settings to know the previous prefix/suffix formats
@@ -85,7 +91,9 @@ export async function PUT(request) {
           const nextVal = parseInt(nextNumber, 10);
           if (!isNaN(nextVal)) {
             try {
-              await prisma.$executeRawUnsafe(`SELECT setval('employee_number_seq', ${nextVal - 1}, true)`);
+              await prisma.$executeRawUnsafe(
+                `SELECT setval('employee_number_seq', ${nextVal - 1}, true)`
+              );
             } catch (seqErr) {
               console.error('Failed to set employee sequence:', seqErr);
             }
@@ -94,34 +102,72 @@ export async function PUT(request) {
           const nextVal = parseInt(nextNumber, 10);
           if (!isNaN(nextVal)) {
             try {
-              await prisma.$executeRawUnsafe(`SELECT setval('contract_employee_number_seq', ${nextVal - 1}, true)`);
+              await prisma.$executeRawUnsafe(
+                `SELECT setval('contract_employee_number_seq', ${nextVal - 1}, true)`
+              );
             } catch (seqErr) {
-              console.error('Failed to set contract employee sequence:', seqErr);
+              console.error(
+                'Failed to set contract employee sequence:',
+                seqErr
+              );
             }
           }
-        } else if (mod === 'asset' && nextNumber) {
+        } else if (mod.startsWith('asset_') && nextNumber) {
           const nextVal = parseInt(nextNumber, 10);
           if (!isNaN(nextVal)) {
             try {
-              await prisma.$executeRawUnsafe(`CREATE SEQUENCE IF NOT EXISTS asset_number_seq START 1;`);
-              await prisma.$executeRawUnsafe(`SELECT setval('asset_number_seq', ${nextVal - 1}, true)`);
+              const seqName = `${mod.toLowerCase().replace(/[^a-z0-9]/g, '_')}_seq`;
+              await prisma.$executeRawUnsafe(
+                `CREATE SEQUENCE IF NOT EXISTS ${seqName} START 1;`
+              );
+              await prisma.$executeRawUnsafe(
+                `SELECT setval('${seqName}', ${nextVal - 1}, true)`
+              );
             } catch (seqErr) {
-              console.error('Failed to set asset sequence:', seqErr);
+              console.error(`Failed to set sequence for ${mod}:`, seqErr);
             }
           }
         }
 
-        // Migrate existing records
-        const oldS = oldSettingsMap[mod] || {
-          prefix: mod === 'invoice' ? 'INV-' : mod === 'employee' ? 'LK' : mod === 'asset' ? 'AST-' : 'LKC',
-          padding: mod === 'invoice' ? 4 : mod === 'asset' ? 4 : 3,
-          suffix: mod === 'invoice' ? '-2026' : '',
-        };
+        let oldS = oldSettingsMap[mod];
+        if (!oldS) {
+          if (mod === 'invoice') {
+            oldS = { prefix: 'INV-', padding: 4, suffix: '-2026' };
+          } else if (mod === 'employee') {
+            oldS = { prefix: 'LK', padding: 3, suffix: '' };
+          } else if (mod === 'contract_employee') {
+            oldS = { prefix: 'LKC', padding: 3, suffix: '' };
+          } else if (mod.startsWith('asset_')) {
+            const assetType = mod.slice(6);
+            const defaultKeywords = {
+              Laptop: 'LAP',
+              Mobile: 'MB',
+              TV: 'TV',
+              Keyboard: 'KB',
+              Monitor: 'MN',
+              Mouse: 'MS',
+              Printer: 'PR',
+              Tablet: 'TB',
+              Chair: 'CHR',
+              Table: 'TBL',
+              Camera: 'CAM',
+              Other: 'OTH',
+            };
+            const keyword = defaultKeywords[assetType] || 'OTH';
+            oldS = {
+              prefix: `${keyword}-`,
+              padding: 3,
+              suffix: `-${String(new Date().getFullYear()).slice(-2)}`,
+            };
+          }
+        }
 
         if (mod === 'employee') {
           const employees = await prisma.employee.findMany();
-          const standardEmployees = employees.filter(e => (e.workType || '').toUpperCase() !== 'CONTRACT');
-          
+          const standardEmployees = employees.filter(
+            (e) => (e.workType || '').toUpperCase() !== 'CONTRACT'
+          );
+
           // Step 1: Set temporary IDs to avoid unique constraint collisions
           for (const emp of standardEmployees) {
             await prisma.employee.update({
@@ -129,9 +175,14 @@ export async function PUT(request) {
               data: { empId: emp.empId + '_temp' },
             });
           }
+          const usedSequences = new Set();
           // Step 2: Format to final new IDs
           for (const emp of standardEmployees) {
-            const seq = extractSequence(emp.empId, oldS.prefix, oldS.suffix);
+            let seq = extractSequence(emp.empId, oldS.prefix, oldS.suffix);
+            while (usedSequences.has(seq)) {
+              seq++;
+            }
+            usedSequences.add(seq);
             const newEmpId = `${prefix || ''}${String(seq).padStart(Number(padding || 3), '0')}${suffix || ''}`;
             await prisma.employee.update({
               where: { id: emp.id },
@@ -140,26 +191,39 @@ export async function PUT(request) {
           }
         } else if (mod === 'contract_employee') {
           const employees = await prisma.employee.findMany();
-          const contractEmployees = employees.filter(e => (e.workType || '').toUpperCase() === 'CONTRACT');
+          const contractEmployees = employees.filter(
+            (e) => (e.workType || '').toUpperCase() === 'CONTRACT'
+          );
 
           // Step 1: Set temporary IDs to avoid unique constraint collisions
           for (const emp of contractEmployees) {
             await prisma.employee.update({
               where: { id: emp.id },
-              data: { empId: emp.empId + '_temp', contractEmpId: (emp.contractEmpId || emp.empId) + '_temp' },
+              data: {
+                empId: emp.empId + '_temp',
+                contractEmpId: (emp.contractEmpId || emp.empId) + '_temp',
+              },
             });
           }
+          const usedSequences = new Set();
           // Step 2: Format to final new IDs
           for (const emp of contractEmployees) {
-            const seq = extractSequence(emp.empId, oldS.prefix, oldS.suffix);
+            let seq = extractSequence(emp.empId, oldS.prefix, oldS.suffix);
+            while (usedSequences.has(seq)) {
+              seq++;
+            }
+            usedSequences.add(seq);
             const newEmpId = `${prefix || ''}${String(seq).padStart(Number(padding || 3), '0')}${suffix || ''}`;
             await prisma.employee.update({
               where: { id: emp.id },
               data: { empId: newEmpId, contractEmpId: newEmpId },
             });
           }
-        } else if (mod === 'asset') {
-          const assets = await prisma.asset.findMany();
+        } else if (mod.startsWith('asset_')) {
+          const assetType = mod.slice(6); // remove 'asset_'
+          const assets = await prisma.asset.findMany({
+            where: { deviceType: assetType },
+          });
 
           // Step 1: Set temporary tags to avoid unique constraint collisions
           for (const asset of assets) {
@@ -168,9 +232,14 @@ export async function PUT(request) {
               data: { assetTag: asset.assetTag + '_temp' },
             });
           }
+          const usedSequences = new Set();
           // Step 2: Format to final new tags
           for (const asset of assets) {
-            const seq = extractSequence(asset.assetTag, oldS.prefix, oldS.suffix);
+            let seq = extractSequence(asset.assetTag, oldS.prefix, oldS.suffix);
+            while (usedSequences.has(seq)) {
+              seq++;
+            }
+            usedSequences.add(seq);
             const newAssetTag = `${prefix || ''}${String(seq).padStart(Number(padding || 3), '0')}${suffix || ''}`;
             await prisma.asset.update({
               where: { id: asset.id },
@@ -179,50 +248,64 @@ export async function PUT(request) {
           }
         } else if (mod === 'invoice') {
           const invoices = await prisma.invoice.findMany();
-          
-          await prisma.$transaction(async (tx) => {
-            // Drop foreign key constraint temporarily during migration to prevent reference issues
-            await tx.$executeRawUnsafe(`ALTER TABLE "InvoiceItem" DROP CONSTRAINT IF EXISTS "InvoiceItem_invoice_number_fkey"`);
-            try {
-              // Rename to _temp
-              for (const inv of invoices) {
-                const tempNum = inv.invoiceNumber + '_temp';
-                await tx.invoiceItem.updateMany({
-                  where: { invoiceNumber: inv.invoiceNumber },
-                  data: { invoiceNumber: tempNum },
-                });
-                await tx.invoice.update({
-                  where: { id: inv.id },
-                  data: { invoiceNumber: tempNum },
-                });
-              }
-              // Format to new IDs
-              for (const inv of invoices) {
-                const seq = extractSequence(inv.invoiceNumber, oldS.prefix, oldS.suffix);
-                const newInvoiceNumber = `${prefix || ''}${String(seq).padStart(Number(padding || 3), '0')}${suffix || ''}`;
-                const tempNum = inv.invoiceNumber + '_temp';
-                
-                await tx.invoiceItem.updateMany({
-                  where: { invoiceNumber: tempNum },
-                  data: { invoiceNumber: newInvoiceNumber },
-                });
-                await tx.invoice.update({
-                  where: { id: inv.id },
-                  data: { invoiceNumber: newInvoiceNumber },
-                });
-              }
-            } finally {
-              // Re-create the foreign key constraint with ON UPDATE CASCADE and ON DELETE CASCADE
-              await tx.$executeRawUnsafe(`
+
+          await prisma.$transaction(
+            async (tx) => {
+              // Drop foreign key constraint temporarily during migration to prevent reference issues
+              await tx.$executeRawUnsafe(
+                `ALTER TABLE "InvoiceItem" DROP CONSTRAINT IF EXISTS "InvoiceItem_invoice_number_fkey"`
+              );
+              try {
+                // Rename to _temp
+                for (const inv of invoices) {
+                  const tempNum = inv.invoiceNumber + '_temp';
+                  await tx.invoiceItem.updateMany({
+                    where: { invoiceNumber: inv.invoiceNumber },
+                    data: { invoiceNumber: tempNum },
+                  });
+                  await tx.invoice.update({
+                    where: { id: inv.id },
+                    data: { invoiceNumber: tempNum },
+                  });
+                }
+                const usedSequences = new Set();
+                // Format to new IDs
+                for (const inv of invoices) {
+                  let seq = extractSequence(
+                    inv.invoiceNumber,
+                    oldS.prefix,
+                    oldS.suffix
+                  );
+                  while (usedSequences.has(seq)) {
+                    seq++;
+                  }
+                  usedSequences.add(seq);
+                  const newInvoiceNumber = `${prefix || ''}${String(seq).padStart(Number(padding || 3), '0')}${suffix || ''}`;
+                  const tempNum = inv.invoiceNumber + '_temp';
+
+                  await tx.invoiceItem.updateMany({
+                    where: { invoiceNumber: tempNum },
+                    data: { invoiceNumber: newInvoiceNumber },
+                  });
+                  await tx.invoice.update({
+                    where: { id: inv.id },
+                    data: { invoiceNumber: newInvoiceNumber },
+                  });
+                }
+              } finally {
+                // Re-create the foreign key constraint with ON UPDATE CASCADE and ON DELETE CASCADE
+                await tx.$executeRawUnsafe(`
                 ALTER TABLE "InvoiceItem" 
                 ADD CONSTRAINT "InvoiceItem_invoice_number_fkey" 
                 FOREIGN KEY (invoice_number) REFERENCES "Invoice"(invoice_number) 
                 ON UPDATE CASCADE ON DELETE RESTRICT
               `);
+              }
+            },
+            {
+              timeout: 30000, // Increase timeout to 30 seconds to support larger datasets on remote DB
             }
-          }, {
-            timeout: 30000 // Increase timeout to 30 seconds to support larger datasets on remote DB
-          });
+          );
         }
 
         updatedSettings[mod] = {

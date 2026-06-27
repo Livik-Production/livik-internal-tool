@@ -3,35 +3,54 @@
 import Image from 'next/image';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSelector } from 'react-redux';
 
 /**
  * HeaderUser
  * - Displays avatar, name, role
  * - Accessible dropdown with Profile / Settings / Logout
  * - Usage: place in top-right header area
- *
- * IMPORTANT: update `getUser()` to read your real user store / API.
  */
 
-const AVATAR_SRC = '/asset/avatar.png'; // change if needed
-
-// Mock getUser (replace with your auth store / API call)
-function getUser() {
-  // Example shape — adapt to your app's user object
-  return {
-    name: localStorage.getItem('user_name') || 'Kiran Das',
-    role: localStorage.getItem('user_role') || 'Admin',
-    empId: localStorage.getItem('user_empId') || 'E010',
-    avatar: AVATAR_SRC,
-  };
-}
+// Removed AVATAR_SRC constant
 
 export default function HeaderUser() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
-  const [user, setUser] = useState(getUser());
   const ref = useRef(null);
+
+  const authUser = useSelector((state) => state.auth?.user);
+
+  // Derive user info from Redux or localStorage fallback
+  const avatarSrc = authUser?.photo || AVATAR_SRC;
+
+  useEffect(() => {
+    setAvatarError(false);
+  }, [avatarSrc]);
+
+  // Derive user info from Redux or localStorage fallback
+  const user = {
+    name: authUser?.firstName
+      ? `${authUser.firstName} ${authUser.lastName || ''}`.trim()
+      : (typeof window !== 'undefined'
+          ? localStorage.getItem('user_name')
+          : null) || 'Kiran Das',
+    role:
+      authUser?.role?.name ||
+      authUser?.role?.roleName ||
+      (typeof window !== 'undefined'
+        ? localStorage.getItem('user_role')
+        : null) ||
+      'Admin',
+    empId:
+      authUser?.empId ||
+      (typeof window !== 'undefined'
+        ? localStorage.getItem('user_empId')
+        : null) ||
+      'E010',
+    avatar: authUser?.photo || AVATAR_SRC,
+  };
 
   // click outside to close dropdown
   useEffect(() => {
@@ -74,25 +93,20 @@ export default function HeaderUser() {
         onClick={() => setOpen((v) => !v)}
         className="inline-flex items-center gap-3 px-3 py-1 rounded-md hover:bg-gray-100 transition"
       >
-        <div className="w-9 h-9 rounded-md overflow-hidden bg-gray-100 flex items-center justify-center">
-          {!avatarError ? (
+        <div className="w-10 h-10 rounded-full border border-gray-200 overflow-hidden relative cursor-pointer group flex items-center justify-center bg-[#004475] text-white">
+          {user?.photo && !avatarError ? (
             <Image
-              src={user.avatar}
-              alt={user.name}
-              width={36}
-              height={36}
-              className="object-cover"
+              src={user.photo}
+              alt="User"
+              fill
+              className="object-cover group-hover:opacity-90 transition-opacity"
               onError={() => setAvatarError(true)}
-              priority
+              unoptimized
             />
           ) : (
-            <div className="w-9 h-9 flex items-center justify-center bg-gray-200 text-gray-700 font-semibold">
-              {user.name
-                .split(' ')
-                .map((n) => n[0])
-                .slice(0, 2)
-                .join('')}
-            </div>
+            <span className="text-sm font-bold uppercase">
+              {user?.name ? user.name.charAt(0) : '?'}
+            </span>
           )}
         </div>
 
