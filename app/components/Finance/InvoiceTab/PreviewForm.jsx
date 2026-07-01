@@ -4,12 +4,14 @@ import React, { useState, useEffect } from 'react';
 
 const PreviewForm = ({
   invoiceData = {},
-
+  initialCompanyDetails = null,
   letterPad = 'with', // "with" | "without"
 }) => {
-  const [companyDetails, setCompanyDetails] = useState(null);
+  const [companyDetails, setCompanyDetails] = useState(initialCompanyDetails);
 
   useEffect(() => {
+    if (initialCompanyDetails) return;
+
     const fetchCompanyDetails = async () => {
       try {
         const response = await fetch('/api/companyDetails');
@@ -276,7 +278,8 @@ const PreviewForm = ({
                     </p>
 
                     <p className="text-[12px] text-[#374151] leading-tight">
-                      CIN: {companyDetails?.cin || 'U62020TZ2023PTC028410'}
+                      CIN:{' '}
+                      {companyDetails?.cinNumber || 'U62020TZ2023PTC028410'}
                     </p>
 
                     <p className="text-[12px] text-[#374151] leading-tight">
@@ -307,19 +310,19 @@ const PreviewForm = ({
                     <span className="font-bold text-[#111827] text-xs">
                       {date
                         ? new Date(date)
-                          .toLocaleDateString('en-IN', {
-                            day: '2-digit',
-                            month: 'short',
-                            year: '2-digit',
-                          })
-                          .replace(/ /g, '-')
+                            .toLocaleDateString('en-IN', {
+                              day: '2-digit',
+                              month: 'short',
+                              year: '2-digit',
+                            })
+                            .replace(/ /g, '-')
                         : new Date()
-                          .toLocaleDateString('en-IN', {
-                            day: '2-digit',
-                            month: 'short',
-                            year: '2-digit',
-                          })
-                          .replace(/ /g, '-')}
+                            .toLocaleDateString('en-IN', {
+                              day: '2-digit',
+                              month: 'short',
+                              year: '2-digit',
+                            })
+                            .replace(/ /g, '-')}
                     </span>
                   </p>
                 </div>
@@ -343,7 +346,25 @@ const PreviewForm = ({
                   <p className="text-[11.5px] text-[#374151] leading-tight">
                     From:{' '}
                     <span className="font-bold text-[#111827] text-xs">
-                      {companyDetails?.lutValidFrom ? new Date(companyDetails.lutValidFrom).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-') : '01-04-2025'} to {companyDetails?.lutValidTo ? new Date(companyDetails.lutValidTo).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-') : '31-03-2026'}
+                      {companyDetails?.lutValidFrom
+                        ? new Date(companyDetails.lutValidFrom)
+                            .toLocaleDateString('en-IN', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                            })
+                            .replace(/\//g, '-')
+                        : '01-04-2025'}{' '}
+                      to{' '}
+                      {companyDetails?.lutValidTo
+                        ? new Date(companyDetails.lutValidTo)
+                            .toLocaleDateString('en-IN', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                            })
+                            .replace(/\//g, '-')
+                        : '31-03-2026'}
                     </span>
                   </p>
                 </div>
@@ -547,35 +568,35 @@ const PreviewForm = ({
                   </div>
                 );
               }) || (
-                  <div className="flex">
-                    <div className="w-12 border-r border-[#1f2937] p-1 pt-2 text-center text-xs whitespace-nowrap">
-                      1
+                <div className="flex">
+                  <div className="w-12 border-r border-[#1f2937] p-1 pt-2 text-center text-xs whitespace-nowrap">
+                    1
+                  </div>
+
+                  <div className="flex-1 border-r border-[#1f2937] p-1 pt-2 px-2">
+                    <div className="font-bold text-[13px] text-[#111827] leading-tight">
+                      Information technology (IT) consulting and support
+                      services
                     </div>
 
-                    <div className="flex-1 border-r border-[#1f2937] p-1 pt-2 px-2">
-                      <div className="font-bold text-[13px] text-[#111827] leading-tight">
-                        Information technology (IT) consulting and support
-                        services
-                      </div>
-
-                      <div className="text-[11px] text-[#374151] italic leading-tight mt-0.5">
-                        Web development for Oct-2025
-                      </div>
-
-                      <div className="text-[11px] text-[#374151] leading-tight mt-0.5">
-                        Kamesh (1,20,000 / 20*18)
-                      </div>
+                    <div className="text-[11px] text-[#374151] italic leading-tight mt-0.5">
+                      Web development for Oct-2025
                     </div>
 
-                    <div className="w-24 border-r border-[#1f2937] p-1 pt-2 text-center text-[11px] text-[#374151]">
-                      998313
-                    </div>
-
-                    <div className="w-28 p-1 pt-2 text-center text-[12px] font-bold text-[#111827] pr-4">
-                      1,08,000.00
+                    <div className="text-[11px] text-[#374151] leading-tight mt-0.5">
+                      Kamesh (1,20,000 / 20*18)
                     </div>
                   </div>
-                )}
+
+                  <div className="w-24 border-r border-[#1f2937] p-1 pt-2 text-center text-[11px] text-[#374151]">
+                    998313
+                  </div>
+
+                  <div className="w-28 p-1 pt-2 text-center text-[12px] font-bold text-[#111827] pr-4">
+                    1,08,000.00
+                  </div>
+                </div>
+              )}
 
               {/* Taxes (directly below items) */}
 
@@ -585,90 +606,90 @@ const PreviewForm = ({
                 (!cgstAmount &&
                   !sgstAmount &&
                   totalAmountWithGST > totalAmount)) && (
-                  <div className="flex">
-                    <div className="w-12 border-r border-[#1f2937]"></div>
+                <div className="flex">
+                  <div className="w-12 border-r border-[#1f2937]"></div>
 
-                    <div className="flex-1 border-r border-[#1f2937] p-1 px-2 pt-6 flex flex-col items-end pr-4">
-                      {discountAmount > 0 && (
-                        <div className="font-bold text-[12px] text-[#111827]">
-                          Discount{' '}
-                          {discountType === 'percentage'
-                            ? `(${discountValue}%)`
-                            : ''}
-                        </div>
-                      )}
+                  <div className="flex-1 border-r border-[#1f2937] p-1 px-2 pt-6 flex flex-col items-end pr-4">
+                    {discountAmount > 0 && (
+                      <div className="font-bold text-[12px] text-[#111827]">
+                        Discount{' '}
+                        {discountType === 'percentage'
+                          ? `(${discountValue}%)`
+                          : ''}
+                      </div>
+                    )}
 
-                      {cgstAmount > 0 && (
+                    {cgstAmount > 0 && (
+                      <div className="font-bold text-[12px] text-[#111827] mt-1">
+                        Output CGST {cgstRate}%
+                      </div>
+                    )}
+
+                    {sgstAmount > 0 && (
+                      <div className="font-bold text-[12px] text-[#111827] mt-1">
+                        Output SGST {sgstRate}%
+                      </div>
+                    )}
+
+                    {!cgstAmount &&
+                      !sgstAmount &&
+                      totalAmountWithGST > totalAmount && (
                         <div className="font-bold text-[12px] text-[#111827] mt-1">
-                          Output CGST {cgstRate}%
+                          Output IGST 18%
                         </div>
                       )}
-
-                      {sgstAmount > 0 && (
-                        <div className="font-bold text-[12px] text-[#111827] mt-1">
-                          Output SGST {sgstRate}%
-                        </div>
-                      )}
-
-                      {!cgstAmount &&
-                        !sgstAmount &&
-                        totalAmountWithGST > totalAmount && (
-                          <div className="font-bold text-[12px] text-[#111827] mt-1">
-                            Output IGST 18%
-                          </div>
-                        )}
-                    </div>
-
-                    <div className="w-24 border-r border-[#1f2937]"></div>
-
-                    <div className="w-28 p-1 px-2 pt-6 text-right flex flex-col font-bold text-[12px] text-[#111827] pr-4">
-                      {discountAmount > 0 && (
-                        <div className="text-[#dc2626]">
-                          -{' '}
-                          {Number(discountAmount).toLocaleString('en-IN', {
-                            minimumFractionDigits: 2,
-
-                            maximumFractionDigits: 2,
-                          })}
-                        </div>
-                      )}
-
-                      {cgstAmount > 0 && (
-                        <div className="mt-1">
-                          {Number(cgstAmount).toLocaleString('en-IN', {
-                            minimumFractionDigits: 2,
-
-                            maximumFractionDigits: 2,
-                          })}
-                        </div>
-                      )}
-
-                      {sgstAmount > 0 && (
-                        <div className="mt-1">
-                          {Number(sgstAmount).toLocaleString('en-IN', {
-                            minimumFractionDigits: 2,
-
-                            maximumFractionDigits: 2,
-                          })}
-                        </div>
-                      )}
-
-                      {!cgstAmount &&
-                        !sgstAmount &&
-                        totalAmountWithGST > totalAmount && (
-                          <div className="mt-1">
-                            {Number(
-                              totalAmountWithGST - totalAmount
-                            ).toLocaleString('en-IN', {
-                              minimumFractionDigits: 2,
-
-                              maximumFractionDigits: 2,
-                            })}
-                          </div>
-                        )}
-                    </div>
                   </div>
-                )}
+
+                  <div className="w-24 border-r border-[#1f2937]"></div>
+
+                  <div className="w-28 p-1 px-2 pt-6 text-right flex flex-col font-bold text-[12px] text-[#111827] pr-4">
+                    {discountAmount > 0 && (
+                      <div className="text-[#dc2626]">
+                        -{' '}
+                        {Number(discountAmount).toLocaleString('en-IN', {
+                          minimumFractionDigits: 2,
+
+                          maximumFractionDigits: 2,
+                        })}
+                      </div>
+                    )}
+
+                    {cgstAmount > 0 && (
+                      <div className="mt-1">
+                        {Number(cgstAmount).toLocaleString('en-IN', {
+                          minimumFractionDigits: 2,
+
+                          maximumFractionDigits: 2,
+                        })}
+                      </div>
+                    )}
+
+                    {sgstAmount > 0 && (
+                      <div className="mt-1">
+                        {Number(sgstAmount).toLocaleString('en-IN', {
+                          minimumFractionDigits: 2,
+
+                          maximumFractionDigits: 2,
+                        })}
+                      </div>
+                    )}
+
+                    {!cgstAmount &&
+                      !sgstAmount &&
+                      totalAmountWithGST > totalAmount && (
+                        <div className="mt-1">
+                          {Number(
+                            totalAmountWithGST - totalAmount
+                          ).toLocaleString('en-IN', {
+                            minimumFractionDigits: 2,
+
+                            maximumFractionDigits: 2,
+                          })}
+                        </div>
+                      )}
+                  </div>
+                </div>
+              )}
 
               {/* Filler space to push Total to bottom, maintaining column borders */}
 
@@ -693,7 +714,13 @@ const PreviewForm = ({
               <div className="w-24 shrink-0 border-r border-[#1f2937] p-1"></div>
 
               <div className="w-28 p-1 px-2 font-bold text-[13px] text-[#111827] flex justify-between items-center">
-                <span>{primaryCurrency === 'INR' ? '₹' : primaryCurrency === 'USD' ? '$' : primaryCurrency}</span>
+                <span>
+                  {primaryCurrency === 'INR'
+                    ? '₹'
+                    : primaryCurrency === 'USD'
+                      ? '$'
+                      : primaryCurrency}
+                </span>
 
                 <span className="pr-2">
                   {Number(totalAmountWithGST || 499140).toLocaleString(
@@ -734,9 +761,7 @@ const PreviewForm = ({
               {/* First Header Row */}
 
               <div className="flex items-stretch">
-                <div className="flex-1 border-r border-[#1f2937] p-1 text-center text-[11px] font-semibold flex items-center justify-center min-h-[40px]">
-
-                </div>
+                <div className="flex-1 border-r border-[#1f2937] p-1 text-center text-[11px] font-semibold flex items-center justify-center min-h-[40px]"></div>
 
                 <div className="w-24 shrink-0 border-r border-[#1f2937] flex items-center justify-center text-center text-[11px] font-semibold p-1 leading-tight px-2">
                   Taxable <br /> Value

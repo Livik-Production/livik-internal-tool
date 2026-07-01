@@ -17,7 +17,7 @@ export default function ViewForm({
 }) {
   const [viewTab, setViewTab] = useState(defaultTab);
 
-  // Set the default tab when component mounts or defaultTab changes
+  // Set the default tab when component mounts or defaultTab
   useEffect(() => {
     setViewTab(defaultTab);
   }, [defaultTab]);
@@ -211,13 +211,9 @@ export default function ViewForm({
 
             {/* Notes Section */}
             <div>
-              <h3 className="text-md font-medium text-gray-900 mb-4">
-                Notes
-              </h3>
+              <h3 className="text-md font-medium text-gray-900 mb-4">Notes</h3>
               <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-sm text-gray-700">
-                  {data.assignmentNotes}
-                </p>
+                <p className="text-sm text-gray-700">{data.assignmentNotes}</p>
               </div>
             </div>
           </div>

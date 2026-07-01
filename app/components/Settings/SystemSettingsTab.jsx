@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Mail, Monitor, ShieldCheck, HelpCircle } from 'lucide-react';
+import { Mail, Monitor, ShieldCheck, HelpCircle, Loader2 } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import { setFontSize } from '../../../store/slices/uiSlice';
 import CustomTable from '../CustomTable';
@@ -17,6 +17,8 @@ export default function SystemSettingsTab() {
   const [tempFontSize, setTempFontSize] = useState(14);
   const [isFontModalOpen, setIsFontModalOpen] = useState(false);
   const [fromEmail, setFromEmail] = useState('');
+  const [isSavingEmail, setIsSavingEmail] = useState(false);
+  const [isApplyingFont, setIsApplyingFont] = useState(false);
   const [emailHistory, setEmailHistory] = useState([
     {
       id: 1,
@@ -43,9 +45,30 @@ export default function SystemSettingsTab() {
   };
 
   const handleApplyFontSize = () => {
-    dispatch(setFontSize(tempFontSize));
+    setIsApplyingFont(true);
     setIsFontModalOpen(false);
-    showSuccessToast(`Font size updated to ${tempFontSize}px!`);
+    setTimeout(() => {
+      dispatch(setFontSize(tempFontSize));
+      setIsApplyingFont(false);
+      showSuccessToast(`Font size updated to ${tempFontSize}px!`);
+    }, 1500);
+  };
+
+  const handleSaveEmailSettings = () => {
+    setIsSavingEmail(true);
+    setTimeout(() => {
+      setIsSavingEmail(false);
+      showSuccessToast('System Email Configuration saved successfully (Mock)!');
+      setEmailHistory((prev) => [
+        {
+          id: Date.now(),
+          email: fromEmail || 'notifications@company.com',
+          updatedDate: new Date().toISOString().split('T')[0],
+          updatedBy: 'Admin',
+        },
+        ...prev,
+      ]);
+    }, 1500);
   };
 
   const handleCancelFontSize = () => {
@@ -134,14 +157,14 @@ export default function SystemSettingsTab() {
 
               <div className="pt-6 border-t border-slate-100 mt-6 flex justify-end">
                 <button
-                  onClick={() =>
-                    showSuccessToast(
-                      'System Email Configuration saved successfully (Mock)!'
-                    )
-                  }
-                  className="px-6 py-2.5 text-sm font-bold text-white bg-[#004475] rounded-xl shadow-sm shadow-blue-200 transition-all active:scale-95 flex items-center justify-center"
+                  onClick={handleSaveEmailSettings}
+                  disabled={isSavingEmail}
+                  className="px-6 py-2.5 text-sm font-bold text-white bg-[#004475] rounded-xl shadow-sm shadow-blue-200 transition-all active:scale-95 flex items-center justify-center disabled:opacity-75 disabled:cursor-not-allowed"
                 >
-                  Save Email Settings
+                  {isSavingEmail && (
+                    <Loader2 className="animate-spin mr-2" size={16} />
+                  )}
+                  {isSavingEmail ? 'Saving...' : 'Save Email Settings'}
                 </button>
               </div>
             </div>
@@ -194,10 +217,16 @@ export default function SystemSettingsTab() {
               />
               <span className="text-xs text-slate-400">Larger</span>
             </div>
-            {tempFontSize !== fontSize && (
+            {(tempFontSize !== fontSize || isApplyingFont) && (
               <div className="mt-4 flex justify-end">
-                <PrimaryButton onClick={() => setIsFontModalOpen(true)}>
-                  Apply Changes
+                <PrimaryButton
+                  onClick={() => setIsFontModalOpen(true)}
+                  disabled={isApplyingFont}
+                >
+                  {isApplyingFont && (
+                    <Loader2 className="animate-spin mr-2" size={16} />
+                  )}
+                  {isApplyingFont ? 'Applying...' : 'Apply Changes'}
                 </PrimaryButton>
               </div>
             )}

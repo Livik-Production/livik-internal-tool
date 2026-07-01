@@ -14,6 +14,7 @@ import {
   Pencil,
   Trash2,
   SquarePen,
+  Loader2,
 } from 'lucide-react';
 import { showSuccessToast, showErrorToast } from '../Toast';
 import CustomModalForm from '../CustomModalForm';
@@ -21,6 +22,7 @@ import CustomAlertForm from '../CustomAlertForm';
 import Pagination from '../Pagination';
 import PrimaryButton from '../Buttons/PrimaryButton';
 import IconButton from '../Buttons/IconButton';
+import Loader from '../Loader';
 
 const PROJECTS = [
   'Product Design - Kinetic UI',
@@ -37,6 +39,10 @@ export default function TimesheetTab({ authUser }) {
 
   // Deletion confirmation modal state
   const [deletingLog, setDeletingLog] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [loadingEditId, setLoadingEditId] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // Form states
   const [logDate, setLogDate] = useState(
@@ -116,21 +122,27 @@ export default function TimesheetTab({ authUser }) {
     setIsModalOpen(true);
   };
 
-  const handleOpenEditModal = (log) => {
-    setEditingLog(log);
+  const handleOpenEditModal = async (log) => {
+    try {
+      setLoadingEditId(log.id);
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      setEditingLog(log);
 
-    // Parse the display date string (e.g. "Oct 23, 2026") to a YYYY-MM-DD string
-    const parsedDate = new Date(log.date);
-    const dateInputVal = !isNaN(parsedDate.getTime())
-      ? parsedDate.toISOString().split('T')[0]
-      : new Date().toISOString().split('T')[0];
+      // Parse the display date string (e.g. "Oct 23, 2026") to a YYYY-MM-DD string
+      const parsedDate = new Date(log.date);
+      const dateInputVal = !isNaN(parsedDate.getTime())
+        ? parsedDate.toISOString().split('T')[0]
+        : new Date().toISOString().split('T')[0];
 
-    setLogDate(dateInputVal);
-    setLogDuration(log.duration || '1 hour');
-    setSelectedProject(log.project || PROJECTS[0]);
-    setProjectTitle(log.title || '');
-    setWorkDescription(log.description || '');
-    setIsModalOpen(true);
+      setLogDate(dateInputVal);
+      setLogDuration(log.duration || '1 hour');
+      setSelectedProject(log.project || PROJECTS[0]);
+      setProjectTitle(log.title || '');
+      setWorkDescription(log.description || '');
+      setIsModalOpen(true);
+    } finally {
+      setLoadingEditId(null);
+    }
   };
 
   const handleCloseModal = () => {
@@ -138,7 +150,7 @@ export default function TimesheetTab({ authUser }) {
     setEditingLog(null);
   };
 
-  const handleLogHours = () => {
+  const handleLogHours = async () => {
     if (!projectTitle.trim()) {
       showErrorToast('Please enter the project title before logging!');
       return;
@@ -147,6 +159,12 @@ export default function TimesheetTab({ authUser }) {
       showErrorToast('Please describe your output before logging!');
       return;
     }
+
+    setIsSubmitting(true);
+    handleCloseModal();
+    setLoading(true);
+
+    await new Promise((resolve) => setTimeout(resolve, 800));
 
     if (editingLog) {
       // Edit mode
@@ -181,12 +199,19 @@ export default function TimesheetTab({ authUser }) {
       showSuccessToast('Timesheet logged successfully!');
     }
 
-    handleCloseModal();
+    setLoading(false);
+    setIsSubmitting(false);
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (!deletingLog) return;
-    const updatedLogs = logs.filter((log) => log.id !== deletingLog.id);
+    const targetId = deletingLog.id;
+    setIsDeleting(true);
+    setDeletingLog(null);
+    setLoading(true);
+
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    const updatedLogs = logs.filter((log) => log.id !== targetId);
     setLogs(updatedLogs);
 
     // Check if the current page has become empty
@@ -195,7 +220,8 @@ export default function TimesheetTab({ authUser }) {
       setCurrentPage(totalPages);
     }
 
-    setDeletingLog(null);
+    setLoading(false);
+    setIsDeleting(false);
     showSuccessToast('Timesheet deleted successfully!');
   };
 
@@ -263,7 +289,15 @@ export default function TimesheetTab({ authUser }) {
           Previous Timesheets
         </h3>
 
-        {paginatedLogs.length === 0 ? (
+        {loading ? (
+          <div className="flex justify-center items-center py-16 bg-white rounded-2xl border border-gray-200 shadow-sm min-h-[200px]">
+            <Loader
+              label="Loading timesheets..."
+              size="md"
+              fullScreen={false}
+            />
+          </div>
+        ) : paginatedLogs.length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-200 p-10 text-center text-gray-400 font-bold">
             No timesheets logged yet.
           </div>
@@ -297,6 +331,7 @@ export default function TimesheetTab({ authUser }) {
                       title="Edit Timesheet"
                       onClick={() => handleOpenEditModal(log)}
                       className="text-gray-500 hover:text-blue-600"
+                      disabled={loadingEditId !== null}
                     >
                       <SquarePen size={14} />
                     </IconButton>
@@ -304,6 +339,7 @@ export default function TimesheetTab({ authUser }) {
                       title="Remove Timesheet"
                       onClick={() => setDeletingLog(log)}
                       className="text-gray-500 hover:text-red-600"
+                      disabled={loadingEditId !== null}
                     >
                       <Trash2 size={14} />
                     </IconButton>
@@ -430,15 +466,26 @@ export default function TimesheetTab({ authUser }) {
           <div className="flex justify-end gap-3 pt-2">
             <button
               onClick={handleCloseModal}
-              className="px-5 py-2.5 border border-gray-200 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-50 transition-colors cursor-pointer"
+              disabled={isSubmitting}
+              className="px-5 py-2.5 border border-gray-200 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               onClick={handleLogHours}
-              className="px-5 py-2.5 bg-[#004475] text-white rounded-xl text-xs font-bold hover:bg-[#003358] transition-colors cursor-pointer"
+              disabled={isSubmitting}
+              className="px-5 py-2.5 bg-[#004475] text-white rounded-xl text-xs font-bold hover:bg-[#003358] transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5 min-w-[80px]"
             >
-              Submit
+              {isSubmitting ? (
+                <>
+                  <Loader2 size={12} className="animate-spin" />
+                  {editingLog ? 'Updating...' : 'Submitting...'}
+                </>
+              ) : editingLog ? (
+                'Update'
+              ) : (
+                'Submit'
+              )}
             </button>
           </div>
         </div>
@@ -447,13 +494,14 @@ export default function TimesheetTab({ authUser }) {
       {/* Delete Confirmation Alert Modal */}
       <CustomAlertForm
         isOpen={deletingLog !== null}
-        onClose={() => setDeletingLog(null)}
+        onClose={() => !isDeleting && setDeletingLog(null)}
         onConfirm={handleDeleteConfirm}
         title="Confirm Deletion"
         message={`Are you sure you want to delete this timesheet entry?\n\n"${deletingLog?.title || deletingLog?.project}"`}
         type="danger"
         confirmText="Delete"
         cancelText="Cancel"
+        isSubmitting={isDeleting}
       />
     </div>
   );

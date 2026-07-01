@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { showSuccessToast, showErrorToast } from '../../../components/Toast';
-import { X, SquarePen } from 'lucide-react';
+import { X, SquarePen, ChevronDown } from 'lucide-react';
 import Button from '../../Buttons/Button';
 import PrimaryButton from '../../Buttons/PrimaryButton';
 import CustomModalForm from '../../CustomModalForm';
@@ -14,6 +14,7 @@ const AddExpenseModal = ({
   mode = 'add',
   expenseData = null,
   onSuccess,
+  existingExpenses: propExistingExpenses = [],
 }) => {
   const [currentMode, setCurrentMode] = useState(mode);
   const [formData, setFormData] = useState({
@@ -30,8 +31,154 @@ const AddExpenseModal = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [existingExpenses, setExistingExpenses] = useState([]);
   const categoryInputRef = useRef(null);
   const categoryDropdownRef = useRef(null);
+
+  const normalizeDateForInput = (value) => {
+    if (!value) return '';
+    if (typeof value === 'string') {
+      const match = value.match(/^(\d{4}-\d{2}-\d{2})/);
+      if (match) return match[1];
+    }
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return '';
+    const yyyy = d.getUTCFullYear();
+    const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(d.getUTCDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
+  useEffect(() => {
+    if (propExistingExpenses && propExistingExpenses.length > 0) {
+      setExistingExpenses(propExistingExpenses);
+      return;
+    }
+
+    const fetchExpenses = async () => {
+      try {
+        const res = await fetch('/api/expense');
+        if (res.ok) {
+          const data = await res.json();
+          setExistingExpenses(Array.isArray(data) ? data : []);
+        }
+      } catch (err) {
+        console.error('Failed to fetch existing expenses:', err);
+      }
+    };
+
+    if (isOpen) {
+      fetchExpenses();
+    }
+  }, [isOpen, propExistingExpenses]);
+
+  const duplicateExpense = useMemo(() => {
+    if (currentMode !== 'add') {
+      return null;
+    }
+
+    if (
+      !formData.category.trim() ||
+      !formData.itemName.trim() ||
+      !formData.paymentMode ||
+      !formData.amount ||
+      parseFloat(formData.amount) <= 0 ||
+      !formData.expenseDate
+    ) {
+      return null;
+    }
+
+    const currentFormCategory = formData.category.trim().toLowerCase();
+    const currentFormItemName = formData.itemName.trim().toLowerCase();
+    const currentFormPaymentMode = formData.paymentMode.trim().toLowerCase();
+    const currentFormAmount = parseFloat(formData.amount);
+    const currentFormDateStr = normalizeDateForInput(formData.expenseDate);
+    const currentFormRemarks = (formData.remarks || '').trim().toLowerCase();
+
+    console.log('[Duplicate Check] Checking current form data:', {
+      category: currentFormCategory,
+      itemName: currentFormItemName,
+      paymentMode: currentFormPaymentMode,
+      amount: currentFormAmount,
+      expenseDate: currentFormDateStr,
+      remarks: currentFormRemarks,
+    });
+
+    const match = existingExpenses.find((existing) => {
+      const existingCategory = (existing.category || '').trim().toLowerCase();
+      const categoryMatch = existingCategory === currentFormCategory;
+
+      const existingItemName = (existing.itemName || existing.description || '')
+        .trim()
+        .toLowerCase();
+      const itemNameMatch = existingItemName === currentFormItemName;
+
+      const existingPaymentMode = (
+        existing.paymentMode ||
+        existing.paymentMethod ||
+        ''
+      )
+        .trim()
+        .toLowerCase();
+      const paymentModeMatch = existingPaymentMode === currentFormPaymentMode;
+
+      const existingAmount = parseFloat(existing.amount);
+      const amountMatch = existingAmount === currentFormAmount;
+
+      const existingDateStr = normalizeDateForInput(
+        existing.expenseDate || existing.date
+      );
+      const dateMatch = existingDateStr === currentFormDateStr;
+
+      // Handle remarks carefully to match both db and transformed states
+      let existingRemarks = '';
+      if (existing.remarks !== undefined && existing.remarks !== null) {
+        existingRemarks = existing.remarks.toString();
+      } else if (
+        existing.notes !== undefined &&
+        existing.notes !== null &&
+        existing.notes !== 'No notes'
+      ) {
+        existingRemarks = existing.notes.toString();
+      }
+      const remarksMatch =
+        existingRemarks.trim().toLowerCase() === currentFormRemarks;
+
+      const isMatch =
+        categoryMatch &&
+        itemNameMatch &&
+        paymentModeMatch &&
+        amountMatch &&
+        dateMatch &&
+        remarksMatch;
+
+      const isPartialMatch = categoryMatch && itemNameMatch;
+      if (isPartialMatch && !isMatch) {
+        console.log(
+          '[Duplicate Check] Partial match (category & name) but mismatch on ID:',
+          existing.id,
+          {
+            paymentModeMatch,
+            amountMatch,
+            dateMatch,
+            remarksMatch,
+            existingDate: existing.expenseDate || existing.date,
+            existingDateStr,
+            formDateStr: currentFormDateStr,
+            existingRemarks,
+            formRemarks: currentFormRemarks,
+          }
+        );
+      }
+
+      return isMatch;
+    });
+
+    if (match) {
+      console.log('[Duplicate Check] Duplicate match found!', match);
+    }
+    return match;
+  }, [formData, existingExpenses, currentMode]);
 
   const authUser = useSelector((state) => state.auth.user);
   const expenseCategories = [
@@ -185,17 +332,6 @@ const AddExpenseModal = ({
   };
 
   useEffect(() => {
-    const normalizeDateForInput = (value) => {
-      if (!value) return '';
-      if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
-      const d = new Date(value);
-      if (isNaN(d)) return '';
-      const yyyy = d.getFullYear();
-      const mm = String(d.getMonth() + 1).padStart(2, '0');
-      const dd = String(d.getDate()).padStart(2, '0');
-      return `${yyyy}-${mm}-${dd}`;
-    };
-
     if (expenseData) {
       setFormData({
         category: expenseData.category || '',
@@ -276,8 +412,17 @@ const AddExpenseModal = ({
   };
 
   const handleCategoryInputFocus = () => {
-    if (currentMode !== 'view' && formData.category.length > 0) {
+    if (currentMode !== 'view') {
       setShowCategoryDropdown(true);
+    }
+  };
+
+  const handleCategoryInputMouseDown = (e) => {
+    if (currentMode !== 'view') {
+      if (document.activeElement === e.target) {
+        e.preventDefault();
+        setShowCategoryDropdown((prev) => !prev);
+      }
     }
   };
 
@@ -495,134 +640,255 @@ const AddExpenseModal = ({
               </div>
             </div>
           )}
+          {duplicateExpense && (
+            <div className="mb-4 p-4 bg-amber-50/50 border border-amber-200 rounded-xl animate-in fade-in slide-in-from-bottom-2 duration-300">
+              {/* <div className="flex items-center gap-2 mb-3 text-amber-800 font-semibold text-sm">
+                  <span className="text-base">⚠️</span>
+                  <span>Duplicate Expense Detected (An identical record already exists)</span>
+                </div> */}
 
+              <div className="overflow-x-auto border border-amber-100 rounded-lg shadow-sm bg-white">
+                <table className="min-w-full divide-y divide-amber-100 text-xs text-left">
+                  <thead className="bg-amber-50/40 text-amber-800 font-semibold uppercase tracking-wider text-[10px]">
+                    <tr>
+                      <th className="px-4 py-2.5">Category</th>
+                      <th className="px-4 py-2.5">Expense Name</th>
+                      <th className="px-4 py-2.5">Date</th>
+                      <th className="px-4 py-2.5">Payment Mode</th>
+                      <th className="px-4 py-2.5 text-right">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 text-gray-700 font-medium bg-white">
+                    <tr>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        📁 {duplicateExpense.category}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {duplicateExpense.itemName}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        📅 {normalizeDateForInput(duplicateExpense.expenseDate)}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {duplicateExpense.paymentMode}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-right font-bold text-gray-900">
+                        ₹
+                        {parseFloat(duplicateExpense.amount).toLocaleString(
+                          undefined,
+                          {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          }
+                        )}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              {duplicateExpense.remarks && (
+                <div className="mt-3 text-xs text-gray-500 bg-amber-50/30 p-2.5 rounded border border-amber-100/50">
+                  <span className="font-semibold text-gray-700">Remarks:</span>{' '}
+                  {duplicateExpense.remarks}
+                </div>
+              )}
+            </div>
+          )}
           <div className="space-y-6">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Expense Category <span className="text-red-500">*</span>
-              </label>
-              <div className="relative" ref={categoryInputRef}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Expense Category */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Expense Category <span className="text-red-500">*</span>
+                </label>
+                <div className="relative" ref={categoryInputRef}>
+                  <input
+                    type="text"
+                    name="category"
+                    value={formData.category}
+                    onChange={handleChange}
+                    onFocus={handleCategoryInputFocus}
+                    onMouseDown={handleCategoryInputMouseDown}
+                    placeholder="Type to search or select a category"
+                    className={`w-full px-4 py-2.5 border rounded-lg ${
+                      errors.category ? 'border-red-500' : 'border-gray-300'
+                    } ${currentMode === 'view' ? 'bg-gray-50 cursor-default' : ''}`}
+                    readOnly={currentMode === 'view'}
+                    required
+                  />
+                  {currentMode !== 'view' && (
+                    <div className="absolute right-3 top-2.5 text-gray-400 pointer-events-none">
+                      <ChevronDown className="w-5 h-5" />
+                    </div>
+                  )}
+
+                  {currentMode !== 'view' &&
+                    showCategoryDropdown &&
+                    filteredCategories.length > 0 && (
+                      <div
+                        ref={categoryDropdownRef}
+                        className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto no-scrollbar"
+                      >
+                        {filteredCategories.map((category) => (
+                          <div
+                            key={category}
+                            onClick={() => handleCategorySelect(category)}
+                            className="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors"
+                          >
+                            <div className="flex items-center">
+                              <span className="mr-3">📁</span>
+                              <span className="text-gray-800">{category}</span>
+                            </div>
+                          </div>
+                        ))}
+                        {formData.category &&
+                          !expenseCategories.includes(formData.category) && (
+                            <div
+                              onClick={() =>
+                                handleCategorySelect(formData.category)
+                              }
+                              className="px-4 py-3 hover:bg-blue-50 cursor-pointer border-t border-gray-200 bg-gray-50"
+                            >
+                              <div className="flex items-center text-blue-600">
+                                <span className="mr-3">➕</span>
+                                <span>
+                                  Add "{formData.category}" as new category
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                      </div>
+                    )}
+                </div>
+                {errors.category && (
+                  <p className="text-red-500 text-sm mt-1 flex items-center">
+                    <svg
+                      className="w-4 h-4 mr-1"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    {errors.category}
+                  </p>
+                )}
+              </div>
+
+              {/* Expense Name */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Expense Name <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
-                  name="category"
-                  value={formData.category}
+                  name="itemName"
+                  value={formData.itemName}
                   onChange={handleChange}
-                  onFocus={handleCategoryInputFocus}
-                  placeholder="Type to search or select a category"
+                  placeholder="e.g., Team lunch, Printer cartridges, Flight tickets"
                   className={`w-full px-4 py-2.5 border rounded-lg ${
-                    errors.category ? 'border-red-500' : 'border-gray-300'
+                    errors.itemName ? 'border-red-500' : 'border-gray-300'
                   } ${currentMode === 'view' ? 'bg-gray-50 cursor-default' : ''}`}
                   readOnly={currentMode === 'view'}
                   required
                 />
-                {currentMode !== 'view' && (
-                  <div className="absolute right-3 top-2.5 text-gray-400">
+                {errors.itemName && (
+                  <p className="text-red-500 text-sm mt-1 flex items-center">
                     <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                      className="w-4 h-4 mr-1"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
                     >
                       <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                        clipRule="evenodd"
                       />
                     </svg>
-                  </div>
+                    {errors.itemName}
+                  </p>
                 )}
-
-                {currentMode !== 'view' &&
-                  showCategoryDropdown &&
-                  filteredCategories.length > 0 && (
-                    <div
-                      ref={categoryDropdownRef}
-                      className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto no-scrollbar"
-                    >
-                      {filteredCategories.map((category) => (
-                        <div
-                          key={category}
-                          onClick={() => handleCategorySelect(category)}
-                          className="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors"
-                        >
-                          <div className="flex items-center">
-                            <span className="mr-3">📁</span>
-                            <span className="text-gray-800">{category}</span>
-                          </div>
-                        </div>
-                      ))}
-                      {formData.category &&
-                        !expenseCategories.includes(formData.category) && (
-                          <div
-                            onClick={() =>
-                              handleCategorySelect(formData.category)
-                            }
-                            className="px-4 py-3 hover:bg-blue-50 cursor-pointer border-t border-gray-200 bg-gray-50"
-                          >
-                            <div className="flex items-center text-blue-600">
-                              <span className="mr-3">➕</span>
-                              <span>
-                                Add "{formData.category}" as new category
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                    </div>
-                  )}
               </div>
-              {errors.category && (
-                <p className="text-red-500 text-sm mt-1 flex items-center">
-                  <svg
-                    className="w-4 h-4 mr-1"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  {errors.category}
-                </p>
-              )}
             </div>
-
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Expense Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="itemName"
-                value={formData.itemName}
-                onChange={handleChange}
-                placeholder="e.g., Team lunch, Printer cartridges, Flight tickets"
-                className={`w-full px-4 py-2.5 border rounded-lg ${
-                  errors.itemName ? 'border-red-500' : 'border-gray-300'
-                } ${currentMode === 'view' ? 'bg-gray-50 cursor-default' : ''}`}
-                readOnly={currentMode === 'view'}
-                required
-              />
-              {errors.itemName && (
-                <p className="text-red-500 text-sm mt-1 flex items-center">
-                  <svg
-                    className="w-4 h-4 mr-1"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  {errors.itemName}
-                </p>
-              )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Date <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="date"
+                    name="expenseDate"
+                    value={formData.expenseDate}
+                    onChange={handleChange}
+                    className={`w-full px-4 py-2.5 border rounded-lg ${
+                      errors.expenseDate ? 'border-red-500' : 'border-gray-300'
+                    } ${currentMode === 'view' ? 'bg-gray-50 cursor-default' : ''}`}
+                    readOnly={currentMode === 'view'}
+                    required
+                  />
+                </div>
+                {errors.expenseDate && (
+                  <p className="text-red-500 text-sm mt-1 flex items-center">
+                    <svg
+                      className="w-4 h-4 mr-1"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    {errors.expenseDate}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Amount <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2.5 text-gray-500 font-medium">
+                    $
+                  </span>
+                  <input
+                    type="number"
+                    name="amount"
+                    value={formData.amount}
+                    onChange={handleChange}
+                    placeholder="0.00"
+                    min="0"
+                    step="0.01"
+                    className={`w-full pl-10 pr-4 py-2.5 border rounded-lg ${
+                      errors.amount ? 'border-red-500' : 'border-gray-300'
+                    } ${currentMode === 'view' ? 'bg-gray-50 cursor-default' : ''}`}
+                    readOnly={currentMode === 'view'}
+                    required
+                  />
+                </div>
+                {errors.amount && (
+                  <p className="text-red-500 text-sm mt-1 flex items-center">
+                    <svg
+                      className="w-4 h-4 mr-1"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    {errors.amount}
+                  </p>
+                )}
+              </div>
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700">
@@ -691,84 +957,6 @@ const AddExpenseModal = ({
                       />
                     </svg>
                     {errors.paymentMode}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Amount <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-2.5 text-gray-500 font-medium">
-                    $
-                  </span>
-                  <input
-                    type="number"
-                    name="amount"
-                    value={formData.amount}
-                    onChange={handleChange}
-                    placeholder="0.00"
-                    min="0"
-                    step="0.01"
-                    className={`w-full pl-10 pr-4 py-2.5 border rounded-lg ${
-                      errors.amount ? 'border-red-500' : 'border-gray-300'
-                    } ${currentMode === 'view' ? 'bg-gray-50 cursor-default' : ''}`}
-                    readOnly={currentMode === 'view'}
-                    required
-                  />
-                </div>
-                {errors.amount && (
-                  <p className="text-red-500 text-sm mt-1 flex items-center">
-                    <svg
-                      className="w-4 h-4 mr-1"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    {errors.amount}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Date <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <input
-                    type="date"
-                    name="expenseDate"
-                    value={formData.expenseDate}
-                    onChange={handleChange}
-                    className={`w-full px-4 py-2.5 border rounded-lg ${
-                      errors.expenseDate ? 'border-red-500' : 'border-gray-300'
-                    } ${currentMode === 'view' ? 'bg-gray-50 cursor-default' : ''}`}
-                    readOnly={currentMode === 'view'}
-                    required
-                  />
-                </div>
-                {errors.expenseDate && (
-                  <p className="text-red-500 text-sm mt-1 flex items-center">
-                    <svg
-                      className="w-4 h-4 mr-1"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    {errors.expenseDate}
                   </p>
                 )}
               </div>

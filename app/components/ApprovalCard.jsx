@@ -188,7 +188,7 @@ export default function ApprovalCard({
           <div className="mb-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                {approval.employeePhoto ? (
+                {approval.employeePhoto && (
                   <img
                     src={approval.employeePhoto}
                     alt={approval.employee}
@@ -197,20 +197,33 @@ export default function ApprovalCard({
                       e.stopPropagation();
                       onViewQuickInfo?.(approval.empData || approval);
                     }}
-                  />
-                ) : (
-                  <span
-                    className={`inline-flex items-center justify-center w-10 h-10 rounded-full cursor-pointer hover:bg-gray-100 transition-colors ${isLeaveRequest ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onViewQuickInfo?.(approval.empData || approval);
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      if (e.currentTarget.nextElementSibling) {
+                        e.currentTarget.nextElementSibling.style.display =
+                          'inline-flex';
+                      }
                     }}
-                  >
-                    <span className="text-sm font-bold">
-                      {isLeaveRequest ? 'LR' : 'RC'}
-                    </span>
-                  </span>
+                  />
                 )}
+                <span
+                  className={`inline-flex items-center justify-center w-10 h-10 rounded-full cursor-pointer hover:bg-gray-100 transition-colors ${isLeaveRequest ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'}`}
+                  style={{
+                    display: approval.employeePhoto ? 'none' : 'inline-flex',
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onViewQuickInfo?.(approval.empData || approval);
+                  }}
+                >
+                  <span className="text-sm font-bold">
+                    {approval.employee
+                      ? approval.employee.charAt(0)
+                      : isLeaveRequest
+                        ? 'LR'
+                        : 'RC'}
+                  </span>
+                </span>
                 <div>
                   <div
                     className="text-gray-900 font-bold text-base hover:text-blue-600 hover:underline cursor-pointer"
@@ -280,10 +293,11 @@ export default function ApprovalCard({
                   </div>
                   <div>
                     <div className="text-[10px] text-gray-400 uppercase font-bold mb-1 tracking-tight">
-                      Applied On
+                      Duration
                     </div>
                     <div className="text-sm font-semibold text-gray-700">
-                      {formatDate(approval.appliedDate || approval.createdAt)}
+                      {formatDate(approval.startDate)} -{' '}
+                      {formatDate(approval.endDate)}
                     </div>
                   </div>
                 </div>
@@ -291,12 +305,13 @@ export default function ApprovalCard({
                 {/* Line 3: Duration Reason */}
                 <div className="flex gap-4">
                   <div className="w-1/3">
-                    <div className="text-[10px] text-gray-400 uppercase font-bold mb-1 tracking-tight">
-                      Duration
-                    </div>
-                    <div className="text-xs font-semibold text-gray-700">
-                      {formatDate(approval.startDate)} -{' '}
-                      {formatDate(approval.endDate)}
+                    <div>
+                      <div className="text-[10px] text-gray-400 uppercase font-bold mb-1 tracking-tight">
+                        Applied On
+                      </div>
+                      <div className="text-sm font-semibold text-gray-700">
+                        {formatDate(approval.appliedDate || approval.createdAt)}
+                      </div>
                     </div>
                   </div>
                   {approval.isHalfDay && (

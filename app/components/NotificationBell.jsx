@@ -1,7 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Bell, UserPlus, MessageSquare, TrendingUp } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  Bell,
+  UserPlus,
+  MessageSquare,
+  TrendingUp,
+  FileText,
+} from 'lucide-react';
 import { useSelector } from 'react-redux';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
@@ -12,40 +18,76 @@ const fetcher = (url) => fetch(url).then((res) => res.json());
 export default function NotificationBell({ placement = 'bottom' }) {
   const router = useRouter();
   const [showNotifications, setShowNotifications] = useState(false);
+  const [isPinned, setIsPinned] = useState(false);
 
   // For dismissing UI-generated notifications
   const [hiddenEnquiries, setHiddenEnquiries] = useState([]);
   const [hiddenExpenseReport, setHiddenExpenseReport] = useState(false);
   const [readPendingIds, setReadPendingIds] = useState([]);
   const [readLeaveIds, setReadLeaveIds] = useState([]);
+  const [readDocIds, setReadDocIds] = useState([]);
+  const hideTimeoutRef = useRef(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     try {
-      setHiddenEnquiries(JSON.parse(localStorage.getItem('hiddenEnquiries') || '[]'));
-      setHiddenExpenseReport(JSON.parse(localStorage.getItem('hiddenExpenseReport') || 'false'));
-      setReadPendingIds(JSON.parse(localStorage.getItem('readPendingIds') || '[]'));
+      setHiddenEnquiries(
+        JSON.parse(localStorage.getItem('hiddenEnquiries') || '[]')
+      );
+      setHiddenExpenseReport(
+        JSON.parse(localStorage.getItem('hiddenExpenseReport') || 'false')
+      );
+      setReadPendingIds(
+        JSON.parse(localStorage.getItem('readPendingIds') || '[]')
+      );
       setReadLeaveIds(JSON.parse(localStorage.getItem('readLeaveIds') || '[]'));
-    } catch(e) {}
+      setReadDocIds(JSON.parse(localStorage.getItem('readDocIds') || '[]'));
+    } catch (e) {}
+    return () => {
+      if (hideTimeoutRef.current) {
+        clearTimeout(hideTimeoutRef.current);
+      }
+    };
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     localStorage.setItem('hiddenEnquiries', JSON.stringify(hiddenEnquiries));
-    localStorage.setItem('hiddenExpenseReport', JSON.stringify(hiddenExpenseReport));
+    localStorage.setItem(
+      'hiddenExpenseReport',
+      JSON.stringify(hiddenExpenseReport)
+    );
     localStorage.setItem('readPendingIds', JSON.stringify(readPendingIds));
     localStorage.setItem('readLeaveIds', JSON.stringify(readLeaveIds));
-  }, [hiddenEnquiries, hiddenExpenseReport, readPendingIds, readLeaveIds]);
-  
+    localStorage.setItem('readDocIds', JSON.stringify(readDocIds));
+  }, [
+    hiddenEnquiries,
+    hiddenExpenseReport,
+    readPendingIds,
+    readLeaveIds,
+    readDocIds,
+  ]);
+
+  useEffect(() => {
+    const event = new CustomEvent('bell-state-change', {
+      detail: { open: showNotifications },
+    });
+    window.dispatchEvent(event);
+  }, [showNotifications]);
+
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   // 1. Get Auth Status and Roles
   const authUser = useSelector((state) => state.auth?.user);
-  const roleName = authUser?.role?.name?.toUpperCase() ?? authUser?.roleName?.toUpperCase() ?? null;
-  
+  const roleName =
+    authUser?.role?.name?.toUpperCase() ??
+    authUser?.roleName?.toUpperCase() ??
+    null;
+
   // Normalize rights from different possible redux states
   const rawRights = authUser?.rights || [];
   const normalizedRights = rawRights.map((r) => String(r).toLowerCase());
-  const roleRights = authUser?.role?.rights?.map((r) => r.right?.rightName?.toLowerCase()) || [];
+  const roleRights =
+    authUser?.role?.rights?.map((r) => r.right?.rightName?.toLowerCase()) || [];
   const rights = [...new Set([...normalizedRights, ...roleRights])];
 
   const isSuperAdmin =
@@ -67,10 +109,13 @@ export default function NotificationBell({ placement = 'bottom' }) {
     { refreshInterval: 30000, revalidateOnFocus: true }
   );
 
-  const dbNotifications = Array.isArray(dbNotificationsData) ? dbNotificationsData : [];
+  const dbNotifications = Array.isArray(dbNotificationsData)
+    ? dbNotificationsData
+    : [];
 
   // Fetch Website Operations - Client Enquiries (Requires admin or website operations module)
-  const canViewWebsiteOps = hasRight('admin_module') || hasRight('website_operations_module');
+  const canViewWebsiteOps =
+    hasRight('admin_module') || hasRight('website_operations_module');
   const { data: contactSubmissionsData } = useSWR(
     canViewWebsiteOps ? '/api/contact-submissions' : null,
     fetcher,
@@ -89,32 +134,70 @@ export default function NotificationBell({ placement = 'bottom' }) {
 
   // Fetch Leaves & Permissions (Requires approve_leave right)
   const canApproveLeave = isSuperAdmin || hasRight('hr_module_approve_leave');
-  
-  const leaveSWRKey = canApproveLeave ? `/api/leave?status=PENDING${!isSuperAdmin && authUser?.id ? `&excludeEmployeeId=${authUser.id}` : ''}` : null;
-  const { data: pendingLeavesData } = useSWR(leaveSWRKey, fetcher, { refreshInterval: 60000 });
-  const pendingLeaves = Array.isArray(pendingLeavesData) ? pendingLeavesData : [];
 
-  const permSWRKey = canApproveLeave ? `/api/permission${!isSuperAdmin && authUser?.id ? `?excludeEmployeeId=${authUser.id}` : ''}` : null;
-  const { data: pendingPermissionsData } = useSWR(permSWRKey, fetcher, { refreshInterval: 60000 });
-  const pendingPermissions = (Array.isArray(pendingPermissionsData) ? pendingPermissionsData : []).filter(p => p.status === 'PENDING' || (p.status === 'APPROVED' && !p.isConfirmed));
+  const leaveSWRKey = canApproveLeave
+    ? `/api/leave?status=PENDING${!isSuperAdmin && authUser?.id ? `&excludeEmployeeId=${authUser.id}` : ''}`
+    : null;
+  const { data: pendingLeavesData } = useSWR(leaveSWRKey, fetcher, {
+    refreshInterval: 60000,
+  });
+  const pendingLeaves = Array.isArray(pendingLeavesData)
+    ? pendingLeavesData
+    : [];
+
+  const permSWRKey = canApproveLeave
+    ? `/api/permission${!isSuperAdmin && authUser?.id ? `?excludeEmployeeId=${authUser.id}` : ''}`
+    : null;
+  const { data: pendingPermissionsData } = useSWR(permSWRKey, fetcher, {
+    refreshInterval: 60000,
+  });
+  const pendingPermissions = (
+    Array.isArray(pendingPermissionsData) ? pendingPermissionsData : []
+  ).filter(
+    (p) => p.status === 'PENDING' || (p.status === 'APPROVED' && !p.isConfirmed)
+  );
+
+  // Fetch Document Requests
+  const canViewDocuments =
+    isSuperAdmin ||
+    hasRight('hr_module_control_all_employees') ||
+    hasRight('hr_module_view_all_employees');
+  const docRoleFilter = isSuperAdmin ? 'HR' : 'EMPLOYEE';
+  const docSWRKey = canViewDocuments
+    ? `/api/document-requests?status=PENDING&requestedByRole=${docRoleFilter}`
+    : null;
+  const { data: pendingDocsData } = useSWR(docSWRKey, fetcher, {
+    refreshInterval: 60000,
+  });
+  const pendingDocs = Array.isArray(pendingDocsData) ? pendingDocsData : [];
 
   // 3. Pending Employees Routing Logic
   const pendingEmployees = useSelector((state) => {
     const items = state.employees?.items || [];
-    
+
     return items.filter((emp) => {
       // Must have completed profile setup to trigger notification
       const isContract = emp.workType === 'CONTRACT';
-      const isProfileComplete = isContract 
-        ? !!(emp.firstName && emp.lastName && emp.phoneNumber && emp.bondRemarks)
-        : !!(emp.aadhaarNumber && emp.panNumber && emp.dateOfBirth && emp.presentAddress);
+      const isProfileComplete = isContract
+        ? !!(
+            emp.firstName &&
+            emp.lastName &&
+            emp.phoneNumber &&
+            emp.bondRemarks
+          )
+        : !!(
+            emp.aadhaarNumber &&
+            emp.panNumber &&
+            emp.dateOfBirth &&
+            emp.presentAddress
+          );
 
       if (!isProfileComplete) return false;
 
       const isPending = emp.status?.toUpperCase() === 'PENDING';
       const isPendingAdmin = emp.status?.toUpperCase() === 'PENDING_ADMIN';
       const createdByAdmin = emp.createdByRole === 'SUPER_ADMIN';
-      
+
       // If employee lacks createdByRole (legacy data), we default to Super Admin seeing them
       const isLegacy = !emp.createdByRole;
 
@@ -135,7 +218,11 @@ export default function NotificationBell({ placement = 'bottom' }) {
   const mappedDbNotifs = dbNotifications
     .filter((notif) => {
       if (notif.type === 'INVOICE_CYCLE') {
-        return hasRight('admin_view_customers') || hasRight('admin_control_customers') || hasRight('finance_module');
+        return (
+          hasRight('admin_view_customers') ||
+          hasRight('admin_control_customers') ||
+          hasRight('finance_module')
+        );
       }
       return true;
     })
@@ -163,15 +250,17 @@ export default function NotificationBell({ placement = 'bottom' }) {
     id: `pending-${emp.id}`,
     title: 'Pending Employee Approval',
     description: `${emp.workType === 'CONTRACT' ? 'Contract Employee' : 'Employee'} ${emp.firstName} ${emp.lastName} is waiting for approval.`,
-    time: emp.createdAt ? new Date(emp.createdAt).toLocaleDateString() : 'Pending',
+    time: emp.createdAt
+      ? new Date(emp.createdAt).toLocaleDateString()
+      : 'Pending',
     tag: emp.workType === 'CONTRACT' ? 'HR - Contract' : 'HR - Employee',
     icon: <UserPlus size={18} />,
     isRead: readPendingIds.includes(emp.id),
-    rawEmp: emp
+    rawEmp: emp,
   }));
 
   const pendingLeaveNotifs = [
-    ...pendingLeaves.map(leave => ({
+    ...pendingLeaves.map((leave) => ({
       id: `leave-${leave.id}`,
       title: 'Pending Leave Request',
       description: `${leave.employee?.firstName || ''} ${leave.employee?.lastName || ''} requested ${leave.leaveType || 'leave'}.`,
@@ -179,9 +268,9 @@ export default function NotificationBell({ placement = 'bottom' }) {
       tag: 'HR - Leave',
       icon: <UserPlus size={18} />,
       isRead: readLeaveIds.includes(`leave-${leave.id}`),
-      raw: leave
+      raw: leave,
     })),
-    ...pendingPermissions.map(perm => ({
+    ...pendingPermissions.map((perm) => ({
       id: `perm-${perm.id}`,
       title: 'Pending Permission Request',
       description: `${perm.employee?.firstName || ''} ${perm.employee?.lastName || ''} requested permission.`,
@@ -189,9 +278,20 @@ export default function NotificationBell({ placement = 'bottom' }) {
       tag: 'HR - Permission',
       icon: <UserPlus size={18} />,
       isRead: readLeaveIds.includes(`perm-${perm.id}`),
-      raw: perm
-    }))
+      raw: perm,
+    })),
   ];
+
+  const pendingDocNotifs = pendingDocs.map((doc) => ({
+    id: `doc-${doc.id}`,
+    title: 'Document Approval Required',
+    description: `${doc.employee?.firstName || ''} ${doc.employee?.lastName || ''} uploaded ${doc.documentType === 'photo' ? 'a Photo' : doc.documentType === 'aadhaarCard' ? 'an Aadhaar Card' : doc.documentType === 'panCard' ? 'a PAN Card' : 'a Document'} for approval.`,
+    time: new Date(doc.createdAt).toLocaleDateString(),
+    tag: 'HR - Document',
+    icon: <FileText size={18} />,
+    isRead: readDocIds.includes(`doc-${doc.id}`),
+    raw: doc,
+  }));
 
   // Client Enquiries Today
   const todayStart = new Date();
@@ -200,15 +300,18 @@ export default function NotificationBell({ placement = 'bottom' }) {
     (enq) => new Date(enq.createdAt) >= todayStart
   );
 
-  const enquiryNotifs = newEnquiries.map(enq => ({
+  const enquiryNotifs = newEnquiries.map((enq) => ({
     id: `enquiry-${enq.id}`,
     title: 'New Client Enquiry',
     description: `From: ${enq.name} - ${enq.service}`,
-    time: new Date(enq.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    time: new Date(enq.createdAt).toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+    }),
     tag: 'Website Operations',
     icon: <MessageSquare size={18} />,
     isRead: hiddenEnquiries.includes(enq.id),
-    raw: enq
+    raw: enq,
   }));
 
   // Weekly Expenses Report (Mondays)
@@ -218,19 +321,24 @@ export default function NotificationBell({ placement = 'bottom' }) {
 
   if (isMonday && !hiddenExpenseReport && isSuperAdmin) {
     const lastMonday = new Date(now);
-    lastMonday.setDate(now.getDate() - (now.getDay() === 1 ? 7 : (now.getDay() + 6) % 7)); // previous Monday
+    lastMonday.setDate(
+      now.getDate() - (now.getDay() === 1 ? 7 : (now.getDay() + 6) % 7)
+    ); // previous Monday
     lastMonday.setHours(0, 0, 0, 0);
     const yesterday = new Date(now);
     yesterday.setDate(now.getDate() - 1);
     yesterday.setHours(23, 59, 59, 999);
 
-    const lastWeekExpenses = expenses.filter(e => {
+    const lastWeekExpenses = expenses.filter((e) => {
       const d = new Date(e.expenseDate || e.createdAt);
       return d >= lastMonday && d <= yesterday;
     });
 
     if (lastWeekExpenses.length > 0) {
-      const total = lastWeekExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+      const total = lastWeekExpenses.reduce(
+        (sum, e) => sum + Number(e.amount || 0),
+        0
+      );
       expenseNotifs.push({
         id: 'weekly-expense-report',
         title: 'Weekly Expenses Report',
@@ -243,13 +351,18 @@ export default function NotificationBell({ placement = 'bottom' }) {
     }
   }
 
-  const notifications = [...mappedDbNotifs, ...pendingNotifs, ...pendingLeaveNotifs, ...enquiryNotifs, ...expenseNotifs].filter((n) => !n.isRead);
+  const notifications = [
+    ...mappedDbNotifs,
+    ...pendingNotifs,
+    ...pendingLeaveNotifs,
+    ...pendingDocNotifs,
+    ...enquiryNotifs,
+    ...expenseNotifs,
+  ].filter((n) => !n.isRead);
   const unreadCount = notifications.length;
 
-
-
   // Auto‑mark notifications of the current tab as read when the tab is visited
-  React.useEffect(() => {
+  useEffect(() => {
     // Determine which tag corresponds to the current tab
     const tab = searchParams?.get('tab');
     let targetTag = '';
@@ -257,7 +370,8 @@ export default function NotificationBell({ placement = 'bottom' }) {
       if (tab === 'customers') targetTag = 'Invoice';
       else if (tab === 'assets') targetTag = 'Asset';
     } else if (pathname?.includes('/dashboard/hr')) {
-      if (tab === 'leave' || searchParams?.get('mainTab') === 'leave') targetTag = 'Leave';
+      if (tab === 'leave' || searchParams?.get('mainTab') === 'leave')
+        targetTag = 'Leave';
     }
     // Add more mappings as needed for other modules
 
@@ -269,9 +383,10 @@ export default function NotificationBell({ placement = 'bottom' }) {
         (n) =>
           n.tag === targetTag &&
           !n.isRead &&
-          !(n.id?.toString().startsWith('pending-')) &&
-          !(n.id?.toString().startsWith('enquiry-')) &&
-          !(n.id?.toString().startsWith('weekly-expense-report'))
+          !n.id?.toString().startsWith('pending-') &&
+          !n.id?.toString().startsWith('enquiry-') &&
+          !n.id?.toString().startsWith('doc-') &&
+          !n.id?.toString().startsWith('weekly-expense-report')
       )
       .map((n) => n.id);
 
@@ -287,23 +402,26 @@ export default function NotificationBell({ placement = 'bottom' }) {
       )
     )
       .then(() => mutate())
-      .catch((err) => console.error('Failed to auto‑mark tab notifications as read:', err));
+      .catch((err) =>
+        console.error('Failed to auto‑mark tab notifications as read:', err)
+      );
   }, [pathname, searchParams, authUser?.id, mutate, notifications]);
 
   // 5. Handlers
   const handleMarkAllRead = async () => {
     try {
-      await fetch('/api/notifications/read-all', { 
+      await fetch('/api/notifications/read-all', {
         method: 'PATCH',
-        headers: { 'x-user-id': authUser?.id }
+        headers: { 'x-user-id': authUser?.id },
       });
       mutate(); // Re-fetch from DB
 
       // Also clear UI generated ones
-      setHiddenEnquiries(newEnquiries.map(e => e.id));
+      setHiddenEnquiries(newEnquiries.map((e) => e.id));
       setHiddenExpenseReport(true);
 
       setShowNotifications(false);
+      setIsPinned(false);
     } catch (err) {
       console.error('Failed to mark all as read:', err);
     }
@@ -311,12 +429,18 @@ export default function NotificationBell({ placement = 'bottom' }) {
 
   const handleNotificationClick = async (notif) => {
     // Mark as read in DB if it's a real DB notification
-    if (notif.id && !notif.id.toString().startsWith('pending-') && !notif.id.toString().startsWith('enquiry-') && notif.id !== 'weekly-expense-report') {
+    if (
+      notif.id &&
+      !notif.id.toString().startsWith('pending-') &&
+      !notif.id.toString().startsWith('doc-') &&
+      !notif.id.toString().startsWith('enquiry-') &&
+      notif.id !== 'weekly-expense-report'
+    ) {
       if (!notif.isRead) {
         try {
-          await fetch(`/api/notifications/${notif.id}/read`, { 
+          await fetch(`/api/notifications/${notif.id}/read`, {
             method: 'PATCH',
-            headers: { 'x-user-id': authUser?.id }
+            headers: { 'x-user-id': authUser?.id },
           });
           mutate(); // Re-fetch
         } catch (err) {
@@ -326,6 +450,7 @@ export default function NotificationBell({ placement = 'bottom' }) {
     }
 
     setShowNotifications(false);
+    setIsPinned(false);
 
     // Global Routing based on notification type
     if (notif.tag === 'Invoice') {
@@ -339,27 +464,37 @@ export default function NotificationBell({ placement = 'bottom' }) {
     } else if (notif.raw?.type === 'ASSET') {
       router.push('/dashboard/employee_portal?tab=assets');
     } else if (notif.id.toString().startsWith('pending-')) {
-      setReadPendingIds(prev => [...new Set([...prev, notif.rawEmp.id])]);
+      setReadPendingIds((prev) => [...new Set([...prev, notif.rawEmp.id])]);
       router.push(`/dashboard/hr?tab=pendingEmployees`);
-    } else if (notif.id.toString().startsWith('leave-') || notif.id.toString().startsWith('perm-')) {
-      setReadLeaveIds(prev => [...new Set([...prev, notif.id])]);
+    } else if (
+      notif.id.toString().startsWith('leave-') ||
+      notif.id.toString().startsWith('perm-')
+    ) {
+      setReadLeaveIds((prev) => [...new Set([...prev, notif.id])]);
       router.push(`/dashboard/hr?tab=leave&subtab=leaveRequests`);
+    } else if (notif.id.toString().startsWith('doc-')) {
+      setReadDocIds((prev) => [...new Set([...prev, notif.id])]);
+      router.push(`/dashboard/hr?tab=pendingEmployees&subtab=documents`);
     } else if (notif.id.toString().startsWith('enquiry-')) {
-      setHiddenEnquiries(prev => [...new Set([...prev, notif.raw.id])]);
-      router.push('/dashboard/admin/livik-site-operations?tab=Client%20Enquiries');
+      setHiddenEnquiries((prev) => [...new Set([...prev, notif.raw.id])]);
+      router.push(
+        '/dashboard/admin/livik-site-operations?tab=Client%20Enquiries'
+      );
     } else if (notif.id === 'weekly-expense-report') {
       setHiddenExpenseReport(true);
       router.push('/dashboard/finance?tab=Expenses');
     }
   };
 
-  let hideTimeout;
   const handleMouseEnter = () => {
-    clearTimeout(hideTimeout);
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+    }
     setShowNotifications(true);
   };
   const handleMouseLeave = () => {
-    hideTimeout = setTimeout(() => {
+    if (isPinned) return;
+    hideTimeoutRef.current = setTimeout(() => {
       setShowNotifications(false);
     }, 200);
   };
@@ -367,50 +502,72 @@ export default function NotificationBell({ placement = 'bottom' }) {
   if (!authUser) return null;
 
   return (
-    <div
-      className="relative mr-4"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
-      <button
-        onClick={() => {
-          clearTimeout(hideTimeout);
-          setShowNotifications(!showNotifications);
-        }}
-        className={`p-2 rounded-full transition-all duration-300 flex items-center justify-center relative hover:scale-110 active:scale-95 bg-blue-50 text-[#33a8d9] ring-2 ring-blue-100 cursor-pointer ${showNotifications ? 'z-50' : ''
-          }`}
-        title="Pending Actions"
-      >
-        <Bell size={17} className="fill-[#33a8d9] scale-110" />
-        {/* Notification Badge */}
-        {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 border border-white text-[10px] font-bold text-white shadow-sm">
-            {unreadCount}
-          </span>
-        )}
-      </button>
-
+    <>
       {showNotifications && (
-        <>
-          {/* Backdrop for closing */}
+        <div
+          className="fixed inset-0 z-40 backdrop-blur-sm bg-black/20 transition-all duration-300"
+          onClick={() => {
+            setShowNotifications(false);
+            setIsPinned(false);
+          }}
+        />
+      )}
+      <div
+        className="relative mr-4"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        <button
+          onClick={() => {
+            if (hideTimeoutRef.current) {
+              clearTimeout(hideTimeoutRef.current);
+            }
+            if (isPinned) {
+              setIsPinned(false);
+              setShowNotifications(false);
+            } else {
+              setIsPinned(true);
+              setShowNotifications(true);
+            }
+          }}
+          className={`p-2 rounded-full transition-all duration-300 flex items-center justify-center relative hover:scale-110 active:scale-95 bg-blue-50 text-[#33a8d9] ring-2 ring-blue-100 cursor-pointer ${
+            showNotifications ? 'z-50' : ''
+          }`}
+          title="Pending Actions"
+        >
+          <Bell size={17} className="fill-[#33a8d9] scale-110" />
+          {/* Notification Badge */}
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 border border-white text-[10px] font-bold text-white shadow-sm">
+              {unreadCount}
+            </span>
+          )}
+        </button>
+
+        {showNotifications && (
           <div
-            className="fixed inset-0 z-40 backdrop-blur-sm bg-black/20 transition-all duration-300"
-            onClick={() => setShowNotifications(false)}
-          ></div>
-          <div
-            className={`absolute z-50 ${placement === 'top' ? 'bottom-full mb-2 left-0 origin-bottom-left' : 'top-full mt-2 right-0 origin-top-right'
-              }`}
+            className={`absolute z-50 ${
+              placement === 'top'
+                ? 'bottom-full mb-2 left-0 origin-bottom-left'
+                : 'top-full mt-2 right-0 origin-top-right'
+            }`}
           >
             <AdminNotificationDropdown
               notifications={notifications}
-              onClose={() => setShowNotifications(false)}
+              onClose={() => {
+                setShowNotifications(false);
+                setIsPinned(false);
+              }}
               onMarkAllRead={handleMarkAllRead}
-              onViewAll={() => setShowNotifications(false)}
+              onViewAll={() => {
+                setShowNotifications(false);
+                setIsPinned(false);
+              }}
               onNotificationClick={handleNotificationClick}
             />
           </div>
-        </>
-      )}
-    </div>
+        )}
+      </div>
+    </>
   );
 }

@@ -27,6 +27,9 @@ const SalarySetupModal = ({
   const [employeeSearch, setEmployeeSearch] = useState('');
   const [showEmployeeDropdown, setShowEmployeeDropdown] = useState(false);
   const dropdownRef = useRef(null);
+  const [employeeNameSearch, setEmployeeNameSearch] = useState('');
+  const [showNameDropdown, setShowNameDropdown] = useState(false);
+  const dropdownNameRef = useRef(null);
 
   const [salaryRules, setSalaryRules] = useState({
     basicPayPercent: 40.0,
@@ -118,6 +121,12 @@ const SalarySetupModal = ({
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setShowEmployeeDropdown(false);
+      }
+      if (
+        dropdownNameRef.current &&
+        !dropdownNameRef.current.contains(e.target)
+      ) {
+        setShowNameDropdown(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -521,6 +530,42 @@ const SalarySetupModal = ({
       ),
     },
     {
+      key: 'audit',
+      label: 'Audit Info',
+      render: (row) => (
+        <div className="flex flex-col text-[10px] text-gray-400 font-medium whitespace-nowrap">
+          {(row.createdAt ||
+            row.updatedAt ||
+            row.createdBy ||
+            row.createBy ||
+            row.created_by) && (
+            <>
+              <span>
+                Created:{' '}
+                {row.createdAt
+                  ? new Date(row.createdAt).toLocaleDateString()
+                  : ''}{' '}
+                {row.createdBy || row.createBy || row.created_by
+                  ? `by ${row.createdBy || row.createBy || row.created_by}`
+                  : ''}
+              </span>
+              {(row.updatedAt || row.updated_at) && (
+                <span>
+                  Updated:{' '}
+                  {new Date(
+                    row.updatedAt || row.updated_at
+                  ).toLocaleDateString()}{' '}
+                  {row.updatedBy || row.UpdatedBy || row.updated_by
+                    ? `by ${row.updatedBy || row.UpdatedBy || row.updated_by}`
+                    : ''}
+                </span>
+              )}
+            </>
+          )}
+        </div>
+      ),
+    },
+    {
       key: 'actions',
       label: 'Actions',
       render: (row) => {
@@ -734,6 +779,7 @@ const SalarySetupModal = ({
                                         dateOfJoining: e.dateOfJoining || '',
                                       }));
                                       setEmployeeSearch(e.empId);
+                                      setEmployeeNameSearch(e.name);
                                       setShowEmployeeDropdown(false);
                                     }}
                                     className="w-full text-left px-4 py-2 text-sm hover:bg-blue-50 hover:text-blue-700 transition-colors"
@@ -777,15 +823,87 @@ const SalarySetupModal = ({
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Employee Name
                       </label>
-                      <input
-                        type="text"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleInputChange}
-                        readOnly={isViewMode}
-                        className={`w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${isViewMode ? 'bg-gray-100' : ''}`}
-                        placeholder={isAddMode ? 'Enter employee name' : ''}
-                      />
+                      {isAddMode ? (
+                        <div className="relative" ref={dropdownNameRef}>
+                          <input
+                            type="text"
+                            placeholder="Search by name or ID..."
+                            value={employeeNameSearch}
+                            onChange={(e) => {
+                              setEmployeeNameSearch(e.target.value);
+                              setShowNameDropdown(true);
+                            }}
+                            onFocus={() => setShowNameDropdown(true)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                          {showNameDropdown && (
+                            <div className="absolute z-50 mt-1 w-64 bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                              {allEmployees
+                                .filter(
+                                  (e) =>
+                                    e.name
+                                      ?.toLowerCase()
+                                      .includes(
+                                        employeeNameSearch.toLowerCase()
+                                      ) ||
+                                    e.empId
+                                      ?.toLowerCase()
+                                      .includes(
+                                        employeeNameSearch.toLowerCase()
+                                      )
+                                )
+                                .map((e) => (
+                                  <button
+                                    key={e.id}
+                                    type="button"
+                                    onClick={() => {
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        id: e.id,
+                                        empId: e.empId,
+                                        name: e.name,
+                                        dateOfJoining: e.dateOfJoining || '',
+                                      }));
+                                      setEmployeeSearch(e.empId);
+                                      setEmployeeNameSearch(e.name);
+                                      setShowNameDropdown(false);
+                                    }}
+                                    className="w-full text-left px-4 py-2 text-sm hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                                  >
+                                    <span className="font-medium text-gray-900">
+                                      {e.name}
+                                    </span>
+                                    <span className="text-gray-500 ml-2 text-xs">
+                                      ({e.empId})
+                                    </span>
+                                  </button>
+                                ))}
+                              {allEmployees.filter(
+                                (e) =>
+                                  e.name
+                                    ?.toLowerCase()
+                                    .includes(
+                                      employeeNameSearch.toLowerCase()
+                                    ) ||
+                                  e.empId
+                                    ?.toLowerCase()
+                                    .includes(employeeNameSearch.toLowerCase())
+                              ).length === 0 && (
+                                <div className="px-4 py-3 text-sm text-gray-500">
+                                  No employees found
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <input
+                          type="text"
+                          value={formData.name}
+                          readOnly
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-gray-100 focus:outline-none"
+                        />
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">

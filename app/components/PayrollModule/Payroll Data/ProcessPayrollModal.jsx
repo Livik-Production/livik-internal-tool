@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import AttendanceTabContent from './AttendancePayrolltab'; // Import the separate component
 import { showSuccessToast, showErrorToast } from '../../Toast';
 import CustomModalForm from '../../CustomModalForm';
@@ -18,6 +19,8 @@ export default function CreatePayrollModal({
   isViewOnly = false, // true when opened from the month link
   viewPayroll = null, // the payroll row to view
 }) {
+  const authUser = useSelector((state) => state.auth?.user);
+
   // Derive initial selectedMonth from viewPayroll ("MMM-YYYY" → "YYYY-MM") or default to current month
   const toInputMonth = (monthStr) => {
     if (!monthStr) return new Date().toISOString().slice(0, 7);
@@ -109,6 +112,8 @@ export default function CreatePayrollModal({
         body: JSON.stringify({
           month: selectedMonth,
           settings: settings,
+          createdBy: authUser?.name || 'Unknown',
+          updatedBy: authUser?.name || 'Unknown',
         }),
       });
 
@@ -230,14 +235,41 @@ export default function CreatePayrollModal({
               </div>
             )}
             <div className="flex items-center justify-between gap-3 w-full">
-              {isViewOnly && viewPayroll?.createdAt ? (
+              {isViewOnly &&
+              (viewPayroll?.createdAt ||
+                viewPayroll?.updatedAt ||
+                viewPayroll?.createdBy ||
+                viewPayroll?.createBy ||
+                viewPayroll?.created_by) ? (
                 <div className="flex flex-col text-[10px] text-gray-400 font-medium text-left">
-                  <span>Created: {new Date(viewPayroll.createdAt).toLocaleString()}</span>
-                  {viewPayroll.updatedAt && (
-                    <span>Updated: {new Date(viewPayroll.updatedAt).toLocaleString()}</span>
+                  <span>
+                    Created:{' '}
+                    {viewPayroll.createdAt
+                      ? new Date(viewPayroll.createdAt).toLocaleString()
+                      : ''}{' '}
+                    {viewPayroll.createdBy ||
+                    viewPayroll.createBy ||
+                    viewPayroll.created_by
+                      ? `by ${viewPayroll.createdBy || viewPayroll.createBy || viewPayroll.created_by}`
+                      : ''}
+                  </span>
+                  {(viewPayroll.updatedAt || viewPayroll.updated_at) && (
+                    <span>
+                      Updated:{' '}
+                      {new Date(
+                        viewPayroll.updatedAt || viewPayroll.updated_at
+                      ).toLocaleString()}{' '}
+                      {viewPayroll.updatedBy ||
+                      viewPayroll.UpdatedBy ||
+                      viewPayroll.updated_by
+                        ? `by ${viewPayroll.updatedBy || viewPayroll.UpdatedBy || viewPayroll.updated_by}`
+                        : ''}
+                    </span>
                   )}
                 </div>
-              ) : <div />}
+              ) : (
+                <div />
+              )}
               <div className="flex justify-end gap-3">
                 {!isViewOnly && (
                   <Button onClick={onClose} className="px-4 py-2">
@@ -247,7 +279,9 @@ export default function CreatePayrollModal({
                 {!isViewOnly && (
                   <PrimaryButton
                     onClick={handleSubmitPayroll}
-                    disabled={isProcessing || hasPendingLeaves || checkingPending}
+                    disabled={
+                      isProcessing || hasPendingLeaves || checkingPending
+                    }
                     className="px-6 py-2"
                   >
                     {isProcessing

@@ -16,6 +16,9 @@ export const metadata = {
     icon: '/asset/livik-logo.png',
   },
   manifest: '/manifest.json',
+};
+
+export const viewport = {
   themeColor: '#004475',
 };
 

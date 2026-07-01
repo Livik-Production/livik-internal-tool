@@ -1,5 +1,7 @@
-import chromium from "@sparticuz/chromium";
-import puppeteer from "puppeteer-core";
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+import puppeteerCore from 'puppeteer-core';
+import chromium from '@sparticuz/chromium-min';
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 
@@ -12,27 +14,28 @@ export async function GET(request) {
   }
 
   try {
-    const isLocal = process.env.NODE_ENV === 'development';
-    
-    let localExecutablePath;
-    if (isLocal) {
-      const chromePath = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
-      const edgePath = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
-      if (fs.existsSync(chromePath)) {
-        localExecutablePath = chromePath;
-      } else if (fs.existsSync(edgePath)) {
-        localExecutablePath = edgePath;
-      } else {
-        throw new Error('Local browser executable not found. Please install Chrome or Edge.');
-      }
+    let browser;
+    // For local development, we use standard puppeteer
+    if (process.env.NODE_ENV === 'development') {
+      const puppeteerDev = (await import('puppeteer')).default;
+      browser = await puppeteerDev.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      });
+    } else {
+      // In Vercel production, use @sparticuz/chromium which fetches a serverless-friendly binary
+      // Then inside your GET function where you configure Vercel production:
+      browser = await puppeteerCore.launch({
+        args: chromium.args,
+        defaultViewport: chromium.defaultViewport,
+        // Provide the direct GitHub release URL to the exact matching version
+        executablePath: await chromium.executablePath(
+          'https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar'
+        ),
+        headless: chromium.headless,
+        ignoreHTTPSErrors: true,
+      });
     }
-
-    // Launch puppeteer in headless mode
-    const browser = await puppeteer.launch({
-      args: isLocal ? [] : chromium.args,
-      executablePath: isLocal ? localExecutablePath : await chromium.executablePath(),
-      headless: true,
-    });
 
     const page = await browser.newPage();
     // Ensure viewport matches the invoice container used in the app (794px width)

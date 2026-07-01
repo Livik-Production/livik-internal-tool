@@ -25,6 +25,7 @@ export default function RepairHistoryTable({
   onRepairUpdated,
   onCreateRepair,
   canEdit = true,
+  isLoading = false,
 }) {
   const [deletingRepair, setDeletingRepair] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -141,8 +142,8 @@ export default function RepairHistoryTable({
         throw new Error(errorData.error || 'Failed to save repair record');
       }
 
-      if (onRepairUpdated) onRepairUpdated();
-      if (repairFormMode === 'add' && onRepairAdded) onRepairAdded();
+      if (onRepairUpdated) await onRepairUpdated();
+      if (repairFormMode === 'add' && onRepairAdded) await onRepairAdded();
 
       toast.success(
         repairFormMode === 'add'
@@ -172,8 +173,8 @@ export default function RepairHistoryTable({
         throw new Error('Failed to delete repair record');
       }
 
-      if (onRepairUpdated) onRepairUpdated();
-      if (onDeleteRepair) onDeleteRepair(deletingRepair.id);
+      if (onRepairUpdated) await onRepairUpdated();
+      if (onDeleteRepair) await onDeleteRepair(deletingRepair.id);
 
       toast.success('Repair record deleted successfully!');
       setDeletingRepair(null);
@@ -286,87 +287,94 @@ export default function RepairHistoryTable({
           </div>
         </div>
 
-        <CustomTable
-          data={currentData}
-          rowKey="id"
-          maxHeight="none"
-          columns={[
-            {
-              key: 'requestId',
-              label: 'Request ID',
-              render: (repair) => (
-                <HyperlinkButton onClick={() => handleViewDetails(repair)}>
-                  {repair.requestId}
-                </HyperlinkButton>
-              ),
-            },
-            {
-              key: 'date',
-              label: 'Date',
-              render: (repair) => formatDate(repair.date),
-            },
-            {
-              key: 'vendor',
-              label: 'Vendor',
-            },
-            {
-              key: 'estimatedCost',
-              label: 'Est. Cost',
-              render: (repair) => repair.estimatedCost.toFixed(2),
-            },
-            {
-              key: 'shortDescription',
-              label: 'Description',
-              render: (repair) => (
-                <div>
-                  <div className="font-medium">{repair.shortDescription}</div>
-                  {repair.issueType && (
-                    <span className="text-xs text-gray-500 mt-0.5 block">
-                      Type: {repair.issueType}
-                    </span>
-                  )}
-                </div>
-              ),
-            },
-            {
-              key: 'status',
-              label: 'Status',
-              render: (repair) => (
-                <span
-                  className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(repair.status)}`}
-                >
-                  {repair.status}
-                </span>
-              ),
-            },
-          ]}
-          actionsHeader="Actions"
-          actionsAlign="center"
-          actions={(repair) => (
-            <div className="flex items-center justify-center gap-2">
-              <IconButton
-                onClick={() => handleEdit(repair)}
-                title="Edit Repair"
-              >
-                <SquarePen size={16} />
-              </IconButton>
-              {repair.status !== 'Completed' && (
-                <IconButton
-                  onClick={() => handleUpdateStatus(repair)}
-                  title="Mark as Completed"
-                >
-                  <CheckCircle size={16} />
-                </IconButton>
-              )}
-              <IconButton
-                onClick={() => setDeletingRepair(repair)}
-                title="Delete Repair"
-              >
-                <Trash size={16} />
-              </IconButton>
+        <div className="relative">
+          {isLoading && (
+            <div className="absolute inset-0 bg-white/60 z-10 flex items-center justify-center rounded-lg">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             </div>
           )}
-        />
+          <CustomTable
+            data={currentData}
+            rowKey="id"
+            maxHeight="none"
+            columns={[
+              {
+                key: 'requestId',
+                label: 'Request ID',
+                render: (repair) => (
+                  <HyperlinkButton onClick={() => handleViewDetails(repair)}>
+                    {repair.requestId}
+                  </HyperlinkButton>
+                ),
+              },
+              {
+                key: 'date',
+                label: 'Date',
+                render: (repair) => formatDate(repair.date),
+              },
+              {
+                key: 'vendor',
+                label: 'Vendor',
+              },
+              {
+                key: 'estimatedCost',
+                label: 'Est. Cost',
+                render: (repair) => repair.estimatedCost.toFixed(2),
+              },
+              {
+                key: 'shortDescription',
+                label: 'Description',
+                render: (repair) => (
+                  <div>
+                    <div className="font-medium">{repair.shortDescription}</div>
+                    {repair.issueType && (
+                      <span className="text-xs text-gray-500 mt-0.5 block">
+                        Type: {repair.issueType}
+                      </span>
+                    )}
+                  </div>
+                ),
+              },
+              {
+                key: 'status',
+                label: 'Status',
+                render: (repair) => (
+                  <span
+                    className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(repair.status)}`}
+                  >
+                    {repair.status}
+                  </span>
+                ),
+              },
+            ]}
+            actionsHeader="Actions"
+            actionsAlign="center"
+            actions={(repair) => (
+              <div className="flex items-center justify-center gap-2">
+                <IconButton
+                  onClick={() => handleEdit(repair)}
+                  title="Edit Repair"
+                >
+                  <SquarePen size={16} />
+                </IconButton>
+                {repair.status !== 'Completed' && (
+                  <IconButton
+                    onClick={() => handleUpdateStatus(repair)}
+                    title="Mark as Completed"
+                  >
+                    <CheckCircle size={16} />
+                  </IconButton>
+                )}
+                <IconButton
+                  onClick={() => setDeletingRepair(repair)}
+                  title="Delete Repair"
+                >
+                  <Trash size={16} />
+                </IconButton>
+              </div>
+            )}
+          />
+        </div>
 
         <div className="mt-4 p-4">
           <Pagination

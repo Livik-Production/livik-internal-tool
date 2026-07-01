@@ -19,7 +19,10 @@ import IconButton from '../../../Buttons/IconButton';
 import Pagination from '../../../Pagination';
 import Loader from '../../../Loader';
 
-export default function ContactSubmissionsTab({ navigationState, clearNavigationState }) {
+export default function ContactSubmissionsTab({
+  navigationState,
+  clearNavigationState,
+}) {
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
@@ -262,7 +265,10 @@ export default function ContactSubmissionsTab({ navigationState, clearNavigation
               year: 'numeric',
             })
           : '';
-        const name = row.name || `${row.firstName || ''} ${row.lastName || ''}`.trim() || 'Unknown';
+        const name =
+          row.name ||
+          `${row.firstName || ''} ${row.lastName || ''}`.trim() ||
+          'Unknown';
         const phone = row.whatsapp || row.phoneNumber || '';
         const message = row.message || row.projectDetails || '';
 
@@ -409,8 +415,20 @@ export default function ContactSubmissionsTab({ navigationState, clearNavigation
                   setSearchQuery(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004475]/20 focus:border-[#004475] w-64 bg-white shadow-sm"
+                className="pl-9 pr-10 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004475]/20 focus:border-[#004475] w-64 bg-white shadow-sm"
               />
+              {searchQuery && (
+                <IconButton
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2 top-0.5 shadow-none bg-transparent hover:bg-transparent"
+                  title="Clear search"
+                >
+                  <X
+                    size={14}
+                    className="text-gray-400 hover:text-red-500 hover:scale-110"
+                  />
+                </IconButton>
+              )}
             </div>
           </div>
           <button

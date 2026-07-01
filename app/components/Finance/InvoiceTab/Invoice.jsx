@@ -23,6 +23,8 @@ import {
   Trash,
   MoreHorizontal,
   ArrowRightLeft,
+  Search,
+  Copy,
 } from 'lucide-react';
 import HyperlinkButton from '../../Buttons/HyperlinkButton';
 import CustomModalForm from '../../CustomModalForm';
@@ -37,6 +39,7 @@ const RowActions = ({
   onToggleType,
   onEdit,
   onDelete,
+  onDuplicate,
 }) => {
   const user = useSelector(selectAuthUser);
   const userRole = (
@@ -173,6 +176,7 @@ const InvoiceTable = ({ onRefresh }) => {
   const [showTypeToggleConfirm, setShowTypeToggleConfirm] = useState(false);
   const [invoiceToToggleType, setInvoiceToToggleType] = useState(null);
   const [isTogglingType, setIsTogglingType] = useState(false);
+  const [duplicateSource, setDuplicateSource] = useState(null);
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [showFollowUpModal, setShowFollowUpModal] = useState(false);
@@ -218,7 +222,10 @@ const InvoiceTable = ({ onRefresh }) => {
     const suffix = invoiceFormat.suffix || '';
 
     const relevantInvoices = invoicesData.filter(
-      (inv) => inv.invoiceNumber && inv.invoiceNumber.startsWith(prefix) && inv.invoiceNumber.endsWith(suffix)
+      (inv) =>
+        inv.invoiceNumber &&
+        inv.invoiceNumber.startsWith(prefix) &&
+        inv.invoiceNumber.endsWith(suffix)
     );
 
     if (relevantInvoices.length === 0) {
@@ -564,6 +571,11 @@ const InvoiceTable = ({ onRefresh }) => {
     setShowClientModal(true);
   };
 
+  const handleDuplicate = (invoice) => {
+    setDuplicateSource(invoice);
+    setShowClientModal(true);
+  };
+
   const handleInvoiceNumberClick = (invoice) => {
     // Construct preview data
     const previewData = {
@@ -710,7 +722,7 @@ const InvoiceTable = ({ onRefresh }) => {
     showInfoToast(
       `Downloading invoice ${previewInvoiceData?.invoiceNumber}...`
     );
-    
+
     // Switch to server-side Puppeteer generation
     const invoiceId = previewInvoiceData?.id || previewInvoiceData?._id;
     window.open(`/api/invoice-pdf?id=${invoiceId}`, '_blank');
@@ -814,19 +826,7 @@ const InvoiceTable = ({ onRefresh }) => {
           <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full md:w-auto">
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg
-                  className="h-5 w-5 text-gray-400"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  aria-hidden="true"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
               </div>
               <input
                 type="text"
@@ -836,7 +836,7 @@ const InvoiceTable = ({ onRefresh }) => {
                 className="pl-10 text-sm pr-10 py-2 border border-gray-300 rounded-lg w-full md:w-64 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all duration-200"
               />
               {searchTerm && (
-                <div className="absolute right-1 top-1">
+                <div className="absolute right-1 top-0.5">
                   <IconButton
                     onClick={() => setSearchTerm('')}
                     title="Clear search"
@@ -867,6 +867,7 @@ const InvoiceTable = ({ onRefresh }) => {
           <PrimaryButton
             onClick={() => {
               setEditingInvoice(null);
+              setDuplicateSource(null);
               handleCreateButtonClick();
             }}
             disabled={isCreatingInvoice}
@@ -1018,6 +1019,7 @@ const InvoiceTable = ({ onRefresh }) => {
                 onToggleType={handleToggleType}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
+                onDuplicate={handleDuplicate}
               />
             )}
             maxHeight="none"
@@ -1044,11 +1046,12 @@ const InvoiceTable = ({ onRefresh }) => {
         onClose={() => {
           setShowClientModal(false);
           setEditingInvoice(null);
+          setDuplicateSource(null);
         }}
         onSelectClient={handleClientSelect}
         clients={clients}
         invoices={invoicesData}
-        initialData={editingInvoice} // Pass editing data
+        initialData={editingInvoice || duplicateSource} // Pass editing data
         nextInvoiceNumber={getNextInvoiceNumber()}
       />
 
@@ -1157,41 +1160,62 @@ const InvoiceTable = ({ onRefresh }) => {
       />
 
       {/* Toggle Type Confirmation Modal */}
-      <CustomAlertForm
-        isOpen={showTypeToggleConfirm}
-        onClose={() => setShowTypeToggleConfirm(false)}
-        onConfirm={
-          invoiceToToggleType?.paymentStatus === 'paid'
-            ? () => setShowTypeToggleConfirm(false)
-            : confirmToggleType
-        }
-        title={
-          invoiceToToggleType?.paymentStatus === 'paid'
-            ? 'Action Restricted'
-            : 'Change Invoice Type'
-        }
-        message={
-          invoiceToToggleType?.paymentStatus === 'paid'
-            ? `Invoice ${invoiceToToggleType.invoiceNumber} is already PAID and cannot be converted back to proforma.`
-            : `Are you sure you want to change invoice ${invoiceToToggleType?.invoiceNumber} to ${
-                (invoiceToToggleType?.invoiceType || 'actual') === 'actual'
-                  ? 'PROFORMA'
-                  : 'ACTUAL'
-              }?`
-        }
-        type={
-          invoiceToToggleType?.paymentStatus === 'paid' ? 'info' : 'warning'
-        }
-        confirmText={
-          invoiceToToggleType?.paymentStatus === 'paid'
-            ? 'Got it'
-            : 'Change Type'
-        }
-        cancelText={
-          invoiceToToggleType?.paymentStatus === 'paid' ? '' : 'Cancel'
-        }
-        isSubmitting={isTogglingType}
-      />
+      {invoiceToToggleType?.paymentStatus === 'paid' ? (
+        <CustomModalForm
+          open={showTypeToggleConfirm}
+          onClose={() => setShowTypeToggleConfirm(false)}
+          title="Action Restricted"
+          widthClass="max-w-md"
+          footer={
+            <div className="flex justify-end w-full">
+              <PrimaryButton onClick={() => setShowTypeToggleConfirm(false)}>
+                Got it
+              </PrimaryButton>
+            </div>
+          }
+        >
+          <div className="p-6 text-center space-y-4">
+            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
+              <svg
+                className="h-6 w-6 text-blue-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">
+              Action Restricted
+            </h3>
+            <p className="text-sm text-gray-500 whitespace-pre-wrap">
+              Invoice {invoiceToToggleType.invoiceNumber} is already PAID and
+              cannot be converted back to proforma.
+            </p>
+          </div>
+        </CustomModalForm>
+      ) : (
+        <CustomAlertForm
+          isOpen={showTypeToggleConfirm}
+          onClose={() => setShowTypeToggleConfirm(false)}
+          onConfirm={confirmToggleType}
+          title="Change Invoice Type"
+          message={`Are you sure you want to change invoice ${invoiceToToggleType?.invoiceNumber} to ${
+            (invoiceToToggleType?.invoiceType || 'actual') === 'actual'
+              ? 'PROFORMA'
+              : 'ACTUAL'
+          }?`}
+          type="warning"
+          confirmText="Change Type"
+          cancelText="Cancel"
+          isSubmitting={isTogglingType}
+        />
+      )}
 
       <FollowUpModal
         open={showFollowUpModal}

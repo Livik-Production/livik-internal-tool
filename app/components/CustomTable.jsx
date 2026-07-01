@@ -51,7 +51,7 @@ export default function CustomTable({
           maxHeight,
           minHeight,
           overflowX: 'auto',
-          overflowY: 'auto',
+          overflowY: 'hidden',
           msOverflowStyle: showScrollbar ? 'auto' : 'none',
           scrollbarWidth: showScrollbar ? 'auto' : 'none',
         }}

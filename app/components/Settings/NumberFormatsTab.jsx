@@ -1,11 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {
-  CreditCard,
-  Users,
-  Package,
-} from 'lucide-react';
+import { CreditCard, Users, Package } from 'lucide-react';
 import { showSuccessToast, showErrorToast } from '../Toast';
 
 export default function NumberFormatsTab() {
@@ -36,30 +32,55 @@ export default function NumberFormatsTab() {
     suffix: '',
   });
 
+  // Asset category and format mapping states
+  const [assetCategories, setAssetCategories] = useState([]);
+  const [selectedAssetType, setSelectedAssetType] = useState('Other');
+  const [assetConfigs, setAssetConfigs] = useState({});
+
   // Fetch saved configurations from DB
   useEffect(() => {
-    const fetchFormats = async () => {
+    const fetchFormatsAndCategories = async () => {
       try {
-        const res = await fetch('/api/number-formats');
-        if (res.ok) {
-          const data = await res.json();
-          if (data.invoice) {
-            setInvoiceConfig(data.invoice);
-          }
-          if (data.employee) {
-            setEmployeeConfig(data.employee);
-          }
-          if (data.contract_employee) {
-            setContractEmployeeConfig(data.contract_employee);
+        const [resFormats, resCategories] = await Promise.all([
+          fetch('/api/number-formats'),
+          fetch('/api/asset-categories'),
+        ]);
+
+        let categories = [];
+        if (resCategories.ok) {
+          categories = await resCategories.json();
+          setAssetCategories(categories);
+          if (categories.length > 0) {
+            setSelectedAssetType(categories[0].name);
           }
         }
+
+        if (resFormats.ok) {
+          const data = await resFormats.json();
+          if (data.invoice) setInvoiceConfig(data.invoice);
+          if (data.employee) setEmployeeConfig(data.employee);
+          if (data.contract_employee)
+            setContractEmployeeConfig(data.contract_employee);
+
+          const newAssetConfigs = {};
+          Object.keys(data).forEach((key) => {
+            if (key.startsWith('asset_')) {
+              const type = key.slice(6);
+              newAssetConfigs[type] = data[key];
+            }
+          });
+          if (data.asset && !newAssetConfigs['Other']) {
+            newAssetConfigs['Other'] = data.asset;
+          }
+          setAssetConfigs(newAssetConfigs);
+        }
       } catch (error) {
-        console.error('Failed to load number formats:', error);
+        console.error('Failed to load data:', error);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchFormats();
+    fetchFormatsAndCategories();
   }, []);
 
   // Generate live preview helper
@@ -90,21 +111,37 @@ export default function NumberFormatsTab() {
     }));
   };
 
+  const handleAssetChange = (field, value) => {
+    setAssetConfigs((prev) => ({
+      ...prev,
+      [selectedAssetType]: {
+        ...(prev[selectedAssetType] ||
+          getAssetDefaultConfig(selectedAssetType)),
+        [field]: value,
+      },
+    }));
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
     setIsSaving(true);
 
     try {
+      const payload = {
+        invoice: invoiceConfig,
+        employee: employeeConfig,
+        contract_employee: contractEmployeeConfig,
+      };
+      Object.keys(assetConfigs).forEach((type) => {
+        payload[`asset_${type}`] = assetConfigs[type];
+      });
+
       const res = await fetch('/api/number-formats', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          invoice: invoiceConfig,
-          employee: employeeConfig,
-          contract_employee: contractEmployeeConfig,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -119,6 +156,33 @@ export default function NumberFormatsTab() {
       setIsSaving(false);
     }
   };
+
+  const getAssetDefaultConfig = (type) => {
+    const defaultKeywords = {
+      Laptop: 'LAP',
+      Mobile: 'MB',
+      TV: 'TV',
+      Keyboard: 'KB',
+      Monitor: 'MN',
+      Mouse: 'MS',
+      Printer: 'PR',
+      Tablet: 'TB',
+      Chair: 'CHR',
+      Table: 'TBL',
+      Camera: 'CAM',
+      Other: 'OTH',
+    };
+    const keyword = defaultKeywords[type] || 'OTH';
+    return {
+      prefix: `${keyword}-`,
+      nextNumber: '1',
+      padding: 3,
+      suffix: `-${String(new Date().getFullYear()).slice(-2)}`,
+    };
+  };
+
+  const currentAssetConfig =
+    assetConfigs[selectedAssetType] || getAssetDefaultConfig(selectedAssetType);
 
   if (isLoading) {
     return (
@@ -390,7 +454,10 @@ export default function NumberFormatsTab() {
                       min="1"
                       value={contractEmployeeConfig.nextNumber}
                       onChange={(e) =>
-                        handleContractEmployeeChange('nextNumber', e.target.value)
+                        handleContractEmployeeChange(
+                          'nextNumber',
+                          e.target.value
+                        )
                       }
                       placeholder="e.g. 101"
                       className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-50/50 focus:border-blue-400 outline-none transition-all font-mono"
@@ -454,6 +521,133 @@ export default function NumberFormatsTab() {
               </div>
             </div>
           </div>
+
+          {/* ================= ASSET TAG FORMAT CARD ================= */}
+          <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
+                <div className="p-2 bg-orange-50 text-orange-600 rounded-xl">
+                  <Package size={20} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-800 text-sm">
+                    Asset Tag Format
+                  </h3>
+                </div>
+              </div>
+
+              <div className="mb-4 bg-orange-50/50 p-3 rounded-xl border border-orange-100">
+                <label className="block text-xs font-semibold text-orange-800 mb-1.5">
+                  Select Asset Type
+                </label>
+                <select
+                  value={selectedAssetType}
+                  onChange={(e) => setSelectedAssetType(e.target.value)}
+                  className="w-full px-3 py-2 border border-orange-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-400 outline-none transition-all bg-white font-medium text-orange-900"
+                >
+                  {assetCategories.map((cat) => (
+                    <option key={cat.id} value={cat.name}>
+                      {cat.name}
+                    </option>
+                  ))}
+                  {!assetCategories.find((c) => c.name === 'Other') && (
+                    <option value="Other">Other</option>
+                  )}
+                </select>
+              </div>
+
+              <div className="space-y-4">
+                {/* Prefix */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                    Prefix
+                  </label>
+                  <input
+                    type="text"
+                    value={currentAssetConfig.prefix}
+                    onChange={(e) =>
+                      handleAssetChange('prefix', e.target.value)
+                    }
+                    placeholder="e.g. AST-"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-50/50 focus:border-orange-400 outline-none transition-all font-mono"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Next Sequence Number */}
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                      Next Number
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={currentAssetConfig.nextNumber}
+                      onChange={(e) =>
+                        handleAssetChange('nextNumber', e.target.value)
+                      }
+                      placeholder="e.g. 1"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-50/50 focus:border-orange-400 outline-none transition-all font-mono"
+                    />
+                  </div>
+
+                  {/* Padding */}
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                      Number Padding
+                    </label>
+                    <select
+                      value={currentAssetConfig.padding}
+                      onChange={(e) =>
+                        handleAssetChange(
+                          'padding',
+                          parseInt(e.target.value, 10)
+                        )
+                      }
+                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-50/50 focus:border-orange-400 outline-none transition-all bg-white font-mono"
+                    >
+                      <option value={2}>2 Digits (e.g. 01)</option>
+                      <option value={3}>3 Digits (e.g. 001)</option>
+                      <option value={4}>4 Digits (e.g. 0001)</option>
+                      <option value={5}>5 Digits (e.g. 00001)</option>
+                      <option value={6}>6 Digits (e.g. 000001)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Suffix */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                    Suffix
+                  </label>
+                  <input
+                    type="text"
+                    value={currentAssetConfig.suffix}
+                    onChange={(e) =>
+                      handleAssetChange('suffix', e.target.value)
+                    }
+                    placeholder="e.g. -IT"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-50/50 focus:border-orange-400 outline-none transition-all font-mono"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Live Preview Block */}
+            <div className="mt-6 pt-5 border-t border-gray-100">
+              <span className="text-[10px] uppercase tracking-wider font-bold text-gray-400 block mb-2">
+                Live Format Preview
+              </span>
+              <div className="bg-orange-50/50 border border-orange-100 rounded-xl p-3.5 flex items-center justify-between">
+                <span className="text-xs font-medium text-orange-800">
+                  Generated Asset Tag:
+                </span>
+                <span className="font-mono text-sm font-bold text-orange-700 bg-orange-100 px-3 py-1 rounded-lg">
+                  {getFormattedNumber(currentAssetConfig)}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Action Buttons */}
@@ -479,6 +673,7 @@ export default function NumberFormatsTab() {
                 padding: 3,
                 suffix: '',
               });
+              setAssetConfigs({});
               showSuccessToast('Reset configurations to default.');
             }}
             className="px-4 py-2 border border-gray-200 text-gray-600 font-semibold text-sm rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors"

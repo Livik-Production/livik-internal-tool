@@ -483,6 +483,39 @@ export default function EmployeeView({
             isView={true}
           />
         </div>
+
+        {(initialData.createdAt ||
+          initialData.updatedAt ||
+          initialData.createdBy ||
+          initialData.createBy ||
+          initialData.created_by) && (
+          <div className="flex flex-col text-xs text-gray-400 font-medium pt-4 mt-6 border-t border-gray-100">
+            <span>
+              Created:{' '}
+              {initialData.createdAt
+                ? new Date(initialData.createdAt).toLocaleString()
+                : ''}{' '}
+              {initialData.createdBy ||
+              initialData.createBy ||
+              initialData.created_by
+                ? `by ${initialData.createdBy || initialData.createBy || initialData.created_by}`
+                : ''}
+            </span>
+            {(initialData.updatedAt || initialData.updated_at) && (
+              <span>
+                Updated:{' '}
+                {new Date(
+                  initialData.updatedAt || initialData.updated_at
+                ).toLocaleString()}{' '}
+                {initialData.updatedBy ||
+                initialData.UpdatedBy ||
+                initialData.updated_by
+                  ? `by ${initialData.updatedBy || initialData.UpdatedBy || initialData.updated_by}`
+                  : ''}
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

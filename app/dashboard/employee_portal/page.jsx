@@ -639,8 +639,7 @@ function EmployeePortalContent() {
 
   // Fetch pending document requests
   useEffect(() => {
-    if (!authUser?.id || activeTab !== 'personal' || personalTab !== 'proofs')
-      return;
+    if (!authUser?.id || activeTab !== 'personal') return;
 
     const fetchPendingRequests = async () => {
       try {
@@ -657,7 +656,7 @@ function EmployeePortalContent() {
     };
 
     fetchPendingRequests();
-  }, [authUser?.id, activeTab, personalTab]);
+  }, [authUser?.id, activeTab]);
 
   // No global loader here - moving it inside the tabs for a better localized experience
   const customUploadsSection = (
@@ -1143,7 +1142,7 @@ function EmployeePortalContent() {
               duration: 0.25,
               ease: 'easeInOut',
             }}
-            className="flex-1 overflow-y-auto no-scrollbar space-y-6 min-h-0"
+            className="flex-1 no-scrollbar space-y-6 min-h-0"
           >
             {/* Personal Details */}
             {activeTab === 'personal' && (

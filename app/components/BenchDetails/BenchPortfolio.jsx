@@ -17,6 +17,7 @@ import ConfirmDialog from '../ConfirmDialog';
 import Loader from '../Loader';
 import { toast } from 'react-toastify';
 import Pagination from '../Pagination';
+import IconButton from '../Buttons/IconButton';
 
 /* ====================================================================
    ASSIGN PROJECT MODAL
@@ -817,13 +818,18 @@ export default function BenchPortfolio({
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-100 transition-all font-medium placeholder:text-gray-400"
             />
-            <button
-              onClick={() => setSearchTerm('')}
-              title="Reset search"
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-gray-400 hover:text-[#004475] hover:bg-white rounded-lg transition-all active:scale-90"
-            >
-              <RefreshCcw size={14} />
-            </button>
+            {searchTerm && (
+              <IconButton
+                onClick={() => setSearchTerm('')}
+                className="absolute right-2 top-1 shadow-none bg-transparent hover:bg-transparent"
+                title="Clear search"
+              >
+                <X
+                  size={14}
+                  className="text-gray-400 hover:text-red-500 hover:scale-110"
+                />
+              </IconButton>
+            )}
           </div>
 
           <PrimaryButton onClick={() => setFilterModalOpen(true)}>

@@ -40,11 +40,11 @@ export default function IconButton({
       title={displayTitle}
       type={type}
       disabled={isDisabled}
-      className={`w-8 h-8 p-0 rounded-full transition-all duration-200 flex items-center justify-center shadow-md focus:outline-none 
+      className={`w-8.5 h-8.5 p-0 transition-all duration-200 flex items-center justify-center focus:outline-none 
         ${
           isDisabled
             ? 'text-gray-300 bg-gray-50 border-gray-100 cursor-not-allowed shadow-none'
-            : 'text-[#004475] hover:bg-blue-100 hover:scale-110 hover:shadow-lg'
+            : 'text-[#004475] hover:scale-110 hover:text-red-500 cursor-pointer'
         } ${className}`}
       {...rest}
     >

@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { selectEmployeesItems } from '../../../store/slices/employeesSlice';
-import { X } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 import CloseButton from '../Buttons/CloseButton';
 import PrimaryButton from '../Buttons/PrimaryButton';
 import Button from '../Buttons/Button';
@@ -22,9 +22,11 @@ export default function AddAssignForm({
   const [formData, setFormData] = useState({
     assetTag: '',
     selectedAssetId: '',
+    assignmentType: 'EMPLOYEE',
     employeeName: '',
     employeeId: '', // This is the display ID (LK001)
     selectedEmployeeDbId: '', // This is the cuid for the database
+    locationId: '',
     assignmentDate: new Date().toISOString().split('T')[0],
     assignmentNotes: '',
   });
@@ -35,6 +37,7 @@ export default function AddAssignForm({
     modelName: '',
   });
 
+  const [locations, setLocations] = useState([]);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isNameAutoFilled, setIsNameAutoFilled] = useState(false);
@@ -68,8 +71,37 @@ export default function AddAssignForm({
             role: emp.role || '',
             status: emp.status || 'Active',
           }))
+          .filter(
+            (emp) =>
+              emp.empId !== 'LOCATION' &&
+              !emp.name.toLowerCase().includes('meeting hall')
+          )
       : [];
   }, [employeesFromRedux]);
+
+  useEffect(() => {
+    const fetchLocations = async () => {
+      try {
+        const res = await fetch('/api/dropdowns');
+        if (res.ok) {
+          const result = await res.json();
+          const allDropdowns = result.data || {};
+          let locs = [];
+          for (const key of Object.keys(allDropdowns)) {
+            if (key.toLowerCase().includes('location')) {
+              locs = locs.concat(allDropdowns[key]);
+            }
+          }
+          setLocations(
+            locs.filter((l) => l.status === 'active' || l.status === 'Active')
+          );
+        }
+      } catch (err) {
+        console.error('Failed to fetch locations', err);
+      }
+    };
+    fetchLocations();
+  }, []);
 
   useEffect(() => {
     if (mode !== 'add' && assignmentData) {
@@ -79,10 +111,12 @@ export default function AddAssignForm({
         setFormData({
           assetTag: asset.assetTag || asset.tag || '',
           selectedAssetId: assignmentData.assetId || asset.id,
+          assignmentType: assignmentData.assignmentType || 'EMPLOYEE',
           employeeName: assignmentData.employeeName || '',
           employeeId: assignmentData.employeeId || '',
           selectedEmployeeDbId:
             assignmentData.employeeDbId || assignmentData.employeeId || '',
+          locationId: assignmentData.locationId || '',
           assignmentDate:
             assignmentData.assignmentDate ||
             new Date().toISOString().split('T')[0],
@@ -91,7 +125,7 @@ export default function AddAssignForm({
 
         setAssetDetails({
           serialNo: asset.serialNumber || asset.serial || '',
-          productName: asset.modelName || asset.model || '',
+          productName: asset.type || asset.deviceType || '',
           modelName: asset.modelName || asset.model || '',
         });
 
@@ -123,8 +157,8 @@ export default function AddAssignForm({
                 '',
               productName:
                 assignmentData.assetDetails.productName ||
-                asset.modelName ||
-                asset.model ||
+                asset.type ||
+                asset.deviceType ||
                 '',
               modelName:
                 assignmentData.assetDetails.modelName ||
@@ -141,7 +175,7 @@ export default function AddAssignForm({
 
             setAssetDetails({
               serialNo: asset.serialNumber || asset.serial || '',
-              productName: asset.modelName || asset.model || '',
+              productName: asset.type || asset.deviceType || '',
               modelName: asset.modelName || asset.model || '',
             });
           }
@@ -154,18 +188,22 @@ export default function AddAssignForm({
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   useEffect(() => {
-    if (formData.employeeId.trim() || formData.employeeName.trim()) {
-      const idTerm = formData.employeeId.toLowerCase();
-      const nameTerm = formData.employeeName.toLowerCase();
+    const idTerm = formData.employeeId.trim().toLowerCase();
+    const nameTerm = formData.employeeName.trim().toLowerCase();
 
-      const filtered = employees.filter(
-        (emp) =>
-          (emp.empId?.toLowerCase().includes(idTerm) && idTerm.length > 0) ||
-          (emp.name?.toLowerCase().includes(nameTerm) && nameTerm.length > 0)
-      );
-      setEmployeeSuggestions(filtered.slice(0, 5));
+    if (!idTerm && !nameTerm) {
+      setEmployeeSuggestions(employees);
     } else {
-      setEmployeeSuggestions([]);
+      const filtered = employees.filter((emp) => {
+        const matchesId = idTerm
+          ? emp.empId?.toLowerCase().includes(idTerm)
+          : false;
+        const matchesName = nameTerm
+          ? emp.name?.toLowerCase().includes(nameTerm)
+          : false;
+        return matchesId || matchesName;
+      });
+      setEmployeeSuggestions(filtered);
     }
   }, [formData.employeeId, formData.employeeName, employees]);
 
@@ -193,10 +231,13 @@ export default function AddAssignForm({
       );
 
       if (foundEmployee) {
-        if (formData.employeeName !== foundEmployee.name) {
+        if (
+          formData.employeeName !== foundEmployee.name &&
+          foundEmployee.name
+        ) {
           setFormData((prev) => ({
             ...prev,
-            employeeName: foundEmployee.name || '',
+            employeeName: foundEmployee.name,
             selectedEmployeeDbId: foundEmployee.dbId,
           }));
         } else if (!formData.selectedEmployeeDbId) {
@@ -231,7 +272,7 @@ export default function AddAssignForm({
         if (foundAsset) {
           setAssetDetails({
             serialNo: foundAsset.serialNumber || foundAsset.serial || '',
-            productName: foundAsset.modelName || foundAsset.model || '',
+            productName: foundAsset.type || foundAsset.deviceType || '',
             modelName: foundAsset.modelName || foundAsset.model || '',
           });
 
@@ -312,20 +353,26 @@ export default function AddAssignForm({
       newErrors.assetTag = 'Please enter a valid Asset Tag';
     }
 
-    if (!formData.employeeName.trim()) {
-      newErrors.employeeName = 'Employee name is required';
-    }
+    if (formData.assignmentType === 'EMPLOYEE') {
+      if (!formData.employeeName.trim()) {
+        newErrors.employeeName = 'Employee name is required';
+      }
 
-    if (!formData.employeeId.trim()) {
-      newErrors.employeeId = 'Employee ID is required';
-    } else {
-      const employeeExists = employees.some(
-        (emp) =>
-          emp.empId?.trim().toLowerCase() ===
-          formData.employeeId.trim().toLowerCase()
-      );
-      if (!employeeExists) {
-        newErrors.employeeId = 'Employee ID not found';
+      if (!formData.employeeId.trim()) {
+        newErrors.employeeId = 'Employee ID is required';
+      } else {
+        const employeeExists = employees.some(
+          (emp) =>
+            emp.empId?.trim().toLowerCase() ===
+            formData.employeeId.trim().toLowerCase()
+        );
+        if (!employeeExists) {
+          newErrors.employeeId = 'Employee ID not found';
+        }
+      }
+    } else if (formData.assignmentType === 'LOCATION') {
+      if (!formData.locationId) {
+        newErrors.locationId = 'Please select a location';
       }
     }
 
@@ -359,7 +406,9 @@ export default function AddAssignForm({
           formData.employeeName,
           formData.assignmentDate,
           formData.assignmentNotes,
-          mode === 'edit' ? assignmentData?.id : null
+          mode === 'edit' ? assignmentData?.id : null,
+          formData.assignmentType,
+          formData.locationId
         );
       }
     } finally {
@@ -511,120 +560,190 @@ export default function AddAssignForm({
         </div>
       </div>
 
-      {/* Employee Details - 4 columns in one line */}
+      {/* Assignment Type Toggle */}
       <div className="pt-4 border-t border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">
-          Employee Details
-        </h3>
-        <div className="grid grid-cols-4 gap-4 relative">
-          {/* Employee ID column - smaller width */}
-          <div className="w-50">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Employee ID <span className="text-red-500">*</span>
-            </label>
+        <label className="block text-sm font-medium text-gray-700 mb-3">
+          Assignment Type
+        </label>
+        <div className="flex items-center space-x-6">
+          <label className="flex items-center cursor-pointer">
             <input
-              type="text"
-              name="employeeId"
-              value={formData.employeeId}
+              type="radio"
+              name="assignmentType"
+              value="EMPLOYEE"
+              checked={formData.assignmentType === 'EMPLOYEE'}
               onChange={handleChange}
-              onFocus={() => setShowSuggestions(true)}
-              onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-              placeholder="Enter Employee ID"
               disabled={mode === 'view'}
-              className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${
-                errors.employeeId ? 'border-red-300' : 'border-gray-300'
-              } ${
-                mode === 'view'
-                  ? 'bg-gray-50 opacity-70 cursor-not-allowed'
-                  : 'bg-white'
-              }`}
+              className="text-blue-600 focus:ring-blue-500 mr-2"
             />
-            {errors.employeeId && (
-              <p className="mt-1 text-xs text-red-600">{errors.employeeId}</p>
-            )}
-          </div>
-
-          {/* Full Name column */}
-          <div className="relative">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Full Name <span className="text-red-500">*</span>
-            </label>
+            <span className="text-sm font-medium text-gray-700">
+              Assign to Employee
+            </span>
+          </label>
+          <label className="flex items-center cursor-pointer">
             <input
-              type="text"
-              name="employeeName"
-              value={formData.employeeName}
+              type="radio"
+              name="assignmentType"
+              value="LOCATION"
+              checked={formData.assignmentType === 'LOCATION'}
               onChange={handleChange}
-              onFocus={() => setShowSuggestions(true)}
-              onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-              placeholder="Employee name will auto-fill"
               disabled={mode === 'view'}
-              className={`w-full px-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${
-                errors.employeeName
-                  ? 'border-red-300'
-                  : isNameAutoFilled && mode !== 'view'
-                    ? 'border-blue-300 bg-blue-50'
-                    : 'border-gray-300'
-              } ${
-                mode === 'view'
-                  ? 'bg-gray-50 opacity-70 cursor-not-allowed'
-                  : 'bg-white'
-              }`}
+              className="text-blue-600 focus:ring-blue-500 mr-2"
             />
-            {errors.employeeName && (
-              <p className="mt-1 text-xs text-red-600">{errors.employeeName}</p>
-            )}
-          </div>
-
-          {/* Suggestion Dropdown - Absolutely positioned */}
-          {showSuggestions &&
-            employeeSuggestions.length > 0 &&
-            mode !== 'view' && (
-              <div className="absolute top-full left-0 mt-1 w-1/2 bg-white border border-gray-200 rounded-lg shadow-lg z-[60] max-h-48 overflow-y-auto">
-                {employeeSuggestions.map((emp) => (
-                  <div
-                    key={emp.empId}
-                    className="px-4 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-50 last:border-b-0"
-                    onClick={() => handleSelectEmployee(emp)}
-                  >
-                    <div className="text-sm font-semibold text-gray-800">
-                      {emp.name}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {emp.empId} • {emp.role?.name || emp.role || 'Employee'}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-          {/* Phone Number column */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Phone Number
-            </label>
-            <input
-              type="text"
-              value={currentEmployee?.phone || ''}
-              readOnly
-              className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm opacity-70 cursor-not-allowed"
-            />
-          </div>
-
-          {/* Email ID column - New column */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email ID
-            </label>
-            <input
-              type="text"
-              value={currentEmployee?.email || ''}
-              readOnly
-              className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm opacity-70 cursor-not-allowed"
-            />
-          </div>
+            <span className="text-sm font-medium text-gray-700">
+              Assign to Location
+            </span>
+          </label>
         </div>
       </div>
 
+      {/* Conditional Details */}
+      <div className="pt-4 border-t border-gray-200">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">
+          {formData.assignmentType === 'EMPLOYEE'
+            ? 'Employee Details'
+            : 'Location Details'}
+        </h3>
+
+        {formData.assignmentType === 'EMPLOYEE' ? (
+          <div className="grid grid-cols-4 gap-4 relative">
+            {/* Employee ID column - smaller width */}
+            <div className="w-50">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Employee ID <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="employeeId"
+                value={formData.employeeId}
+                onChange={handleChange}
+                onFocus={() => setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                placeholder="Enter Employee ID"
+                disabled={mode === 'view'}
+                className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${
+                  errors.employeeId ? 'border-red-300' : 'border-gray-300'
+                } ${
+                  mode === 'view'
+                    ? 'bg-gray-50 opacity-70 cursor-not-allowed'
+                    : 'bg-white'
+                }`}
+              />
+              {errors.employeeId && (
+                <p className="mt-1 text-xs text-red-600">{errors.employeeId}</p>
+              )}
+            </div>
+
+            {/* Full Name column */}
+            <div className="relative">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Full Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="employeeName"
+                value={formData.employeeName}
+                onChange={handleChange}
+                onFocus={() => setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                placeholder="Employee name will auto-fill"
+                disabled={mode === 'view'}
+                className={`w-full px-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${
+                  errors.employeeName
+                    ? 'border-red-300'
+                    : isNameAutoFilled && mode !== 'view'
+                      ? 'border-blue-300 bg-blue-50'
+                      : 'border-gray-300'
+                } ${
+                  mode === 'view'
+                    ? 'bg-gray-50 opacity-70 cursor-not-allowed'
+                    : 'bg-white'
+                }`}
+              />
+              {errors.employeeName && (
+                <p className="mt-1 text-xs text-red-600">
+                  {errors.employeeName}
+                </p>
+              )}
+            </div>
+
+            {/* Suggestion Dropdown - Absolutely positioned */}
+            {showSuggestions &&
+              employeeSuggestions.length > 0 &&
+              mode !== 'view' && (
+                <div className="absolute top-full left-0 mt-1 w-1/2 bg-white border border-gray-200 rounded-lg shadow-lg z-[60] max-h-48 overflow-y-auto">
+                  {employeeSuggestions.map((emp) => (
+                    <div
+                      key={emp.empId}
+                      className="px-4 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-50 last:border-b-0"
+                      onClick={() => handleSelectEmployee(emp)}
+                    >
+                      <div className="text-sm font-semibold text-gray-800">
+                        {emp.name}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {emp.empId} • {emp.role?.name || emp.role || 'Employee'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+            {/* Phone Number column */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Phone Number
+              </label>
+              <input
+                type="text"
+                value={currentEmployee?.phone || ''}
+                readOnly
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm opacity-70 cursor-not-allowed"
+              />
+            </div>
+
+            {/* Email ID column - New column */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Email ID
+              </label>
+              <input
+                type="text"
+                value={currentEmployee?.email || ''}
+                readOnly
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm opacity-70 cursor-not-allowed"
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Location <span className="text-red-500">*</span>
+              </label>
+              <select
+                name="locationId"
+                value={formData.locationId}
+                onChange={handleChange}
+                disabled={mode === 'view'}
+                className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${
+                  errors.locationId ? 'border-red-300' : 'border-gray-300'
+                } ${mode === 'view' ? 'bg-gray-50 opacity-70' : 'bg-white'}`}
+              >
+                <option value="">-- Select Location --</option>
+                {locations.map((loc) => (
+                  <option key={loc.id} value={loc.id}>
+                    {loc.label}
+                  </option>
+                ))}
+              </select>
+              {errors.locationId && (
+                <p className="mt-1 text-xs text-red-600">{errors.locationId}</p>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
       {/* Assignment Details */}
       <div className="pt-4 border-t border-gray-200">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
@@ -698,32 +817,15 @@ export default function AddAssignForm({
               disabled={
                 isSubmitting ||
                 !formData.selectedAssetId ||
-                !formData.employeeId ||
-                !formData.employeeName
+                (formData.assignmentType === 'EMPLOYEE' &&
+                  (!formData.employeeId || !formData.employeeName)) ||
+                (formData.assignmentType === 'LOCATION' && !formData.locationId)
               }
               className="min-w-[150px]"
             >
               {isSubmitting ? (
                 <>
-                  <svg
-                    className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
+                  <Loader2 className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" />
                   {mode === 'edit' ? 'Updating...' : 'Assigning...'}
                 </>
               ) : mode === 'edit' ? (

@@ -22,7 +22,10 @@ import { showSuccessToast, showErrorToast } from '../../../components/Toast';
 import FilterDropdown from '../../Buttons/FilterDropdown';
 
 function DonutChart({ data }) {
-  const total = React.useMemo(() => data.reduce((sum, item) => sum + item.value, 0), [data]);
+  const total = React.useMemo(
+    () => data.reduce((sum, item) => sum + item.value, 0),
+    [data]
+  );
   let accumulatedAngle = 0;
 
   if (total === 0) {
@@ -36,7 +39,10 @@ function DonutChart({ data }) {
   return (
     <div className="flex flex-col sm:flex-row items-center gap-6 w-full h-full">
       <div className="relative w-36 h-36 flex-shrink-0 animate-in fade-in zoom-in duration-300">
-        <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
+        <svg
+          viewBox="0 0 100 100"
+          className="w-full h-full transform -rotate-90"
+        >
           {data.map((item, index) => {
             const percentage = (item.value / total) * 100;
             if (percentage === 0) return null;
@@ -46,8 +52,10 @@ function DonutChart({ data }) {
             const x1 = 50 + 40 * Math.cos((accumulatedAngle * Math.PI) / 180);
             const y1 = 50 + 40 * Math.sin((accumulatedAngle * Math.PI) / 180);
 
-            const x2 = 50 + 40 * Math.cos(((accumulatedAngle + angle) * Math.PI) / 180);
-            const y2 = 50 + 40 * Math.sin(((accumulatedAngle + angle) * Math.PI) / 180);
+            const x2 =
+              50 + 40 * Math.cos(((accumulatedAngle + angle) * Math.PI) / 180);
+            const y2 =
+              50 + 40 * Math.sin(((accumulatedAngle + angle) * Math.PI) / 180);
 
             const path = [
               `M 50 50`,
@@ -79,7 +87,12 @@ function DonutChart({ data }) {
               Total
             </p>
             <p className="text-xs font-black text-gray-900 leading-none font-bold">
-              ₹{total >= 100000 ? `${(total / 100000).toFixed(1)}L` : total >= 1000 ? `${Math.round(total / 1000)}k` : total.toLocaleString()}
+              ₹
+              {total >= 100000
+                ? `${(total / 100000).toFixed(1)}L`
+                : total >= 1000
+                  ? `${Math.round(total / 1000)}k`
+                  : total.toLocaleString()}
             </p>
           </div>
         </div>
@@ -121,8 +134,11 @@ function DonutChart({ data }) {
 }
 
 function TrendBarChart({ data }) {
-  const maxAmount = React.useMemo(() => Math.max(...data.map((d) => d.amount), 1), [data]);
-  
+  const maxAmount = React.useMemo(
+    () => Math.max(...data.map((d) => d.amount), 1),
+    [data]
+  );
+
   if (data.length === 0) {
     return (
       <div className="flex items-center justify-center w-full h-40 text-gray-400 italic text-xs border-2 border-dashed border-gray-100 rounded-xl bg-gray-50/30">
@@ -148,7 +164,9 @@ function TrendBarChart({ data }) {
               <div className="h-24 w-full flex items-end justify-center px-1">
                 <div
                   className="relative w-full max-w-[14px] bg-gradient-to-t from-[#004475] to-[#33a8d9] rounded-t hover:from-[#00335a] hover:to-[#2890c0] transition-all duration-300 shadow-sm"
-                  style={{ height: `${Math.max((item.amount / maxAmount) * 100, 4)}%` }}
+                  style={{
+                    height: `${Math.max((item.amount / maxAmount) * 100, 4)}%`,
+                  }}
                 >
                   <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-[9px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-lg pointer-events-none font-bold">
                     ₹{item.amount.toLocaleString()}
@@ -204,7 +222,10 @@ const AllExpenseTab = ({
     let totalAmt = 0;
     expenses.forEach((exp) => {
       const cat = exp.category || 'Uncategorized';
-      const amt = typeof exp.amount === 'number' ? exp.amount : parseFloat(exp.amount || 0);
+      const amt =
+        typeof exp.amount === 'number'
+          ? exp.amount
+          : parseFloat(exp.amount || 0);
       categoriesMap[cat] = (categoriesMap[cat] || 0) + amt;
       totalAmt += amt;
     });
@@ -231,30 +252,37 @@ const AllExpenseTab = ({
   }, [expenses]);
 
   const trendData = React.useMemo(() => {
-    const validExpenses = expenses.filter(e => e.expenseDate || e.date);
+    const validExpenses = expenses.filter((e) => e.expenseDate || e.date);
     if (validExpenses.length === 0) return [];
-    
-    const dates = validExpenses.map(e => new Date(e.expenseDate || e.date));
+
+    const dates = validExpenses.map((e) => new Date(e.expenseDate || e.date));
     const minDate = new Date(Math.min(...dates));
     const maxDate = new Date(Math.max(...dates));
-    
-    const sameMonth = minDate.getMonth() === maxDate.getMonth() && minDate.getFullYear() === maxDate.getFullYear();
-    
+
+    const sameMonth =
+      minDate.getMonth() === maxDate.getMonth() &&
+      minDate.getFullYear() === maxDate.getFullYear();
+
     const groups = {};
-    validExpenses.forEach(exp => {
+    validExpenses.forEach((exp) => {
       const d = new Date(exp.expenseDate || exp.date);
-      const amt = typeof exp.amount === 'number' ? exp.amount : parseFloat(exp.amount || 0);
-      
+      const amt =
+        typeof exp.amount === 'number'
+          ? exp.amount
+          : parseFloat(exp.amount || 0);
+
       let key;
       if (sameMonth) {
         key = d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
       } else {
-        key = d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }).replace(' ', " '");
+        key = d
+          .toLocaleDateString('en-US', { month: 'short', year: '2-digit' })
+          .replace(' ', " '");
       }
-      
+
       groups[key] = (groups[key] || 0) + amt;
     });
-    
+
     return Object.entries(groups)
       .map(([label, amount]) => {
         let dateObj;
@@ -296,9 +324,9 @@ const AllExpenseTab = ({
         throw new Error(err.error || 'Failed to delete expense');
       }
 
+      setShowDeleteConfirm(false);
       onDeleteSuccess?.(expenseToDelete.id);
       showSuccessToast('Expense deleted successfully!');
-      setShowDeleteConfirm(false);
       setExpenseToDelete(null);
     } catch (error) {
       console.error('Delete expense failed:', error);

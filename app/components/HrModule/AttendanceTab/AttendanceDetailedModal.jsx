@@ -123,7 +123,7 @@ export default function AttendanceDetailedModal({ isOpen, onClose, month }) {
           title="Export"
           className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition shadow-sm"
         >
-          <Download size={16} />
+          <Download size={16} color="blue" />
           <span className="text-gray-700">Export</span>
         </PrimaryButton>
       }

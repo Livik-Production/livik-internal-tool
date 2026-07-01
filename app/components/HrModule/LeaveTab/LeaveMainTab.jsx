@@ -277,8 +277,10 @@ export default function LeaveMainTab({
       }
       fetchLeaveRequests();
       window.dispatchEvent(new CustomEvent('refresh-attendance-data'));
-      showErrorToast(
-        `${category === 'leave' ? 'Leave' : 'Permission'} rejected ❌`
+      showSuccessToast(
+        <span style={{ color: '#ef4444', fontWeight: 'bold' }}>
+          {`${category === 'leave' ? 'Leave' : 'Permission'} rejected ❌`}
+        </span>
       );
     } catch (error) {
       showErrorToast(error.message);
@@ -331,8 +333,11 @@ export default function LeaveMainTab({
       {/* TAB CONTENT */}
       <div
         key={activeLeaveTab}
-        className={`transition-all duration-400 ${animatingSubTab ? 'opacity-0 translate-y-4' : 'animate-dashboard-reveal'
-          }`}
+        className={`transition-all duration-400 ${
+          animatingSubTab
+            ? 'opacity-0 translate-y-4'
+            : 'animate-dashboard-reveal'
+        }`}
       >
         {activeLeaveTab === 'attendance' && (
           <AttendanceTab

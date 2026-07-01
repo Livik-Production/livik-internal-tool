@@ -206,7 +206,10 @@ const CustomersTable = () => {
           <div className="font-medium text-gray-900 line-clamp-1">
             {row.city}, {row.state}
           </div>
-          <div className="text-xs text-gray-500 line-clamp-1" title={row.address1}>
+          <div
+            className="text-xs text-gray-500 line-clamp-1"
+            title={row.address1}
+          >
             {row.address1}
           </div>
         </div>
@@ -298,7 +301,7 @@ const CustomersTable = () => {
                   title="Clear search"
                   className="p-1"
                 >
-                  <X size={14} />
+                  <X size={15} />
                 </IconButton>
               </div>
             )}

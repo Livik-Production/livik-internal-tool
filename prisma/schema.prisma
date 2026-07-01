@@ -76,6 +76,7 @@ model Employee {
   skills                   Skill[]
   totalExperience          String?
   projectsDone             String?
+  level                    String?
   benchDetail              BenchDetail?
   notifications            Notification[]
   isActive                 Boolean                   @default(true)
@@ -166,6 +167,8 @@ model Asset {
   warrantyFile  String?           @map("warranty_file")
   notes         String?
   specs         Json?
+  createdBy     String?           @map("created_by")
+  updatedBy     String?           @map("updated_by")
   createdAt     DateTime          @default(now()) @map("created_at")
   updatedAt     DateTime          @updatedAt @map("updated_at")
   category      AssetCategory     @relation(fields: [categoryId], references: [id])
@@ -174,17 +177,27 @@ model Asset {
 }
 
 model AssetAssignment {
-  id           String    @id @default(cuid())
-  assetId      String    @map("asset_id")
-  employeeId   String    @map("employee_id")
-  assignedDate DateTime  @default(now())
-  returnDate   DateTime?
-  status       String    @default("ASSIGNED")
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
-  notes        String?
-  asset        Asset     @relation(fields: [assetId], references: [id])
-  employee     Employee  @relation(fields: [employeeId], references: [id])
+  id             String    @id @default(cuid())
+  assetId        String    @map("asset_id")
+  assignmentType String    @default("EMPLOYEE") @map("assignment_type")
+  employeeId     String?   @map("employee_id")
+  locationId     String?   @map("location_id")
+  assignedDate   DateTime  @default(now())
+  returnDate     DateTime?
+  status         String    @default("ASSIGNED")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  createdBy      String?
+  updatedBy      String?
+  notes          String?
+  remarks        String?   @map("remarks") // Renamed/Mapped for consistency with requirements
+
+  asset    Asset     @relation(fields: [assetId], references: [id])
+  employee Employee? @relation(fields: [employeeId], references: [id])
+
+  @@index([assetId])
+  @@index([employeeId])
+  @@index([locationId])
 }
 
 model LeaveBalance {
@@ -194,6 +207,7 @@ model LeaveBalance {
   allocated  Float    @default(0)
   used       Float    @default(0)
   updatedAt  DateTime @updatedAt
+  updatedBy  String?
   remarks    String?
   employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 }
@@ -398,6 +412,8 @@ model Attendance {
   remarks    String?
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
+  createBy   String?
+  UpdatedBy  String?
   employee   Employee @relation(fields: [employeeId], references: [id])
 }
 
@@ -410,6 +426,8 @@ model SalarySetup {
   otherAllowance     Decimal  @db.Decimal(10, 2)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
+  createdBy          String?
+  updatedBy          String?
 }
 
 model LeaveBalanceHistory {
@@ -422,6 +440,8 @@ model LeaveBalanceHistory {
   lop        Float    @default(0)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  createdBy  String?
+  updatedBy  String?
   remarks    String?
   employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
@@ -459,6 +479,8 @@ model PayrollCycle {
   status          String    @default("DRAFT")
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
+  createdBy       String?
+  updatedBy       String?
   payrolls        Payroll[]
 
   @@index([cycleId])
@@ -596,6 +618,7 @@ model companyDetails {
   companyEmail      String
   companyPhone      String
   city              String
+  cinNumber         String?
   state             String
   country           String
   address           String

@@ -13,10 +13,14 @@ import {
   SquarePen,
   Layers,
   Users,
+  Terminal,
+  Sparkles,
+  ZapOff,
 } from 'lucide-react';
 import Loader from '../Loader';
 import { toast } from 'react-toastify';
 import Pagination from '../Pagination';
+import IconButton from '../Buttons/IconButton';
 import { useMemo } from 'react';
 
 const SkillsDirectory = ({ isTab = false, isViewOnly = false }) => {
@@ -32,6 +36,7 @@ const SkillsDirectory = ({ isTab = false, isViewOnly = false }) => {
     skills: [],
     totalExperience: '',
     projectsDone: '',
+    level: 'Mid',
     effectiveDate: new Date().toISOString().split('T')[0],
   });
   const [newSkill, setNewSkill] = useState({ name: '', category: 'Mid' });
@@ -39,7 +44,7 @@ const SkillsDirectory = ({ isTab = false, isViewOnly = false }) => {
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(9); // 9 matches 3-column grid layout perfectly
+  const [itemsPerPage, setItemsPerPage] = useState(8); // 8 matches 2-column grid layout perfectly
 
   const [dropdownDepartments, setDropdownDepartments] = useState([]);
   const [dropdownLevels, setDropdownLevels] = useState([]);
@@ -47,7 +52,12 @@ const SkillsDirectory = ({ isTab = false, isViewOnly = false }) => {
   // Derive final departments and levels
   const finalDepartments =
     dropdownDepartments.length > 0
-      ? ['All Departments', ...dropdownDepartments]
+      ? [
+          'All Departments',
+          ...dropdownDepartments.filter(
+            (d) => d && d.toLowerCase() !== 'all departments'
+          ),
+        ]
       : [
           'All Departments',
           ...Array.from(
@@ -57,7 +67,15 @@ const SkillsDirectory = ({ isTab = false, isViewOnly = false }) => {
 
   const finalLevels =
     dropdownLevels.length > 0
-      ? ['All Employees', ...dropdownLevels]
+      ? [
+          'All Employees',
+          ...dropdownLevels.filter(
+            (l) =>
+              l &&
+              l.toLowerCase() !== 'all levels' &&
+              l.toLowerCase() !== 'all employees'
+          ),
+        ]
       : ['All Employees', 'Junior', 'Mid', 'Senior', 'Expert'];
 
   useEffect(() => {
@@ -112,6 +130,7 @@ const SkillsDirectory = ({ isTab = false, isViewOnly = false }) => {
         : [],
       totalExperience: employee.totalExperience || '',
       projectsDone: employee.projectsDone || '',
+      level: employee.level || 'Mid',
       effectiveDate: new Date().toISOString().split('T')[0],
     });
     setNewSkill({ name: '', category: 'Mid' });
@@ -158,6 +177,7 @@ const SkillsDirectory = ({ isTab = false, isViewOnly = false }) => {
           })),
           totalExperience: editForm.totalExperience,
           projectsDone: editForm.projectsDone,
+          level: editForm.level,
         }),
       });
 
@@ -175,14 +195,22 @@ const SkillsDirectory = ({ isTab = false, isViewOnly = false }) => {
   };
 
   const filteredEmployees = employees.filter((emp) => {
-    const searchLower = searchTerm.toLowerCase();
     const fullName = `${emp.firstName} ${emp.lastName}`.toLowerCase();
+
+    const searchLower = searchTerm.toLowerCase().trim();
+    // Allow matching plural "developers" to singular "developer"
+    const searchLowerSingular = searchLower.endsWith('s')
+      ? searchLower.slice(0, -1)
+      : searchLower;
+
     const matchesSearch =
-      searchTerm === '' ||
+      searchLower === '' ||
       fullName.includes(searchLower) ||
       emp.empId?.toLowerCase().includes(searchLower) ||
       emp.department?.toLowerCase().includes(searchLower) ||
       emp.designation?.toLowerCase().includes(searchLower) ||
+      emp.designation?.toLowerCase().includes(searchLowerSingular) ||
+      emp.level?.toLowerCase().includes(searchLower) ||
       String(emp.totalExperience || '')
         .toLowerCase()
         .includes(searchLower) ||
@@ -195,18 +223,29 @@ const SkillsDirectory = ({ isTab = false, isViewOnly = false }) => {
             s.name?.toLowerCase().includes(searchLower) ||
             s.category?.toLowerCase().includes(searchLower)
         ));
+
     const matchesDept =
-      selectedDept === 'All Departments' || emp.department === selectedDept;
+      selectedDept === 'All Departments' ||
+      emp.department?.toLowerCase() === selectedDept.toLowerCase();
+
+    // Handle the level filtering based on the employee's overall level
     const matchesExp =
       selectedExp === 'All Employees' ||
-      (emp.skills &&
-        emp.skills.some(
-          (s) => (s.category || '').toLowerCase() === selectedExp.toLowerCase()
-        ));
-    const status = (emp.status || '').toLowerCase();
-    const isApproved = status === 'active' || status === 'approved';
+      (emp.level || 'Mid').toLowerCase() === selectedExp.toLowerCase();
 
-    return matchesSearch && matchesDept && matchesExp && isApproved;
+    const status = (emp.status || '').toLowerCase();
+    // Default to true if status is missing to prevent hiding active users
+    const isApproved =
+      status === '' || status === 'active' || status === 'approved';
+
+    const isMeetingHall =
+      emp.empId === 'LOCATION' ||
+      fullName.includes('meeting hall') ||
+      emp.name?.toLowerCase().includes('meeting hall');
+
+    return (
+      matchesSearch && matchesDept && matchesExp && isApproved && !isMeetingHall
+    );
   });
 
   // Reset pagination when search query or filters change
@@ -307,6 +346,18 @@ const SkillsDirectory = ({ isTab = false, isViewOnly = false }) => {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-medium"
               />
+              {searchTerm && (
+                <IconButton
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-2 top-1.5 shadow-none bg-transparent hover:bg-transparent"
+                  title="Clear search"
+                >
+                  <X
+                    size={16}
+                    className="text-gray-400 hover:text-red-500 hover:scale-110"
+                  />
+                </IconButton>
+              )}
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
@@ -356,115 +407,181 @@ const SkillsDirectory = ({ isTab = false, isViewOnly = false }) => {
           <div className="flex-1 flex items-center justify-center min-h-[200px]">
             <Loader label="Syncing directory..." size="lg" fullScreen={false} />
           </div>
+        ) : filteredEmployees.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center min-h-[300px] bg-gray-50/50 rounded-2xl border-2 border-dashed border-gray-300 m-4 p-6">
+            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-gray-200 mb-4">
+              <Search className="text-gray-400" size={28} />
+            </div>
+            <h3 className="text-xl font-black text-gray-800">
+              No professionals found
+            </h3>
+            <p className="text-sm font-medium text-gray-500 mt-2 max-w-md text-center">
+              We couldn't find any employees matching your current search or
+              filters. Try adjusting your criteria.
+            </p>
+            <button
+              onClick={() => {
+                setSearchTerm('');
+                setSelectedDept('All Departments');
+                setSelectedExp('All Employees');
+              }}
+              className="mt-6 px-6 py-2.5 bg-white border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-100 transition-colors shadow-sm flex items-center gap-2"
+            >
+              <X size={16} /> Clear All Filters
+            </button>
+          </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-4 px-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 pb-4 px-3">
               {paginatedEmployees.map((emp) => (
                 <div
                   key={emp.id}
-                  className="bg-white border border-gray-400 rounded-[1.5rem] p-3 md:p-4 shadow-[0_15px_50px_rgba(0,0,0,0.03)] hover:shadow-[0_25px_70px_rgba(0,0,0,0.07)] transition-all duration-500 group flex flex-col justify-between min-h-[320px] md:min-h-[290px] relative overflow-hidden"
+                  className="bg-white border-[2px] border-gray-400 rounded-xl transition-all duration-300 flex flex-col min-h-[340px] overflow-hidden group relative"
                 >
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50/30 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-blue-100/40 transition-colors"></div>
-
-                  <div className="relative">
-                    <div className="flex items-start justify-between mb-5">
-                      <div className="flex gap-5">
-                        <div className="w-20 h-20 rounded-[1.5rem] overflow-hidden border-2 border-white bg-blue-50 flex items-center justify-center shadow-inner">
-                          {emp.photo ? (
-                            <img
-                              src={emp.photo}
-                              alt={emp.firstName}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <span className="text-2xl font-bold text-blue-600 uppercase tracking-widest">
-                              {emp.firstName?.[0] || ''}
-                              {emp.lastName?.[0] || ''}
-                            </span>
-                          )}
-                        </div>
-                        <div className="pt-1">
-                          <h3 className="text-xl font-bold text-[#1a1c23] leading-tight transition-colors">
-                            {emp.firstName} {emp.lastName}
-                          </h3>
-                          <p className="text-[11px] font-bold text-[#004475] mt-1.5 uppercase tracking-[0.05em]">
-                            {emp.designation || 'Technical Specialist'}
-                          </p>
-                          <div className="mt-1.5 py-0.5 text-gray-500 text-[11px] font-bold rounded-lg w-fit">
-                            {emp.empId}
-                          </div>
-                        </div>
-                      </div>
-                      {!isViewOnly && (
-                        <div className="flex flex-col items-end gap-6">
-                          <button
-                            onClick={() => handleEditClick(emp)}
-                            className="w-8 h-8 flex items-center justify-center text-gray-500 border border-gray-300 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all border border-gray-50 shadow-sm bg-white hover:border-blue-100"
-                            title="Edit Skills"
-                          >
-                            <SquarePen size={16} />
-                          </button>
-                        </div>
+                  {!isViewOnly && (
+                    <button
+                      onClick={() => handleEditClick(emp)}
+                      className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-gray-600 border-[1px] border-gray-300 hover:bg-[#004475] hover:text-white rounded-lg transition-all shadow-sm z-10 bg-white cursor-pointer"
+                      title="Edit Skills"
+                    >
+                      <Edit2 size={14} strokeWidth={3} />
+                    </button>
+                  )}
+                  {/* Top Section */}
+                  <div className="flex p-3 border-b-[1px] border-gray-400 relative bg-[#fdfdfd]">
+                    <div className="w-20 h-20 rounded-2xl overflow-hidden border-[3px] border-gray-100 bg-yellow-100 flex items-center justify-center shrink-0 mr-5">
+                      {emp.photo ? (
+                        <img
+                          src={emp.photo}
+                          alt={emp.firstName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-2xl font-black text-black uppercase tracking-widest">
+                          {emp.firstName?.[0] || ''}
+                          {emp.lastName?.[0] || ''}
+                        </span>
                       )}
                     </div>
+                    <div className="flex flex-col justify-center min-w-0 flex-1 pr-8">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-xl font-bold text-gray-900 leading-tight truncate">
+                          {emp.firstName} {emp.lastName}
+                        </h3>
+                        <div className="text-md font-bold text-gray-700 truncate">
+                          - {emp.designation || 'DEVELOPER'}
+                        </div>
+                      </div>
+                      <div className="text-sm font-bold text-[#004475] truncate mt-1.5">
+                        {emp.empId}
+                      </div>
+                    </div>
+                  </div>
 
-                    {/* Metrics Section (Moved Above Proficiencies) */}
-                    <div className="pt-3 pb-2.5 mb-4 border-t border-b border-gray-300 flex flex-wrap items-center justify-between gap-4">
-                      <div className="flex flex-col items-start min-w-[120px]">
-                        <span className="text-[12px] font-bold text-[#004475] mb-2 uppercase tracking-[0.04em]">
+                  {/* Bottom Section */}
+                  <div className="flex flex-1">
+                    {/* Left Pane */}
+                    <div className="w-[120px] min-w-[120px] border-r-[1px] border-gray-400 p-4 flex flex-col justify-between bg-blue-50/50">
+                      {/* DEPT */}
+                      <div className="flex flex-col items-center text-center">
+                        <span className="text-[12px] font-bold text-gray-900 uppercase tracking-widest mb-1">
                           Department
                         </span>
-                        <span className="text-[11.5px] font-bold text-[#1a1c23] uppercase tracking-tight">
-                          {emp.department || 'Dev Team'}
-                        </span>
+                        <div className="text-[11px] font-bold text-[#004475] uppercase leading-tight break-words">
+                          {emp.department || 'TECH'}
+                        </div>
                       </div>
-                      <div className="flex gap-8 md:gap-12">
-                        <div className="flex flex-col items-center">
-                          <span className="text-[12px] font-bold text-[#004475] mb-2 uppercase tracking-[0.05em]">
-                            Experience
-                          </span>
-                          <span className="text-md font-bold text-[#1a1c23]">
-                            {emp.totalExperience || '0Y'}
-                          </span>
+
+                      {/* LEVEL */}
+                      <div className="flex flex-col items-center text-center">
+                        <span className="text-[12px] font-bold text-gray-900 uppercase tracking-widest mb-1">
+                          Level
+                        </span>
+                        <div className="text-[11px] font-bold text-[#004475] uppercase leading-tight break-words">
+                          {emp.level || 'Mid'}
                         </div>
-                        <div className="flex flex-col items-center relative">
-                          <span className="text-[12px] font-bold text-[#004475] mb-2 uppercase tracking-[0.05em]">
-                            Projects
+                      </div>
+
+                      {/* EXPERIENCE */}
+                      <div className="flex flex-col items-center">
+                        <span className="text-[12px] font-bold text-gray-900 uppercase tracking-widest mb-1">
+                          Experience
+                        </span>
+                        <div className="flex items-baseline gap-1 text-[#004475]">
+                          <span className="text-xl font-black leading-none">
+                            {(emp.totalExperience || '0').replace(/\D/g, '') ||
+                              '0'}
                           </span>
-                          <span className="text-md font-bold text-[#1a1c23]">
-                            {emp.projectsDone || '0'}
-                          </span>
+                          <span className="text-xs font-bold">Y</span>
                         </div>
+                      </div>
+
+                      {/* PROJECTS */}
+                      <div className="flex flex-col items-center">
+                        <span className="text-[12px] font-bold text-gray-900 uppercase tracking-widest mb-1">
+                          Projects
+                        </span>
+                        <span className="text-xl font-black text-[#004475] leading-none">
+                          {emp.projectsDone || '0'}
+                        </span>
                       </div>
                     </div>
 
-                    {/* Core Proficiencies (Now at bottom) */}
-                    <div className="space-y-4">
-                      <div>
-                        <div className="flex flex-col items-center">
-                          <p className="text-[12px] font-black text-gray-700 uppercase tracking-[0.1em] mb-2 flex items-center gap-2.5 justify-center">
+                    {/* Right Pane */}
+                    <div className="flex-1 p-4 flex flex-col bg-white">
+                      <div className="flex-1 flex flex-col">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Sparkles
+                            size={16}
+                            className="text-black"
+                            strokeWidth={2}
+                          />
+                          <h4 className="text-[12px] font-extrabold text-black uppercase tracking-widest">
                             Core Proficiencies
-                          </p>
+                          </h4>
                         </div>
-                        <div className="max-h-[110px] overflow-y-auto pr-2 custom-scrollbar mt-1 mb-2 p-1 border-2 border-dashed border-gray-100 rounded-2xl bg-gray-50/30">
-                          <div className="flex flex-wrap gap-1 justify-center">
-                            {emp.skills && emp.skills.length > 0 ? (
-                              emp.skills.map((skill, idx) => (
-                                <span
-                                  key={idx}
-                                  className="px-2.5 py-1.5 bg-white text-[#475569] text-[10px] font-bold rounded-xl uppercase tracking-wider shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-300 hover:scale-105 hover:text-[#33a8d9] transition-all duration-300"
-                                >
-                                  {skill.name}
-                                </span>
-                              ))
-                            ) : (
-                              <div className="w-full h-20 flex items-center justify-center">
-                                <span className="text-xs text-gray-400 italic font-bold">
-                                  No skills listed
-                                </span>
-                              </div>
-                            )}
+
+                        {emp.skills && emp.skills.length > 0 ? (
+                          <div className="flex flex-wrap gap-2 max-h-[110px] overflow-y-auto custom-scrollbar pr-1">
+                            {emp.skills.map((skill, idx) => (
+                              <span
+                                key={idx}
+                                className="px-2.5 py-1 bg-white text-black text-[12px] font-bold rounded-lg border-[1px] border-gray-400"
+                              >
+                                {skill.name}
+                              </span>
+                            ))}
                           </div>
+                        ) : (
+                          <div className="flex-1 border-[2px] border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center p-2 text-center min-h-[10px]">
+                            <ZapOff
+                              size={20}
+                              className="text-gray-400 mb-2"
+                              strokeWidth={2}
+                            />
+                            <p className="text-[13px] font-bold text-gray-500">
+                              No skills listed
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Footer */}
+                      <div className="mt-4 pt-3 flex flex-wrap items-center justify-between border-t-[2px] border-black/10">
+                        <span className="text-[10px] font-bold text-gray-600 uppercase tracking-wide">
+                          UPDATED :{' '}
+                          {emp.updatedAt
+                            ? new Date(emp.updatedAt).toLocaleDateString(
+                                'en-US',
+                                { month: 'short', day: 'numeric' }
+                              )
+                            : 'TODAY'}
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+                          <span className="text-[11px] font-bold text-black">
+                            Active
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -518,12 +635,12 @@ const SkillsDirectory = ({ isTab = false, isViewOnly = false }) => {
               </div>
 
               <div className="p-4 space-y-3 max-h-[80vh] overflow-y-auto custom-scrollbar">
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-black uppercase tracking-widest">
                       Employee Name
                     </label>
-                    <div className="px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-sm font-bold text-gray-600">
+                    <div className="px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-sm font-bold text-gray-600 truncate">
                       {selectedEmployee?.firstName} {selectedEmployee?.lastName}
                     </div>
                   </div>
@@ -531,8 +648,40 @@ const SkillsDirectory = ({ isTab = false, isViewOnly = false }) => {
                     <label className="text-xs font-bold text-black  uppercase tracking-widest">
                       Employee ID
                     </label>
-                    <div className="px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-sm font-bold text-gray-600">
+                    <div className="px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-sm font-bold text-gray-600 truncate">
                       {selectedEmployee?.empId}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-black uppercase tracking-widest">
+                      Level
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={editForm.level}
+                        onChange={(e) =>
+                          setEditForm((prev) => ({
+                            ...prev,
+                            level: e.target.value,
+                          }))
+                        }
+                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600 transition-all font-medium appearance-none text-black"
+                      >
+                        {finalLevels
+                          .filter(
+                            (lvl) =>
+                              lvl !== 'All Employees' && lvl !== 'All Levels'
+                          )
+                          .map((lvl) => (
+                            <option key={lvl} value={lvl}>
+                              {lvl}
+                            </option>
+                          ))}
+                      </select>
+                      <ChevronDown
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                        size={16}
+                      />
                     </div>
                   </div>
                 </div>

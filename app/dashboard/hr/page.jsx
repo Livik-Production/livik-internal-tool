@@ -1136,6 +1136,18 @@ function HRPageContent() {
                       d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                     />
                   </svg>
+                  {searchQuery && (
+                    <IconButton
+                      onClick={() => handleSearch({ target: { value: '' } })}
+                      className="absolute right-2 top-0.5 shadow-none bg-transparent hover:bg-transparent"
+                      title="Clear search"
+                    >
+                      <X
+                        size={14}
+                        className="text-gray-400 hover:text-red-500 hover:scale-110"
+                      />
+                    </IconButton>
+                  )}
                 </div>
               );
 
@@ -1323,6 +1335,7 @@ function HRPageContent() {
                         canApprove={
                           !isViewOnly && (isAdmin || canControlAllEmployees)
                         }
+                        initialSubTab={activeSubTab}
                         canDelete={
                           !isHrRole &&
                           (isAdmin || canControlAllEmployees) &&
@@ -1638,10 +1651,13 @@ function HRPageContent() {
               </div>
             </div>
 
-            <div className="p-3 border-t border-gray-200  flex justify-end rounded-b-xl">
+            <div
+              className="p-3 border-t border-gray-200 
+            flex justify-end rounded-b-xl"
+            >
               <PrimaryButton
                 onClick={handleCloseStats}
-                className="px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-200 transition-all font-bold shadow-sm active:scale-[0.98]"
+                className="px-6 py-3 bg-white border border-gray-300 text-black rounded-xl hover:bg-gray-200 transition-all font-bold shadow-sm active:scale-[0.98]"
               >
                 Close History
               </PrimaryButton>

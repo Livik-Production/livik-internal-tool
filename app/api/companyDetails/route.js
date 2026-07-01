@@ -38,6 +38,7 @@ export async function PUT(request) {
       lutBondNo,
       lutValidFrom,
       lutValidTo,
+      cinNumber,
     } = body;
 
     // Validate required fields
@@ -83,6 +84,7 @@ export async function PUT(request) {
       lutBondNo: lutBondNo || null,
       lutValidFrom: lutValidFrom ? new Date(lutValidFrom) : null,
       lutValidTo: lutValidTo ? new Date(lutValidTo) : null,
+      cinNumber: cinNumber || null,
     };
 
     if (existingDetail) {

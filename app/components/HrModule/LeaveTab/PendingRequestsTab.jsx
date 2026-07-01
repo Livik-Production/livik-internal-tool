@@ -220,7 +220,7 @@ const LeaveRequestsTab = ({
             {searchQuery && (
               <IconButton
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-2 text-gray-400 hover:text-[#004475] shadow-none bg-transparent hover:bg-transparent"
+                className="absolute right-2 top-0.5 text-gray-400 hover:text-[#004475] shadow-none bg-transparent hover:bg-transparent"
                 title="Clear search"
               >
                 <X size={16} />
