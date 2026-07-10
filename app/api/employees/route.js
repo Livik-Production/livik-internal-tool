@@ -126,8 +126,8 @@ export async function POST(req) {
 
         <p><strong>Step 1:</strong> Visit the Employee Portal</p>
         <p>
-          <a href="https://portal.liviktech.com" style="color:#2563eb;">
-            https://portal.liviktech.com
+          <a href="https://livik-internal-tool-dev.vercel.app" style="color:#2563eb;">
+            https://livik-internal-tool-dev.vercel.app
           </a>
         </p>
 

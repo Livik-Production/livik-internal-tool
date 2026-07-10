@@ -144,6 +144,7 @@ export default function EmployeeView({
     documentsCollected:
       initialData.documentsCollected ?? reconstructDocuments(initialData),
     bondRemarks: initialData.bondRemarks ?? '',
+    bondNotRequired: initialData.bondNotRequired ?? false,
   };
 
   const educations = (
