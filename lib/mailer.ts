@@ -468,3 +468,252 @@ export async function sendInvoiceReminderEmail(
 
   await transporter.sendMail(mailOptions);
 }
+
+/**
+ * Sends a notification email to admins when an employee requests leave.
+ * @param emails - Array of admin email addresses
+ * @param employeeName - Name of the employee requesting leave
+ * @param leaveType - Type of leave requested
+ * @param startDate - Start date of the leave
+ * @param endDate - End date of the leave
+ * @param reason - Reason for the leave
+ */
+export async function sendLeaveRequestNotification(
+  emails: string[],
+  employeeName: string,
+  leaveType: string,
+  startDate: string | Date,
+  endDate: string | Date,
+  reason: string
+): Promise<void> {
+  if (!emails || emails.length === 0) return;
+
+  const formatDate = (d: string | Date) => {
+    const date = new Date(d);
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
+  const mailOptions = {
+    from,
+    to: emails,
+    subject: `New Leave Request from ${employeeName}`,
+    html: `
+      <!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>New Leave Request Notification</title>
+          <style>
+            body {
+              font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+              background-color: #f1f5f9;
+              margin: 0;
+              padding: 0;
+              -webkit-font-smoothing: antialiased;
+            }
+            .wrapper { padding: 40px 16px; }
+            .container {
+              max-width: 600px; margin: 0 auto; background-color: #ffffff;
+              border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.07);
+              border: 1px solid #e2e8f0;
+            }
+            .header { background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%); padding: 28px 36px; text-align: left; }
+            .header h1 { margin: 0; font-size: 22px; font-weight: 700; color: #ffffff; line-height: 1.3; }
+            .content { padding: 36px; color: #334155; line-height: 1.7; font-size: 15px; }
+            .info-card {
+              background: #f8fafc; border: 1px solid #e2e8f0; border-left: 5px solid #4f46e5;
+              border-radius: 8px; padding: 20px 24px; margin: 24px 0;
+            }
+            .info-row { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 12px; }
+            .info-row:last-child { margin-bottom: 0; }
+            .info-item { flex: 1; min-width: 120px; }
+            .info-label { font-size: 11px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 2px; }
+            .info-value { font-size: 14px; font-weight: 600; color: #334155; }
+            .reason-box { margin-top: 12px; font-style: italic; color: #475569; }
+            .footer { padding: 20px 36px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; }
+            .footer p { margin: 0; line-height: 1.6; }
+          </style>
+        </head>
+        <body>
+          <div class="wrapper">
+            <div class="container">
+              <div class="header">
+                <h1>New Leave Request 📝</h1>
+              </div>
+              <div class="content">
+                <p>Hello,</p>
+                <p><strong>${employeeName}</strong> has submitted a new leave request that requires review.</p>
+                
+                <div class="info-card">
+                  <div class="info-row">
+                    <div class="info-item">
+                      <div class="info-label">Leave Type</div>
+                      <div class="info-value">${leaveType}</div>
+                    </div>
+                  </div>
+                  <div class="info-row">
+                    <div class="info-item">
+                      <div class="info-label">Start Date</div>
+                      <div class="info-value">${formatDate(startDate)}</div>
+                    </div>
+                    <div class="info-item">
+                      <div class="info-label">End Date</div>
+                      <div class="info-value">${formatDate(endDate)}</div>
+                    </div>
+                  </div>
+                  <div class="info-row">
+                    <div class="info-item">
+                      <div class="info-label">Reason</div>
+                      <div class="info-value reason-box">"${reason || 'No reason provided'}"</div>
+                    </div>
+                  </div>
+                </div>
+
+                <p>Please log in to the HR admin portal to approve or reject this request.</p>
+              </div>
+              <div class="footer">
+                <p>This is an automated message from the Livik Tech Internal System.</p>
+                <p>Please do not reply to this email.</p>
+              </div>
+            </div>
+          </div>
+        </body>
+      </html>
+    `,
+  };
+
+  await transporter.sendMail(mailOptions);
+}
+
+/**
+ * Sends a notification email to an employee when their leave request is approved or rejected.
+ * @param email - Employee's email address
+ * @param employeeName - Employee's name
+ * @param leaveType - Type of leave
+ * @param startDate - Start date
+ * @param endDate - End date
+ * @param status - 'APPROVED' | 'REJECTED'
+ * @param approverName - Name of the person who approved/rejected
+ * @param remarks - Optional remarks provided by the approver
+ */
+export async function sendLeaveStatusNotification(
+  email: string,
+  employeeName: string,
+  leaveType: string,
+  startDate: string | Date,
+  endDate: string | Date,
+  status: 'APPROVED' | 'REJECTED',
+  approverName: string,
+  remarks: string | null
+): Promise<void> {
+  if (!email) return;
+
+  const formatDate = (d: string | Date) => {
+    const date = new Date(d);
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
+  const isApproved = status === 'APPROVED';
+  const color = isApproved ? '#10b981' : '#ef4444'; // Emerald for approved, Red for rejected
+  const actionWord = isApproved ? 'Approved' : 'Rejected';
+  const emoji = isApproved ? '✅' : '❌';
+
+  const mailOptions = {
+    from,
+    to: email,
+    subject: `Leave Request ${actionWord} - ${leaveType}`,
+    html: `
+      <!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Leave Request ${actionWord}</title>
+          <style>
+            body {
+              font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+              background-color: #f1f5f9;
+              margin: 0;
+              padding: 0;
+              -webkit-font-smoothing: antialiased;
+            }
+            .wrapper { padding: 40px 16px; }
+            .container {
+              max-width: 600px; margin: 0 auto; background-color: #ffffff;
+              border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.07);
+              border: 1px solid #e2e8f0;
+            }
+            .header { background: linear-gradient(135deg, ${color} 0%, ${isApproved ? '#059669' : '#dc2626'} 100%); padding: 28px 36px; text-align: left; }
+            .header h1 { margin: 0; font-size: 22px; font-weight: 700; color: #ffffff; line-height: 1.3; }
+            .content { padding: 36px; color: #334155; line-height: 1.7; font-size: 15px; }
+            .info-card {
+              background: #f8fafc; border: 1px solid #e2e8f0; border-left: 5px solid ${color};
+              border-radius: 8px; padding: 20px 24px; margin: 24px 0;
+            }
+            .info-row { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 12px; }
+            .info-row:last-child { margin-bottom: 0; }
+            .info-item { flex: 1; min-width: 120px; }
+            .info-label { font-size: 11px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 2px; }
+            .info-value { font-size: 14px; font-weight: 600; color: #334155; }
+            .remarks-box { margin-top: 12px; font-style: italic; color: #475569; }
+            .footer { padding: 20px 36px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; }
+            .footer p { margin: 0; line-height: 1.6; }
+          </style>
+        </head>
+        <body>
+          <div class="wrapper">
+            <div class="container">
+              <div class="header">
+                <h1>Leave Request ${actionWord} ${emoji}</h1>
+              </div>
+              <div class="content">
+                <p>Hello <strong>${employeeName}</strong>,</p>
+                <p>Your leave request has been <strong>${actionWord.toLowerCase()}</strong> by ${approverName}.</p>
+                
+                <div class="info-card">
+                  <div class="info-row">
+                    <div class="info-item">
+                      <div class="info-label">Leave Type</div>
+                      <div class="info-value">${leaveType}</div>
+                    </div>
+                    <div class="info-item">
+                      <div class="info-label">Status</div>
+                      <div class="info-value" style="color: ${color};">${actionWord}</div>
+                    </div>
+                  </div>
+                  <div class="info-row">
+                    <div class="info-item">
+                      <div class="info-label">Start Date</div>
+                      <div class="info-value">${formatDate(startDate)}</div>
+                    </div>
+                    <div class="info-item">
+                      <div class="info-label">End Date</div>
+                      <div class="info-value">${formatDate(endDate)}</div>
+                    </div>
+                  </div>
+                  ${remarks ? `
+                  <div class="info-row">
+                    <div class="info-item">
+                      <div class="info-label">Approver Remarks</div>
+                      <div class="info-value remarks-box">"${remarks}"</div>
+                    </div>
+                  </div>
+                  ` : ''}
+                </div>
+
+                <p>If you have any questions, please reach out to HR or your manager.</p>
+              </div>
+              <div class="footer">
+                <p>This is an automated message from the Livik Tech Internal System.</p>
+                <p>Please do not reply to this email.</p>
+              </div>
+            </div>
+          </div>
+        </body>
+      </html>
+    `,
+  };
+
+  await transporter.sendMail(mailOptions);
+}

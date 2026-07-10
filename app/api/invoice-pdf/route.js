@@ -1,5 +1,5 @@
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 import puppeteerCore from 'puppeteer-core';
 import chromium from '@sparticuz/chromium-min';
 import { NextResponse } from 'next/server';

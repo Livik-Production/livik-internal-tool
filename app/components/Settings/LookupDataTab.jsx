@@ -21,8 +21,10 @@ import CustomAlertForm from '../CustomAlertForm';
 import Loader from '../Loader';
 import IconButton from '../Buttons/IconButton';
 
+
 const InlineEditInput = ({
   value,
+  code,
   onSave,
   onCancel,
   placeholder = '',
@@ -30,6 +32,7 @@ const InlineEditInput = ({
   isSaving = false,
 }) => {
   const [text, setText] = useState(value);
+  const [codeText, setCodeText] = useState(code || '');
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -42,25 +45,36 @@ const InlineEditInput = ({
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      if (text.trim() && !isSaving) onSave(text.trim());
+      if (text.trim() && !isSaving) onSave(text.trim(), codeText.trim());
     }
     if (e.key === 'Escape' && !isSaving) onCancel();
   };
 
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex items-center gap-1.5 w-full">
       <input
         ref={inputRef}
         type="text"
         value={text}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder={placeholder}
+        placeholder={placeholder || 'Label'}
         disabled={isSaving}
-        className="flex-1 px-2.5 py-1.5 border border-gray-300 rounded-lg text-sm text-slate-800 bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all disabled:opacity-50"
+        className="flex-1 px-2.5 py-1.5 border border-gray-300 rounded-lg text-sm text-slate-800 bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all disabled:opacity-50 min-w-[120px]"
       />
+      {code !== undefined && (
+        <input
+          type="text"
+          value={codeText}
+          onChange={(e) => setCodeText(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Code"
+          disabled={isSaving}
+          className="px-2.5 py-1.5 border border-gray-300 rounded-lg text-sm text-slate-800 bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all disabled:opacity-50 w-[80px]"
+        />
+      )}
       <button
-        onClick={() => text.trim() && !isSaving && onSave(text.trim())}
+        onClick={() => text.trim() && !isSaving && onSave(text.trim(), codeText.trim())}
         disabled={isSaving || !text.trim()}
         className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50"
         title="Save"
@@ -106,6 +120,7 @@ export default function LookupDataTab() {
   // Add new value
   const [isAddingValue, setIsAddingValue] = useState(false);
   const [newValueText, setNewValueText] = useState('');
+  const [newValueCode, setNewValueCode] = useState('');
   const newValueInputRef = useRef(null);
 
   // Edit value
@@ -219,13 +234,14 @@ export default function LookupDataTab() {
 
     setIsCreatingValue(true);
     try {
+      const finalCode = newValueCode.trim() || newValueText.trim();
       const res = await fetch('/api/dropdowns', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: selectedCategoryId,
           label: newValueText.trim(),
-          value: newValueText.trim(),
+          value: finalCode,
           status: 'active',
         }),
       });
@@ -248,6 +264,7 @@ export default function LookupDataTab() {
       );
       showToast('Value added successfully.');
       setNewValueText('');
+      setNewValueCode('');
     } catch (error) {
       showToast(error.message, 'error');
     } finally {
@@ -255,16 +272,17 @@ export default function LookupDataTab() {
     }
   };
 
-  const handleEditValueSave = async (valueId, newLabel) => {
+  const handleEditValueSave = async (valueId, newLabel, newCode) => {
     setIsSavingValue(true);
     try {
+      const finalCode = newCode || newLabel;
       const res = await fetch(`/api/dropdowns/${valueId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: selectedCategoryId,
           label: newLabel,
-          value: newLabel,
+          value: finalCode,
         }),
       });
       const data = await res.json();
@@ -276,7 +294,7 @@ export default function LookupDataTab() {
             ? {
                 ...cat,
                 values: cat.values.map((v) =>
-                  v.id === valueId ? { ...v, label: newLabel } : v
+                  v.id === valueId ? { ...v, label: newLabel, value: finalCode } : v
                 ),
               }
             : cat
@@ -478,9 +496,7 @@ export default function LookupDataTab() {
 
       setCategories((prev) =>
         prev.map((c) =>
-          c.id === catId
-            ? { ...c, id: newCategoryId, name: formattedNewName }
-            : c
+          c.id === catId ? { ...c, id: newCategoryId, name: formattedNewName } : c
         )
       );
       setSelectedCategoryId(newCategoryId);
@@ -500,6 +516,7 @@ export default function LookupDataTab() {
     if (e.key === 'Escape') {
       setIsAddingValue(false);
       setNewValueText('');
+      setNewValueCode('');
     }
   };
 
@@ -583,7 +600,7 @@ export default function LookupDataTab() {
                 {filteredCategories.map((cat) => {
                   const isSelected = cat.id === selectedCategoryId;
                   return (
-                    <button
+                     <button
                       key={cat.id}
                       disabled={isAnyActionLoading}
                       onClick={() => {
@@ -601,14 +618,9 @@ export default function LookupDataTab() {
                     >
                       <span className="text-2xl flex-shrink-0">{cat.icon}</span>
                       <div className="flex-1 min-w-0">
-                        <span className="text-xs font-semibold block truncate w-full">
-                          {cat.name}
-                        </span>
-                        <span
-                          className={`text-[10px] block mt-0.5 ${isSelected ? 'text-blue-200' : 'text-slate-500'}`}
-                        >
-                          {cat.values.length} value
-                          {cat.values.length !== 1 ? 's' : ''}
+                        <span className="text-xs font-semibold block truncate w-full">{cat.name}</span>
+                        <span className={`text-[10px] block mt-0.5 ${isSelected ? 'text-blue-200' : 'text-slate-500'}`}>
+                          {cat.values.length} value{cat.values.length !== 1 ? 's' : ''}
                         </span>
                       </div>
                     </button>
@@ -639,7 +651,7 @@ export default function LookupDataTab() {
                         <h3 className="text-lg font-bold text-slate-800 ml-5">
                           {selectedCategory.name}
                         </h3>
-
+                        
                         {/* Active Stats Pill */}
                         <span className="px-2.5 py-0.5 ml-30 bg-emerald-50 text-emerald-600 rounded-full text-xs font-bold border border-emerald-100 flex-shrink-0">
                           {activeCount}/{totalCount} Active
@@ -667,9 +679,7 @@ export default function LookupDataTab() {
 
                         {/* Delete Category button [🗑️] */}
                         <IconButton
-                          onClick={() =>
-                            handleDeleteCategory(selectedCategory.id)
-                          }
+                          onClick={() => handleDeleteCategory(selectedCategory.id)}
                           disabled={isAnyActionLoading}
                           className="p-1.5 hover:bg-red-50 transition-colors text-red-500 flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed"
                           title="Delete Category"
@@ -693,9 +703,18 @@ export default function LookupDataTab() {
                           value={newValueText}
                           onChange={(e) => setNewValueText(e.target.value)}
                           onKeyDown={handleNewValueKeyDown}
-                          placeholder="Type value & press Enter"
+                          placeholder="Label (e.g. Dindigul)"
                           disabled={isCreatingValue}
-                          className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-slate-800 bg-white focus:ring-2 focus:ring-blue-500 outline-none flex-1 transition-all disabled:opacity-50"
+                          className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-slate-800 bg-white focus:ring-2 focus:ring-blue-500 outline-none flex-1 transition-all disabled:opacity-50 min-w-[120px]"
+                        />
+                        <input
+                          type="text"
+                          value={newValueCode}
+                          onChange={(e) => setNewValueCode(e.target.value)}
+                          onKeyDown={handleNewValueKeyDown}
+                          placeholder="Code (e.g. DGL)"
+                          disabled={isCreatingValue}
+                          className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-slate-800 bg-white focus:ring-2 focus:ring-blue-500 outline-none flex-1 transition-all disabled:opacity-50 min-w-[100px]"
                         />
                         <button
                           onClick={handleAddValue}
@@ -713,6 +732,7 @@ export default function LookupDataTab() {
                           onClick={() => {
                             setIsAddingValue(false);
                             setNewValueText('');
+                            setNewValueCode('');
                           }}
                           disabled={isCreatingValue}
                           className="p-1.5 text-gray-400 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0 disabled:opacity-30"
@@ -723,6 +743,7 @@ export default function LookupDataTab() {
                       </div>
                     </div>
                   )}
+
 
                   {/* Values list */}
                   <div className="flex-1 overflow-y-auto no-scrollbar px-6 py-4">
@@ -754,21 +775,27 @@ export default function LookupDataTab() {
                                 {editingValueId === val.id ? (
                                   <InlineEditInput
                                     value={val.label}
+                                    code={val.value}
                                     isSaving={isSavingValue}
-                                    onSave={(newLabel) =>
-                                      handleEditValueSave(val.id, newLabel)
+                                    onSave={(newLabel, newCode) =>
+                                      handleEditValueSave(val.id, newLabel, newCode)
                                     }
                                     onCancel={() => setEditingValueId(null)}
                                   />
                                 ) : (
                                   <span
-                                    className={`text-sm font-medium ${
+                                    className={`text-sm font-medium flex items-center gap-2 ${
                                       val.isActive
                                         ? 'text-slate-800'
                                         : 'text-slate-500 line-through'
                                     }`}
                                   >
-                                    {val.label}
+                                    <span>{val.label}</span>
+                                    {val.label !== val.value && (
+                                      <span className="px-1.5 py-0.5 text-[10px] bg-slate-100 text-slate-500 rounded border border-slate-200 font-mono no-underline">
+                                        {val.value}
+                                      </span>
+                                    )}
                                   </span>
                                 )}
                               </div>
@@ -836,9 +863,8 @@ export default function LookupDataTab() {
                                 No values yet
                               </p>
                               <p className="text-xs text-gray-400 mt-1">
-                                Click the inline &quot;+&quot; button in the
-                                header above to create dropdown options for this
-                                category
+                                Click the inline &quot;+&quot; button in the header above to create dropdown
+                                options for this category
                               </p>
                             </>
                           )}
@@ -949,90 +975,84 @@ export default function LookupDataTab() {
         }
       />
       {/* ── Add Category Modal ── */}
-      {isAddingCategory &&
-        mounted &&
-        createPortal(
-          <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/40 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl border border-gray-300 p-6 w-full max-w-sm shadow-2xl animate-in zoom-in duration-200 text-left">
-              <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                <span>Create New Category</span>
-              </h3>
-              <div className="space-y-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-600">
-                    Category Name
-                  </label>
-                  <input
-                    type="text"
-                    value={newCategoryName}
-                    onChange={(e) => setNewCategoryName(e.target.value)}
-                    placeholder="e.g. Project Status"
-                    autoFocus
-                    disabled={isCreatingCategory}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleAddCategory();
-                      if (e.key === 'Escape' && !isCreatingCategory) {
-                        setIsAddingCategory(false);
-                        setNewCategoryName('');
-                        setNewCategoryDesc('');
-                      }
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-slate-800 bg-white focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-600">
-                    Description (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={newCategoryDesc}
-                    onChange={(e) => setNewCategoryDesc(e.target.value)}
-                    placeholder="Short description"
-                    disabled={isCreatingCategory}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleAddCategory();
-                      if (e.key === 'Escape' && !isCreatingCategory) {
-                        setIsAddingCategory(false);
-                        setNewCategoryName('');
-                        setNewCategoryDesc('');
-                      }
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-slate-800 bg-white focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50"
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end gap-3 mt-6 border-t border-gray-100 pt-4">
-                <button
-                  onClick={() => {
-                    setIsAddingCategory(false);
-                    setNewCategoryName('');
-                    setNewCategoryDesc('');
-                  }}
+      {isAddingCategory && mounted && createPortal(
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl border border-gray-300 p-6 w-full max-w-sm shadow-2xl animate-in zoom-in duration-200 text-left">
+            <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+              <span>Create New Category</span>
+            </h3>
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-600">Category Name</label>
+                <input
+                  type="text"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  placeholder="e.g. Project Status"
+                  autoFocus
                   disabled={isCreatingCategory}
-                  className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 rounded-xl transition-all disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleAddCategory}
-                  disabled={!newCategoryName.trim() || isCreatingCategory}
-                  className="px-5 py-2 text-sm font-bold text-white bg-[#004475] hover:bg-[#003a66] rounded-xl shadow-sm disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center min-w-[140px]"
-                >
-                  {isCreatingCategory ? (
-                    <>
-                      <Loader2 className="animate-spin mr-2" size={16} />
-                      <span>Creating...</span>
-                    </>
-                  ) : (
-                    'Create Category'
-                  )}
-                </button>
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleAddCategory();
+                    if (e.key === 'Escape' && !isCreatingCategory) {
+                      setIsAddingCategory(false);
+                      setNewCategoryName('');
+                      setNewCategoryDesc('');
+                    }
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-slate-800 bg-white focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-600">Description (Optional)</label>
+                <input
+                  type="text"
+                  value={newCategoryDesc}
+                  onChange={(e) => setNewCategoryDesc(e.target.value)}
+                  placeholder="Short description"
+                  disabled={isCreatingCategory}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleAddCategory();
+                    if (e.key === 'Escape' && !isCreatingCategory) {
+                      setIsAddingCategory(false);
+                      setNewCategoryName('');
+                      setNewCategoryDesc('');
+                    }
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-slate-800 bg-white focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50"
+                />
               </div>
             </div>
-          </div>,
-          document.body
-        )}
+            <div className="flex justify-end gap-3 mt-6 border-t border-gray-100 pt-4">
+              <button
+                onClick={() => {
+                  setIsAddingCategory(false);
+                  setNewCategoryName('');
+                  setNewCategoryDesc('');
+                }}
+                disabled={isCreatingCategory}
+                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 rounded-xl transition-all disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddCategory}
+                disabled={!newCategoryName.trim() || isCreatingCategory}
+                className="px-5 py-2 text-sm font-bold text-white bg-[#004475] hover:bg-[#003a66] rounded-xl shadow-sm disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center min-w-[140px]"
+              >
+                {isCreatingCategory ? (
+                  <>
+                    <Loader2 className="animate-spin mr-2" size={16} />
+                    <span>Creating...</span>
+                  </>
+                ) : (
+                  'Create Category'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

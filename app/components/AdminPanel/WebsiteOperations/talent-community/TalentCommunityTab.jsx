@@ -344,7 +344,7 @@ export default function TalentCommunityTab() {
       if (excelData.length > 0) {
         const headers = Object.keys(excelData[0]);
         ws.addRow(headers);
-
+        
         const headerRow = ws.getRow(1);
         headerRow.font = { bold: true };
 
@@ -369,9 +369,7 @@ export default function TalentCommunityTab() {
       }.xlsx`;
 
       const buffer = await wb.xlsx.writeBuffer();
-      const blob = new Blob([buffer], {
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      });
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -617,10 +615,7 @@ export default function TalentCommunityTab() {
                   className="absolute right-2 top-0.5 shadow-none bg-transparent hover:bg-transparent"
                   title="Clear search"
                 >
-                  <X
-                    size={14}
-                    className="text-gray-400 hover:text-red-500 hover:scale-110"
-                  />
+                  <X size={14} className="text-gray-400 hover:text-red-500 hover:scale-110" />
                 </IconButton>
               )}
             </div>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
-import { Printer, Download, Mail, SquareX, ChevronDown } from 'lucide-react';
+import { Printer, Download, Mail, SquareX, ChevronDown, User, FileText } from 'lucide-react';
 import Button from '../../Buttons/Button';
 import PrimaryButton from '../../Buttons/PrimaryButton';
 import TabButton from '../../Buttons/TabButton';
@@ -80,8 +80,11 @@ const OfferLetterTab = ({ isViewOnly = false }) => {
   const [empId, setEmpId] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const suggestionsRef = useRef(null);
   const [selectedLetterType, setSelectedLetterType] = useState('');
   const [dynamicLetterTypes, setDynamicLetterTypes] = useState([]);
+  const [isLetterTypeOpen, setIsLetterTypeOpen] = useState(false);
+  const letterTypeRef = useRef(null);
   const [alertState, setAlertState] = useState({
     isOpen: false,
     title: '',
@@ -216,6 +219,49 @@ const OfferLetterTab = ({ isViewOnly = false }) => {
       document.body.style.overflow = 'auto';
     };
   }, [showPayslipModal]);
+
+  // Handle click outside suggestions to close them
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(event.target)
+      ) {
+        setSuggestions([]);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Handle click outside letter type dropdown to close it
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        letterTypeRef.current &&
+        !letterTypeRef.current.contains(event.target)
+      ) {
+        setIsLetterTypeOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleInputFocus = () => {
+    if (empId.trim() === '') {
+      setSuggestions(employees);
+    } else {
+      const filtered = employees.filter(
+        (emp) =>
+          emp.id.toLowerCase().includes(empId.toLowerCase()) ||
+          emp.name.toLowerCase().includes(empId.toLowerCase())
+      );
+      setSuggestions(filtered);
+    }
+  };
 
   // Handle input change and suggestions - FIXED VERSION
   const handleInputChange = (value) => {
@@ -487,73 +533,63 @@ const OfferLetterTab = ({ isViewOnly = false }) => {
             {/* LEFT COLUMN: Controls */}
             <div className="space-y-6 sticky top-2 self-start">
               {/* 1. Employee Selection with Suggestions */}
-              <div className="relative">
-
-
-                {/* Suggestions dropdown */}
-                {suggestions.length > 0 && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto no-scroll">
-                    {suggestions.map((emp) => (
-                      <div
-                        key={emp.id}
-                        onClick={() => handleSelectEmployee(emp)}
-                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
-                      >
-                        <div className="font-medium">{emp.id}</div>
-                        <div className="text-sm text-gray-600">
-                          {emp.name} - {emp.role}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {employees.length === 0 && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    No employees found. Make sure your Redux store is populated.
-                  </p>
-                )}
-              </div>
+             
 
               {/* 3. Letter Type Selection Dropdown */}
               <div>
-                <h3 className="  text-sm font-medium text-gray-700 mb-3">
+                <h3 className="text-sm font-medium text-gray-700 mb-3">
                   Select Letter Type
                 </h3>
-                <div className="relative w-80">
-                  <select
-                    value={selectedLetterType}
-                    onChange={(e) => setSelectedLetterType(e.target.value)}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none cursor-pointer pr-10"
+                <div className="relative w-80" ref={letterTypeRef}>
+                  <div
+                    onClick={() => setIsLetterTypeOpen(!isLetterTypeOpen)}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex justify-between items-center cursor-pointer shadow-sm"
                   >
-                    <option value="" disabled>
-                      -- Select a letter type --
-                    </option>
-                    {dynamicLetterTypes.map((lt) => {
-                      const canonicalId = mapToCanonicalId(lt.value || lt.label);
-                      return (
-                        <option key={lt.id || canonicalId} value={canonicalId}>
-                          {lt.label}
-                        </option>
-                      );
-                    })}
-                  </select>
-                  <ChevronDown
-                    size={18}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
-                  />
+                    <span className={selectedLetterType ? "text-gray-900" : "text-gray-500"}>
+                      {selectedLetterType ? getSelectedLetterLabel() : "-- Select a letter type --"}
+                    </span>
+                    <ChevronDown
+                      size={18}
+                      className={`text-gray-500 transition-transform ${isLetterTypeOpen ? "rotate-180" : ""}`}
+                    />
+                  </div>
+
+                  {isLetterTypeOpen && (
+                    <div className="absolute top-full left-0 z-20 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto no-scroll">
+                      {dynamicLetterTypes.map((lt) => {
+                        const canonicalId = mapToCanonicalId(lt.value || lt.label);
+                        const isSelected = selectedLetterType === canonicalId;
+                        return (
+                          <div
+                            key={lt.id || canonicalId}
+                            onClick={() => {
+                              setSelectedLetterType(canonicalId);
+                              setIsLetterTypeOpen(false);
+                            }}
+                            className={`px-4 py-3 cursor-pointer border-b border-gray-100 last:border-b-0 flex items-center gap-3 transition-colors ${
+                              isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'
+                            }`}
+                          >
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                              isSelected ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'
+                            }`}>
+                              <FileText size={20} />
+                            </div>
+                            <div>
+                              <div className={`text-sm font-semibold ${isSelected ? 'text-blue-900' : 'text-gray-900'}`}>
+                                {lt.label}
+                              </div>
+                              <div className="text-xs text-gray-500 font-medium mt-0.5">
+                                Letter Template
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
-
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Enter Employee ID or Name
-              </label>
-              <input
-                type="text"
-                value={empId}
-                onChange={(e) => handleInputChange(e.target.value)}
-                placeholder="Type employee ID or name..."
-                className="w-80 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
 
               {/* 2. Employee Details Display */}
               {selectedEmployee && (
@@ -604,7 +640,46 @@ const OfferLetterTab = ({ isViewOnly = false }) => {
                   </div>
                 </div>
               )}
+ <div className="relative w-80" ref={suggestionsRef}>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Enter Employee ID or Name
+                </label>
+                <input
+                  type="text"
+                  value={empId}
+                  onChange={(e) => handleInputChange(e.target.value)}
+                  onFocus={handleInputFocus}
+                  onClick={handleInputFocus}
+                  placeholder="Type employee ID or name..."
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
 
+                {/* Suggestions dropdown */}
+                {suggestions.length > 0 && (
+                  <div className="absolute top-full left-0 z-20 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto no-scroll">
+                    {suggestions.map((emp) => (
+                      <div
+                        key={emp.id}
+                        onClick={() => handleSelectEmployee(emp)}
+                        className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0 flex items-center gap-3 transition-colors"
+                      >
+                        <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-gray-500 shrink-0">
+                           <User size={20} />
+                        </div>
+                        <div>
+                           <div className="text-sm font-semibold text-gray-900">{emp.name}</div>
+                           <div className="text-xs text-gray-500 font-medium mt-0.5">ID: {emp.id}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {employees.length === 0 && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    No employees found. Make sure your Redux store is populated.
+                  </p>
+                )}
+              </div>
               {/* 4. Radio Buttons for Letter Pad */}
               <div>
                 <h3 className="font-medium text-gray-700 mb-3">

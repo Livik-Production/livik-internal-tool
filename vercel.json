@@ -10,7 +10,8 @@
     },
     {
       "path": "/api/cron/invoice-reminder",
-      "schedule": "10 15 * * *"
+      "schedule": "0 6 * * *"
     }
   ]
 }
+ 

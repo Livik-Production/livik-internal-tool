@@ -2,7 +2,7 @@
 
 export default function Loader({
   label = 'Loading…',
-  size = 'md', // sm | md | lg
+  size = 'md', 
   fullScreen = false,
 }) {
   const sizeMap = {

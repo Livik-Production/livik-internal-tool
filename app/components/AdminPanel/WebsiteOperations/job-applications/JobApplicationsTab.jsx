@@ -257,10 +257,10 @@ export default function JobApplicationsTab({
       ...filtered.map((row) => {
         const dateApplied = row.createdAt
           ? new Date(row.createdAt).toLocaleDateString('en-US', {
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric',
-            })
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          })
           : '';
 
         const fields = [
@@ -321,9 +321,8 @@ export default function JobApplicationsTab({
       {/* Toast Notification */}
       {toast && (
         <div
-          className={`fixed top-5 right-5 z-[99999] px-5 py-3 rounded-xl shadow-lg text-sm font-semibold text-white transition-all ${
-            toast.type === 'error' ? 'bg-red-500' : 'bg-green-600'
-          }`}
+          className={`fixed top-5 right-5 z-[99999] px-5 py-3 rounded-xl shadow-lg text-sm font-semibold text-white transition-all ${toast.type === 'error' ? 'bg-red-500' : 'bg-green-600'
+            }`}
         >
           {toast.message}
         </div>
@@ -354,10 +353,7 @@ export default function JobApplicationsTab({
                   className="absolute right-2 top-0.5 shadow-none bg-transparent hover:bg-transparent"
                   title="Clear search"
                 >
-                  <X
-                    size={14}
-                    className="text-gray-400 hover:text-red-500 hover:scale-110"
-                  />
+                  <X size={14} className="text-gray-400 hover:text-red-500 hover:scale-110" />
                 </IconButton>
               )}
             </div>

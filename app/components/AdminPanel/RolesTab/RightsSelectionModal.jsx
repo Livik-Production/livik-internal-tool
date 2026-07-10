@@ -17,6 +17,7 @@ export default function RightsSelectionModal({
   onSave,
   onCancel,
   onEdit,
+  currentUserName,
 }) {
   const [moduleRights, setModuleRights] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,6 +32,10 @@ export default function RightsSelectionModal({
     selectedRights = [],
     effectiveDate = '',
     description = '',
+    createdAt = null,
+    createdBy = null,
+    updatedAt = null,
+    updatedBy = null,
   } = roleData;
 
   const [formData, setFormData] = useState({
@@ -253,6 +258,7 @@ export default function RightsSelectionModal({
         roleName: generatedRoleName,
         description: formData.description || null,
         rights: formData.selectedRights,
+        ...(isEditMode ? { updatedBy: currentUserName } : { createdBy: currentUserName, updatedBy: currentUserName })
       };
 
       let savedRole;
@@ -316,42 +322,50 @@ export default function RightsSelectionModal({
   if (!isOpen) return null;
 
   const renderFooter = (
-    <div className="flex justify-end gap-3 w-full">
-      {!isViewMode ? (
-        <>
-          <Button onClick={handleCancel} disabled={saving}>
-            CANCEL
-          </Button>
-          <PrimaryButton
-            onClick={handleSave}
-            disabled={
-              !formData.roleName || !formData.effectiveDate || loading || saving
-            }
-            className="min-w-[140px]"
-          >
-            {saving ? (
-              <>
-                <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></span>
-                {isEditMode ? 'SAVING...' : 'CREATING...'}
-              </>
-            ) : isEditMode ? (
-              'SAVE CHANGES'
-            ) : (
-              'CREATE ROLE'
-            )}
-          </PrimaryButton>
-        </>
-      ) : (
-        <>
-          <Button onClick={handleCancel}>CLOSE</Button>
-          {isViewMode && onEdit && (
-            <PrimaryButton onClick={onEdit} className="gap-2">
-              <SquarePen size={18} />
-              EDIT DETAILS
-            </PrimaryButton>
-          )}
-        </>
+    <div className={`flex w-full ${isViewMode ? 'justify-between items-center' : 'justify-end'}`}>
+      {isViewMode && (
+        <div className="flex flex-col text-xs text-gray-500 text-left">
+          {createdAt && <div><span className="font-medium text-gray-700">Created At:</span> {new Date(createdAt).toLocaleString()} {createdBy ? `by ${createdBy}` : ''}</div>}
+          {updatedAt && <div><span className="font-medium text-gray-700">Updated At:</span> {new Date(updatedAt).toLocaleString()} {updatedBy ? `by ${updatedBy}` : ''}</div>}
+        </div>
       )}
+      <div className="flex justify-end gap-3">
+        {!isViewMode ? (
+          <>
+            <Button onClick={handleCancel} disabled={saving}>
+              CANCEL
+            </Button>
+            <PrimaryButton
+              onClick={handleSave}
+              disabled={
+                !formData.roleName || !formData.effectiveDate || loading || saving
+              }
+              className="min-w-[140px]"
+            >
+              {saving ? (
+                <>
+                  <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></span>
+                  {isEditMode ? 'SAVING...' : 'CREATING...'}
+                </>
+              ) : isEditMode ? (
+                'SAVE CHANGES'
+              ) : (
+                'CREATE ROLE'
+              )}
+            </PrimaryButton>
+          </>
+        ) : (
+          <>
+            <Button onClick={handleCancel}>CLOSE</Button>
+            {isViewMode && onEdit && (
+              <PrimaryButton onClick={onEdit} className="gap-2">
+                <SquarePen size={18} />
+                EDIT DETAILS
+              </PrimaryButton>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 

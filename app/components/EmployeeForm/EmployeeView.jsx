@@ -35,6 +35,7 @@ export default function EmployeeView({
   initialData = {},
   onEdit,
   customUploadSection,
+  hideStatus = false,
 }) {
   const [tilt, setTilt] = useState({
     x: 0,
@@ -383,33 +384,35 @@ export default function EmployeeView({
 
       {/* Right Column: Other Sections */}
       <div className="w-full lg:w-2/3 space-y-5 overflow-y-auto no-scroll h-full py-5">
-        <div className="flex justify-between items-center pb-2 border-b">
-          <div />
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                Status:
-              </label>
-              <select
-                value={status}
-                onChange={handleStatusChange}
-                className="px-3 py-1.5 mr-2 border border-gray-300 rounded-xl text-sm bg-white text-gray-800 font-semibold cursor-pointer"
-              >
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-              </select>
+        {!hideStatus && (
+          <div className="flex justify-between items-center pb-2 border-b">
+            <div />
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Status:
+                </label>
+                <select
+                  value={status}
+                  onChange={handleStatusChange}
+                  className="px-3 py-1.5 mr-2 border border-gray-300 rounded-xl text-sm bg-white text-gray-800 font-semibold cursor-pointer"
+                >
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
+              </div>
+              {status === 'Inactive' && (
+                <PrimaryButton
+                  onClick={() =>
+                    router.push(`/dashboard/hr/exit/${initialData.id}`)
+                  }
+                >
+                  Exit Employee
+                </PrimaryButton>
+              )}
             </div>
-            {status === 'Inactive' && (
-              <PrimaryButton
-                onClick={() =>
-                  router.push(`/dashboard/hr/exit/${initialData.id}`)
-                }
-              >
-                Exit Employee
-              </PrimaryButton>
-            )}
           </div>
-        </div>
+        )}
         <div>
           <EducationSection
             educations={educations}
@@ -483,36 +486,12 @@ export default function EmployeeView({
             isView={true}
           />
         </div>
-
-        {(initialData.createdAt ||
-          initialData.updatedAt ||
-          initialData.createdBy ||
-          initialData.createBy ||
-          initialData.created_by) && (
+        
+        {(initialData.createdAt || initialData.updatedAt || initialData.createdBy || initialData.createBy || initialData.created_by) && (
           <div className="flex flex-col text-xs text-gray-400 font-medium pt-4 mt-6 border-t border-gray-100">
-            <span>
-              Created:{' '}
-              {initialData.createdAt
-                ? new Date(initialData.createdAt).toLocaleString()
-                : ''}{' '}
-              {initialData.createdBy ||
-              initialData.createBy ||
-              initialData.created_by
-                ? `by ${initialData.createdBy || initialData.createBy || initialData.created_by}`
-                : ''}
-            </span>
+            <span>Created: {initialData.createdAt ? new Date(initialData.createdAt).toLocaleString() : ''} {(initialData.createdBy || initialData.createBy || initialData.created_by) ? `by ${initialData.createdBy || initialData.createBy || initialData.created_by}` : ''}</span>
             {(initialData.updatedAt || initialData.updated_at) && (
-              <span>
-                Updated:{' '}
-                {new Date(
-                  initialData.updatedAt || initialData.updated_at
-                ).toLocaleString()}{' '}
-                {initialData.updatedBy ||
-                initialData.UpdatedBy ||
-                initialData.updated_by
-                  ? `by ${initialData.updatedBy || initialData.UpdatedBy || initialData.updated_by}`
-                  : ''}
-              </span>
+              <span>Updated: {new Date(initialData.updatedAt || initialData.updated_at).toLocaleString()} {(initialData.updatedBy || initialData.UpdatedBy || initialData.updated_by) ? `by ${initialData.updatedBy || initialData.UpdatedBy || initialData.updated_by}` : ''}</span>
             )}
           </div>
         )}

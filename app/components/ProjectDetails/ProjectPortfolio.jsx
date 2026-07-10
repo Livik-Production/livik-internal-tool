@@ -240,7 +240,7 @@ function ProjectCard({ project, onEdit, onDelete, onTeamClick, onComplete }) {
             <span className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">
               Assigned Team
             </span>
-            <span className="text-[11px] font-bold text-[#004cf0] bg-blue-50 px-2 py-0.5 rounded-full">
+            <span className="text-[11px] font-bold text-[#004475] bg-blue-50 px-2 py-0.5 rounded-full">
               {project.members?.length || 0} Members
             </span>
           </div>
@@ -320,6 +320,7 @@ function ProjectTeamModal({
   open,
   onClose,
   project,
+  benchData = [],
   onMemberClick,
   onUnassign,
   onAssign,
@@ -355,6 +356,30 @@ function ProjectTeamModal({
     };
   });
 
+  const benchMembers = benchData
+    .filter((emp) => emp.status !== 'Assigned')
+    .map((emp) => ({
+      ...emp,
+      id: emp.id,
+      name: emp.name,
+      role: emp.designation || 'Staff',
+      status: 'Available',
+      skills: Array.isArray(emp.skills)
+        ? emp.skills
+        : emp.skills
+          ? emp.skills.split(',')
+          : [],
+      avatar: emp.avatar || emp.photo,
+      initials: (emp.name || 'Unknown')
+        .split(' ')
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((n) => n[0].toUpperCase())
+        .join(''),
+    }));
+
+  const displayMembers = activeTab === 'assigned' ? teamMembers : benchMembers;
+
   const filteredMembers = displayMembers.filter(
     (m) =>
       m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -383,27 +408,24 @@ function ProjectTeamModal({
     >
       <div className="flex flex-col h-full">
         {/* Tabs */}
-        <div className="flex items-center border-b border-gray-200 px-6 pt-2 bg-gray-50/50">
-          <button
+        <div className="flex items-center border-b border-gray-200 px-6 pt-2 bg-gray-50/50 gap-1.5">
+          <TabButton
+            isActive={activeTab === 'assigned'}
             onClick={() => setActiveTab('assigned')}
-            className={`px-4 py-3 text-sm font-bold border-b-2 transition-all ${
-              activeTab === 'assigned'
-                ? 'border-[#004475] text-[#004475]'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
           >
-            Assigned Team ({teamMembers.length})
-          </button>
-          <button
+            <div className="flex items-center gap-2">
+              Assigned Team
+              <span className="bg-gray-100 text-[#004475] py-0.5 px-2 rounded-full text-xs border border-gray-200">
+                {teamMembers.length}
+              </span>
+            </div>
+          </TabButton>
+          <TabButton
+            isActive={activeTab === 'bench'}
             onClick={() => setActiveTab('bench')}
-            className={`px-4 py-3 text-sm font-bold border-b-2 transition-all ${
-              activeTab === 'bench'
-                ? 'border-[#004475] text-[#004475]'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
           >
             Bench Talent
-          </button>
+          </TabButton>
         </div>
 
         {/* Search & Filter */}
@@ -415,11 +437,7 @@ function ProjectTeamModal({
             />
             <input
               type="text"
-              placeholder={
-                activeTab === 'assigned'
-                  ? 'Search assigned members...'
-                  : 'Search bench talent...'
-              }
+              placeholder={activeTab === 'assigned' ? 'Search assigned members...' : 'Search bench talent...'}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-[#004475] transition-all"
@@ -428,7 +446,7 @@ function ProjectTeamModal({
           {activeTab === 'assigned' && (
             <button
               onClick={() => setActiveTab('bench')}
-              className="flex items-center gap-2 px-4 py-2 bg-[#004cf0] text-white rounded-xl text-sm font-bold hover:bg-[#003bcc] transition-all shrink-0"
+              className="flex items-center gap-2 px-4 py-2 bg-[#004475] text-white rounded-xl text-sm font-bold hover:bg-[#003bcc] transition-all shrink-0"
             >
               <UserPlus size={16} />
               Add Team
@@ -437,10 +455,10 @@ function ProjectTeamModal({
         </div>
 
         {/* Member List */}
-        <div className="flex-1 overflow-y-auto max-h-[450px] no-scrollbar px-6 py-4 space-y-6">
-          {filteredMembers.map((member) => (
+        <div className="flex-1 overflow-y-auto max-h-[250px] no-scrollbar px-6 py-4 space-y-6">
+          {filteredMembers.map((member, idx) => (
             <div
-              key={member.id}
+              key={`${member.id}-${idx}`}
               className="flex items-start justify-between group cursor-pointer hover:bg-blue-50/50 p-2 -m-2 rounded-xl transition-all"
               onClick={() => onMemberClick?.(member)}
             >
@@ -454,7 +472,7 @@ function ProjectTeamModal({
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-lg font-bold">
+                      <div className="w-full h-full flex items-center justify-center bg-[#004475] text-white text-lg font-bold">
                         {member.initials}
                       </div>
                     )}
@@ -485,42 +503,42 @@ function ProjectTeamModal({
                 </div>
               </div>
 
-              {activeTab === 'assigned' ? (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onUnassign?.(member);
-                  }}
-                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                  title="Unassign Member"
-                >
-                  <UserMinus size={18} />
-                </button>
-              ) : (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onAssign?.(member);
-                  }}
-                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                  title="Assign Member"
-                >
-                  <UserPlus size={18} />
-                </button>
-              )}
-            </div>
-          ))}
+                  {activeTab === 'assigned' ? (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onUnassign?.(member);
+                      }}
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                      title="Unassign Member"
+                    >
+                      <UserMinus size={18} />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onAssign?.(member);
+                      }}
+                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                      title="Assign Member"
+                    >
+                      <UserPlus size={18} />
+                    </button>
+                  )}
+                </div>
+              ))}
 
-          {filteredMembers.length === 0 && (
-            <div className="py-12 text-center flex flex-col items-center gap-3">
-              <Users className="text-gray-200" size={48} />
-              <p className="text-sm font-medium text-gray-500">
-                {activeTab === 'assigned'
-                  ? 'No team members assigned to this project'
-                  : 'No available talent found'}
-              </p>
-            </div>
-          )}
+              {filteredMembers.length === 0 && (
+                <div className="py-12 text-center flex flex-col items-center gap-3">
+                  <Users className="text-gray-200" size={48} />
+                  <p className="text-sm font-medium text-gray-500">
+                    {activeTab === 'assigned'
+                      ? 'No team members assigned to this project'
+                      : 'No available talent found'}
+                  </p>
+                </div>
+              )}
         </div>
       </div>
     </CustomModalForm>
@@ -573,6 +591,7 @@ function CreateProjectModal({ open, onClose, onSubmit }) {
       setErrors(errs);
       return;
     }
+
 
     setIsSubmitting(true);
     try {
@@ -978,6 +997,9 @@ function EditProjectModal({ open, onClose, project, onUpdate, isUpdating }) {
       start: form.start,
       description: form.description,
       priority: form.priority,
+      manager: form.manager,
+      techStack: form.techStack,
+      status: form.status,
       progress: parseInt(form.progress) || 0,
       team: form.team
         .split(',')
@@ -1283,6 +1305,62 @@ function EditProjectModal({ open, onClose, project, onUpdate, isUpdating }) {
                 ))}
               </div>
             </div>
+            
+            {/* Record Info */}
+            <div className="md:col-span-2 pt-6 mt-2 border-t border-gray-100">
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
+                Record Info
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                  <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
+                    Created At
+                  </div>
+                  <div className="text-sm font-medium text-gray-800">
+                    {project?.createdAt ? new Date(project.createdAt).toLocaleDateString('en-IN', {
+                      day: '2-digit', month: 'short', year: 'numeric',
+                    }) : 'N/A'}
+                  </div>
+                  {project?.createdAt && (
+                    <div className="text-xs text-gray-500 mt-0.5">
+                      {new Date(project.createdAt).toLocaleTimeString('en-IN', {
+                        hour: '2-digit', minute: '2-digit', hour12: true,
+                      })}
+                    </div>
+                  )}
+                  <div className="text-xs text-[#004475] font-semibold mt-1.5 flex items-center gap-1">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    {project?.createdBy || project?.createBy || project?.created_by || 'System'}
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                  <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
+                    Last Updated
+                  </div>
+                  <div className="text-sm font-medium text-gray-800">
+                    {project?.updatedAt || project?.updated_at ? new Date(project.updatedAt || project.updated_at).toLocaleDateString('en-IN', {
+                      day: '2-digit', month: 'short', year: 'numeric',
+                    }) : 'N/A'}
+                  </div>
+                  {(project?.updatedAt || project?.updated_at) && (
+                    <div className="text-xs text-gray-500 mt-0.5">
+                      {new Date(project.updatedAt || project.updated_at).toLocaleTimeString('en-IN', {
+                        hour: '2-digit', minute: '2-digit', hour12: true,
+                      })}
+                    </div>
+                  )}
+                  <div className="text-xs text-[#004475] font-semibold mt-1.5 flex items-center gap-1">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    {project?.updatedBy || project?.UpdatedBy || project?.updated_by || 'System'}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </form>
       </div>
@@ -1298,6 +1376,8 @@ export default function ProjectPortfolio({
   projectData,
   setProjectData,
   loading,
+  benchData = [],
+  setBenchData,
 }) {
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -1311,6 +1391,8 @@ export default function ProjectPortfolio({
   const [selectedMember, setSelectedMember] = useState(null);
   const [unassignConfirmOpen, setUnassignConfirmOpen] = useState(false);
   const [memberToUnassign, setMemberToUnassign] = useState(null);
+  const [assignConfirmOpen, setAssignConfirmOpen] = useState(false);
+  const [memberToAssign, setMemberToAssign] = useState(null);
   const [createSuccessOpen, setCreateSuccessOpen] = useState(false);
   const [lastCreatedProject, setLastCreatedProject] = useState(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -1321,6 +1403,7 @@ export default function ProjectPortfolio({
   const [itemsPerPage, setItemsPerPage] = useState(6);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isUnassigning, setIsUnassigning] = useState(false);
+  const [isAssigning, setIsAssigning] = useState(false);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -1378,26 +1461,50 @@ export default function ProjectPortfolio({
         });
 
         if (res.ok) {
-          // Update local state
-          const updatedMembers = selectedProject.members.filter(
-            (m) => (m.employee?.id || m.employeeId) !== memberToUnassign.id
+          setProjectData((prevData) =>
+            prevData.map((p) => {
+              if (p.id === selectedProject.id) {
+                const updatedMembers = (p.members || []).filter(
+                  (m) => (m.employee?.id || m.employeeId) !== memberToUnassign.id
+                );
+                return {
+                  ...p,
+                  members: updatedMembers,
+                  team: updatedMembers.map((m) =>
+                    m.employee
+                      ? `${m.employee.firstName} ${m.employee.lastName}`
+                      : 'Unknown'
+                  ),
+                };
+              }
+              return p;
+            })
           );
 
-          const updatedProject = {
-            ...selectedProject,
-            members: updatedMembers,
-            team: updatedMembers.map((m) =>
-              m.employee
-                ? `${m.employee.firstName} ${m.employee.lastName}`
-                : 'Unknown'
-            ),
-          };
+          setSelectedProject((prevProj) => {
+            if (!prevProj) return null;
+            const updatedMembers = (prevProj.members || []).filter(
+              (m) => (m.employee?.id || m.employeeId) !== memberToUnassign.id
+            );
+            return {
+              ...prevProj,
+              members: updatedMembers,
+              team: updatedMembers.map((m) =>
+                m.employee
+                  ? `${m.employee.firstName} ${m.employee.lastName}`
+                  : 'Unknown'
+              ),
+            };
+          });
 
-          setProjectData((prev) =>
-            prev.map((p) => (p.id === selectedProject.id ? updatedProject : p))
+          setBenchData?.((prev) =>
+            prev.map((emp) =>
+              String(emp.id) === String(memberToUnassign.id)
+                ? { ...emp, status: 'Available' }
+                : emp
+            )
           );
 
-          setSelectedProject(updatedProject);
           setUnassignConfirmOpen(false);
           setMemberToUnassign(null);
           showSuccessToast('Team member unassigned successfully!');
@@ -1414,16 +1521,22 @@ export default function ProjectPortfolio({
     }
   };
 
-  const handleAssignClick = async (member) => {
-    if (selectedProject && member) {
+  const handleAssignClick = (member) => {
+    setMemberToAssign(member);
+    setAssignConfirmOpen(true);
+  };
+
+  const handleConfirmAssign = async () => {
+    if (selectedProject && memberToAssign) {
+      setIsAssigning(true);
       try {
         const res = await fetch('/api/projects/assign', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             projectId: selectedProject.id,
-            employeeId: member.id,
-            role: member.designation || 'Staff',
+            employeeId: memberToAssign.id,
+            role: memberToAssign.designation || 'Staff',
           }),
         });
 
@@ -1433,31 +1546,51 @@ export default function ProjectPortfolio({
           // since the modal member has the employee data
           const addedMember = {
             ...newAssignment,
-            employeeId: member.id,
-            employee: member,
-            role: member.designation || 'Staff',
+            employeeId: memberToAssign.id,
+            employee: memberToAssign,
+            role: memberToAssign.designation || 'Staff'
           };
-
-          const updatedMembers = [
-            ...(selectedProject.members || []),
-            addedMember,
-          ];
-
-          const updatedProject = {
-            ...selectedProject,
-            members: updatedMembers,
-            team: updatedMembers.map((m) =>
-              m.employee
-                ? `${m.employee.firstName} ${m.employee.lastName}`
-                : 'Unknown'
-            ),
-          };
-
-          setProjectData((prev) =>
-            prev.map((p) => (p.id === selectedProject.id ? updatedProject : p))
+          
+          setProjectData((prevData) =>
+            prevData.map((p) => {
+              if (p.id === selectedProject.id) {
+                const updatedMembers = [...(p.members || []), addedMember];
+                return {
+                  ...p,
+                  members: updatedMembers,
+                  team: updatedMembers.map((m) =>
+                    m.employee
+                      ? `${m.employee.firstName} ${m.employee.lastName}`
+                      : 'Unknown'
+                  ),
+                };
+              }
+              return p;
+            })
           );
 
-          setSelectedProject(updatedProject);
+          setSelectedProject((prevProj) => {
+            if (!prevProj) return null;
+            const updatedMembers = [...(prevProj.members || []), addedMember];
+            return {
+              ...prevProj,
+              members: updatedMembers,
+              team: updatedMembers.map((m) =>
+                m.employee
+                  ? `${m.employee.firstName} ${m.employee.lastName}`
+                  : 'Unknown'
+              ),
+            };
+          });
+
+          setBenchData?.((prev) =>
+            prev.map((emp) =>
+              String(emp.id) === String(memberToAssign.id) ? { ...emp, status: 'Assigned' } : emp
+            )
+          );
+
+          setAssignConfirmOpen(false);
+          setMemberToAssign(null);
           showSuccessToast('Team member assigned successfully!');
         } else {
           showErrorToast('Failed to assign team member.');
@@ -1465,6 +1598,8 @@ export default function ProjectPortfolio({
       } catch (err) {
         showErrorToast('An error occurred during assignment.');
         console.error('Assign error:', err);
+      } finally {
+        setIsAssigning(false);
       }
     }
   };
@@ -1620,10 +1755,7 @@ export default function ProjectPortfolio({
                   className="absolute right-2 top-1 shadow-none bg-transparent hover:bg-transparent"
                   title="Clear search"
                 >
-                  <X
-                    size={14}
-                    className="text-gray-400 hover:text-red-500 hover:scale-110"
-                  />
+                  <X size={14} className="text-gray-400 hover:text-red-500 hover:scale-110" />
                 </IconButton>
               )}
             </div>
@@ -1664,10 +1796,7 @@ export default function ProjectPortfolio({
                   className="absolute right-2 top-1 shadow-none bg-transparent hover:bg-transparent"
                   title="Clear search"
                 >
-                  <X
-                    size={14}
-                    className="text-gray-400 hover:text-red-500 hover:scale-110"
-                  />
+                  <X size={14} className="text-gray-400 hover:text-red-500 hover:scale-110" />
                 </IconButton>
               )}
             </div>
@@ -1781,6 +1910,7 @@ export default function ProjectPortfolio({
             setSelectedProject(null);
           }}
           project={selectedProject}
+          benchData={benchData}
           onMemberClick={handleMemberClick}
           onUnassign={handleUnassignClick}
           onAssign={handleAssignClick}
@@ -1838,6 +1968,28 @@ export default function ProjectPortfolio({
           onCancel={() => {
             setUnassignConfirmOpen(false);
             setMemberToUnassign(null);
+          }}
+        />
+      )}
+
+      {assignConfirmOpen && (
+        <ConfirmDialog
+          open={assignConfirmOpen}
+          title="Assign Team Member"
+          loading={isAssigning}
+          description={
+            <p>
+              Are you sure you want to assign{' '}
+              <span className="font-bold">{memberToAssign?.name}</span> to{' '}
+              <span className="font-bold">{selectedProject?.name}</span>?
+            </p>
+          }
+          confirmLabel="Assign Member"
+          cancelLabel="Cancel"
+          onConfirm={handleConfirmAssign}
+          onCancel={() => {
+            setAssignConfirmOpen(false);
+            setMemberToAssign(null);
           }}
         />
       )}

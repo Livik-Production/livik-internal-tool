@@ -1,15 +1,14 @@
-// app/api/cron/invoice-reminder/route.ts
 import { NextResponse } from 'next/server';
 import { processInvoiceReminders } from '../../../../services/invoice-reminder.service';
 
 export async function GET(request: Request) {
   const startTime = Date.now();
-  console.log('[Cron InvoiceReminder] Cron started.');
+  const url = new URL(request.url);
+  const todayParam = url.searchParams.get('today');
+
+  console.log('[Cron Invoice Reminder] Cron started.');
 
   try {
-    // 1. Authorization check
-    // Vercel internally calls cron routes with the header: x-vercel-cron: 1
-    // Optionally, CRON_SECRET can also be set for external/manual triggers.
     const vercelCronHeader = request.headers.get('x-vercel-cron');
     const authHeader = request.headers.get('authorization');
     const cronSecret = process.env.CRON_SECRET;
@@ -20,37 +19,41 @@ export async function GET(request: Request) {
       (authHeader === `Bearer ${cronSecret}` || authHeader === cronSecret);
 
     if (!isVercelCron && !isValidSecret) {
-      console.warn('[Cron InvoiceReminder] Unauthorized access attempt.', {
-        vercelCronHeader,
-        hasAuthHeader: !!authHeader,
-        hasCronSecret: !!cronSecret,
-      });
+      console.warn('[Cron Invoice Reminder] Unauthorized access attempt.');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // 2. Process invoice reminders
-    const result = await processInvoiceReminders();
+    let todayOverride: Date | undefined;
+
+    if (todayParam) {
+      todayOverride = new Date(todayParam);
+
+      if (Number.isNaN(todayOverride.getTime())) {
+        return NextResponse.json(
+          { error: 'Invalid today query parameter. Use YYYY-MM-DD.' },
+          { status: 400 }
+        );
+      }
+    }
+
+    const result = await processInvoiceReminders({ today: todayOverride });
 
     const duration = Date.now() - startTime;
-    console.log('[Cron InvoiceReminder] Cron completed.');
+    console.log('[Cron Invoice Reminder] Cron completed.');
     console.log(
-      `[Cron InvoiceReminder] Summary — Processed: ${result.processed}, Emails: ${result.emailsSent}, Notifications: ${result.notificationsCreated}, Failed: ${result.failed}, Duration: ${duration}ms`
+      `[Cron Invoice Reminder] Summary - Processed: ${result.processed}, Emails Sent: ${result.emailsSent}, Notifications Created: ${result.notificationsCreated}, Failed: ${result.failed}, Duration: ${duration}ms`
     );
 
     return NextResponse.json({
-      success: true,
       processed: result.processed,
       emailsSent: result.emailsSent,
       notificationsCreated: result.notificationsCreated,
       failed: result.failed,
       durationMs: duration,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const duration = Date.now() - startTime;
-    console.error(
-      `[Cron InvoiceReminder] Cron failed after ${duration}ms:`,
-      error
-    );
+    console.error(`[Cron Invoice Reminder] Cron failed after ${duration}ms:`, error);
     return NextResponse.json(
       {
         error: 'Internal Server Error',
@@ -61,7 +64,6 @@ export async function GET(request: Request) {
   }
 }
 
-// Support POST requests as well for flexibility
 export async function POST(request: Request) {
   return GET(request);
 }

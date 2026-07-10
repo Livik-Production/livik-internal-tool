@@ -200,28 +200,21 @@ export default function ApprovalCard({
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
                       if (e.currentTarget.nextElementSibling) {
-                        e.currentTarget.nextElementSibling.style.display =
-                          'inline-flex';
+                        e.currentTarget.nextElementSibling.style.display = 'inline-flex';
                       }
                     }}
                   />
                 )}
                 <span
                   className={`inline-flex items-center justify-center w-10 h-10 rounded-full cursor-pointer hover:bg-gray-100 transition-colors ${isLeaveRequest ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'}`}
-                  style={{
-                    display: approval.employeePhoto ? 'none' : 'inline-flex',
-                  }}
+                  style={{ display: approval.employeePhoto ? 'none' : 'inline-flex' }}
                   onClick={(e) => {
                     e.stopPropagation();
                     onViewQuickInfo?.(approval.empData || approval);
                   }}
                 >
                   <span className="text-sm font-bold">
-                    {approval.employee
-                      ? approval.employee.charAt(0)
-                      : isLeaveRequest
-                        ? 'LR'
-                        : 'RC'}
+                    {approval.employee ? approval.employee.charAt(0) : (isLeaveRequest ? 'LR' : 'RC')}
                   </span>
                 </span>
                 <div>
@@ -254,13 +247,12 @@ export default function ApprovalCard({
               </div>
 
               <span
-                className={`inline-block text-[11px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider ${
-                  approval.status === 'Pending'
+                className={`inline-block text-[11px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider ${approval.status === 'Pending'
                     ? 'bg-yellow-50 text-yellow-700 border border-yellow-100'
                     : approval.status === 'Approved'
                       ? 'bg-green-50 text-green-700 border border-green-100'
                       : 'bg-red-50 text-red-700 border border-red-100'
-                }`}
+                  }`}
               >
                 {approval.status || 'Pending'}
               </span>
@@ -313,6 +305,7 @@ export default function ApprovalCard({
                         {formatDate(approval.appliedDate || approval.createdAt)}
                       </div>
                     </div>
+
                   </div>
                   {approval.isHalfDay && (
                     <div className="w-1/3">
@@ -351,11 +344,10 @@ export default function ApprovalCard({
               <>
                 <Button
                   onClick={() => setConfirmAction('reject')}
-                  className={`px-5 py-1.5 rounded-lg text-xs font-bold transition-all border flex items-center gap-1.5 ${
-                    isDisabled || actionLoading
+                  className={`px-5 py-1.5 rounded-lg text-xs font-bold transition-all border flex items-center gap-1.5 ${isDisabled || actionLoading
                       ? 'bg-red-500 text-white cursor-not-allowed'
                       : 'bg-white text-red-500 border-red-200 hover:bg-red-50 hover:border-red-300'
-                  }`}
+                    }`}
                   disabled={isDisabled || !!actionLoading}
                 >
                   {actionLoading === 'reject' && (
@@ -365,11 +357,10 @@ export default function ApprovalCard({
                 </Button>
                 <PrimaryButton
                   onClick={() => setConfirmAction('approve')}
-                  className={`px-5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 ${
-                    isDisabled || actionLoading
+                  className={`px-5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 ${isDisabled || actionLoading
                       ? 'bg-[#004475] text-white cursor-not-allowed'
                       : 'bg-[#003273] text-white hover:bg-[#002657] hover:shadow'
-                  }`}
+                    }`}
                   disabled={isDisabled || !!actionLoading}
                 >
                   {actionLoading === 'approve' && (

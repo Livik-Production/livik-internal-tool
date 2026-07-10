@@ -48,7 +48,7 @@ export default function PendingEmployees({
   // Filter only pending employees (including PENDING_ADMIN)
   let employees = allEmployees.filter((emp) => {
     const statusUpper = emp.status?.toUpperCase();
-    if (statusUpper === 'ACTIVE' || statusUpper === 'APPROVED') {
+    if (statusUpper === 'ACTIVE' || statusUpper === 'APPROVED' || statusUpper === 'INACTIVE') {
       return false;
     }
 
@@ -404,19 +404,19 @@ export default function PendingEmployees({
   return (
     <>
       <div className="">
-        <div className="flex justify-end items-center mb-2 gap-3">
+        <div className="flex justify-end items-center mb-2 gap-3 min-h-[56px]">
           {searchElement && <div>{searchElement}</div>}
-          {employees.length > 0 && (
-            <PrimaryButton
-              onClick={handleApproveAllClick}
-              disabled={!hasApprovableEmployees || isUpdating}
-              className="px-4 py-2 m-2 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              title={!canApprove ? 'Approve access restricted' : 'Approve All'}
-            >
-              <CheckCircle size={16} />
-              Approve All ({employees.length})
-            </PrimaryButton>
-          )}
+          <PrimaryButton
+            onClick={handleApproveAllClick}
+            disabled={!hasApprovableEmployees || isUpdating || employees.length === 0}
+            className={`px-4 py-2 m-2 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ${
+              employees.length > 0 ? '' : 'invisible'
+            }`}
+            title={!canApprove ? 'Approve access restricted' : 'Approve All'}
+          >
+            <CheckCircle size={16} />
+            Approve All ({employees.length})
+          </PrimaryButton>
         </div>
 
         <div className="bg-white rounded-xl shadow-lg border border-gray-200">

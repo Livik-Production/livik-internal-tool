@@ -274,7 +274,9 @@ const BalanceDetailModal = ({
 
   const customTitle = (
     <div className="font-normal text-base block w-full justify-start items-start">
-      <h3 className="text-xl font-bold text-gray-900">Leave Balance Details</h3>
+      <h3 className="text-xl font-bold text-gray-900">
+        Leave Balance Details
+      </h3>
       <div className="flex justify-start gap-4">
         <div className="flex items-center gap-2 mt-1">
           <span className="text-sm text-gray-600 font-semibold">
@@ -290,13 +292,16 @@ const BalanceDetailModal = ({
             <span className="font-semibold">Balance Leaves : </span>
             <span className="text-green-600 font-medium">
               {Math.max(0, yearlySummary.cl - yearlySummary.clUsed) +
-                Math.max(0, yearlySummary.sl - yearlySummary.slUsed)}{' '}
+                Math.max(
+                  0,
+                  yearlySummary.sl - yearlySummary.slUsed
+                )}{' '}
               days
             </span>
           </div>
           <div className="text-xs text-gray-500 flex items-center h-5 mt-0.5">
-            SL: {Math.max(0, yearlySummary.sl - yearlySummary.slUsed)} | CL:{' '}
-            {Math.max(0, yearlySummary.cl - yearlySummary.clUsed)}
+            SL: {Math.max(0, yearlySummary.sl - yearlySummary.slUsed)} |
+            CL: {Math.max(0, yearlySummary.cl - yearlySummary.clUsed)}
           </div>
         </div>
       </div>
@@ -405,23 +410,11 @@ const BalanceDetailModal = ({
                               </span>
                             )}
                           </div>
-                          {(row.createdAt ||
-                            row.updatedAt ||
-                            row.createdBy) && (
+                          {(row.createdAt || row.updatedAt || row.createdBy) && (
                             <div className="flex flex-col text-[9px] text-gray-400 font-medium whitespace-nowrap mt-0.5 leading-tight">
-                              <span>
-                                Created:{' '}
-                                {row.createdAt
-                                  ? new Date(row.createdAt).toLocaleDateString()
-                                  : ''}{' '}
-                                {row.createdBy ? `by ${row.createdBy}` : ''}
-                              </span>
+                              <span>Created: {row.createdAt ? new Date(row.createdAt).toLocaleDateString() : ''} {row.createdBy ? `by ${row.createdBy}` : ''}</span>
                               {row.updatedAt && (
-                                <span>
-                                  Updated:{' '}
-                                  {new Date(row.updatedAt).toLocaleDateString()}{' '}
-                                  {row.updatedBy ? `by ${row.updatedBy}` : ''}
-                                </span>
+                                <span>Updated: {new Date(row.updatedAt).toLocaleDateString()} {row.updatedBy ? `by ${row.updatedBy}` : ''}</span>
                               )}
                             </div>
                           )}

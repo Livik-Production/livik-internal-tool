@@ -383,9 +383,7 @@ export default function AttendanceTab({
         date: initialDate,
         status: initialStatus,
         remarks: initialRemarks,
-        audit: summaryRow.dailyAudit
-          ? summaryRow.dailyAudit[initialDate]
-          : null,
+        audit: summaryRow.dailyAudit ? summaryRow.dailyAudit[initialDate] : null,
       });
       setDateSearchQuery('');
       setIsEditModalOpen(true);
@@ -565,11 +563,10 @@ export default function AttendanceTab({
       <div className="flex justify-end gap-2">
         <IconButton
           onClick={() => handleEdit(row.id)}
-          className={`p-1.5 rounded-full transition-colors ${
-            !canControlAllEmployees
+          className={`p-1.5 rounded-full transition-colors ${!canControlAllEmployees
               ? 'text-gray-400 cursor-not-allowed bg-gray-50'
               : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
-          }`}
+            }`}
           title={
             !canControlAllEmployees ? 'Edit access required' : 'Edit Record'
           }
@@ -580,11 +577,10 @@ export default function AttendanceTab({
 
         <IconButton
           onClick={() => isAdmin && handleDelete(row.id)}
-          className={`p-1.5 rounded-full transition-colors ${
-            !isAdmin
+          className={`p-1.5 rounded-full transition-colors ${!isAdmin
               ? 'text-gray-400 cursor-not-allowed bg-gray-50'
               : 'text-gray-600 hover:text-red-600 hover:bg-red-50'
-          }`}
+            }`}
           title={!isAdmin ? 'Delete access restricted for HR' : 'Delete Record'}
           disabled={!isAdmin}
         >
@@ -624,11 +620,10 @@ export default function AttendanceTab({
           <span className="text-sm font-medium text-gray-700">Month :</span>
           <div className="relative min-w-[160px]">
             <div
-              className={`w-full border rounded-lg px-4 py-2.5 text-sm font-medium transition-colors cursor-pointer flex justify-between items-center gap-2 ${
-                isMonthDropdownOpen
+              className={`w-full border rounded-lg px-4 py-2.5 text-sm font-medium transition-colors cursor-pointer flex justify-between items-center gap-2 ${isMonthDropdownOpen
                   ? 'border-blue-500 ring-2 ring-blue-500 bg-white'
                   : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-              }`}
+                }`}
               onClick={() => setIsMonthDropdownOpen(!isMonthDropdownOpen)}
             >
               <span>
@@ -649,11 +644,10 @@ export default function AttendanceTab({
                   {filteredMonthOptions.map((m) => (
                     <div
                       key={m.value}
-                      className={`px-4 py-2.5 text-sm font-medium cursor-pointer hover:bg-blue-50 transition-colors ${
-                        selectedMonthNum === m.value
+                      className={`px-4 py-2.5 text-sm font-medium cursor-pointer hover:bg-blue-50 transition-colors ${selectedMonthNum === m.value
                           ? 'bg-blue-50 text-blue-600 font-semibold'
                           : 'text-gray-700'
-                      }`}
+                        }`}
                       onClick={() => {
                         setSelectedMonthNum(m.value);
                         setIsMonthDropdownOpen(false);
@@ -873,10 +867,7 @@ export default function AttendanceTab({
                                   setCurrentEditData({
                                     ...currentEditData,
                                     date: opt.value,
-                                    audit:
-                                      data.find(
-                                        (r) => r.empId === currentEditData.empId
-                                      )?.dailyAudit?.[opt.value] || null,
+                                    audit: data.find(r => r.empId === currentEditData.empId)?.dailyAudit?.[opt.value] || null,
                                   });
                                   setDateSearchQuery(opt.label);
                                   setIsDateOptionsOpen(false);
@@ -891,10 +882,10 @@ export default function AttendanceTab({
                               .toLowerCase()
                               .includes(dateSearchQuery.toLowerCase())
                           ).length === 0 && (
-                            <div className="px-3 py-2 text-sm text-gray-400 text-center">
-                              No dates found
-                            </div>
-                          )}
+                              <div className="px-3 py-2 text-sm text-gray-400 text-center">
+                                No dates found
+                              </div>
+                            )}
                         </div>
                       )}
                     </div>
@@ -908,10 +899,10 @@ export default function AttendanceTab({
                       currentEditData.empId,
                       currentEditData.date
                     ) && (
-                      <span className="ml-2 text-xs text-red-500 font-normal">
-                        (Locked — Approved Leave)
-                      </span>
-                    )}
+                        <span className="ml-2 text-xs text-red-500 font-normal">
+                          (Locked — Approved Leave)
+                        </span>
+                      )}
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {['Present', 'Absent', 'Half Day', 'Company Holiday'].map(
@@ -941,8 +932,7 @@ export default function AttendanceTab({
                               className="sr-only peer"
                             />
                             <span
-                              className={`px-3 py-1.5 text-xs font-semibold rounded-full border transition-colors ${
-                                currentEditData.status === status
+                              className={`px-3 py-1.5 text-xs font-semibold rounded-full border transition-colors ${currentEditData.status === status
                                   ? status === 'Present'
                                     ? 'bg-green-100 text-green-800 border-green-200'
                                     : status === 'Absent'
@@ -951,7 +941,7 @@ export default function AttendanceTab({
                                         ? 'bg-purple-100 text-purple-800 border-purple-200'
                                         : 'bg-yellow-100 text-yellow-800 border-yellow-200'
                                   : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
-                              }`}
+                                }`}
                             >
                               {status}
                             </span>
@@ -978,40 +968,12 @@ export default function AttendanceTab({
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm h-20 resize-none"
                   />
                 </div>
-
-                {(currentEditData.audit?.createdAt ||
-                  currentEditData.audit?.updatedAt ||
-                  currentEditData.audit?.createdBy ||
-                  currentEditData.audit?.createBy ||
-                  currentEditData.audit?.created_by) && (
+                
+                {(currentEditData.audit?.createdAt || currentEditData.audit?.updatedAt || currentEditData.audit?.createdBy || currentEditData.audit?.createBy || currentEditData.audit?.created_by) && (
                   <div className="flex flex-col text-[10px] text-gray-400 font-medium whitespace-nowrap mt-2">
-                    <span>
-                      Created:{' '}
-                      {currentEditData.audit.createdAt
-                        ? new Date(
-                            currentEditData.audit.createdAt
-                          ).toLocaleString()
-                        : ''}{' '}
-                      {currentEditData.audit.createdBy ||
-                      currentEditData.audit.createBy ||
-                      currentEditData.audit.created_by
-                        ? `by ${currentEditData.audit.createdBy || currentEditData.audit.createBy || currentEditData.audit.created_by}`
-                        : ''}
-                    </span>
-                    {(currentEditData.audit.updatedAt ||
-                      currentEditData.audit.updated_at) && (
-                      <span>
-                        Updated:{' '}
-                        {new Date(
-                          currentEditData.audit.updatedAt ||
-                            currentEditData.audit.updated_at
-                        ).toLocaleString()}{' '}
-                        {currentEditData.audit.updatedBy ||
-                        currentEditData.audit.UpdatedBy ||
-                        currentEditData.audit.updated_by
-                          ? `by ${currentEditData.audit.updatedBy || currentEditData.audit.UpdatedBy || currentEditData.audit.updated_by}`
-                          : ''}
-                      </span>
+                    <span>Created: {currentEditData.audit.createdAt ? new Date(currentEditData.audit.createdAt).toLocaleString() : ''} {(currentEditData.audit.createdBy || currentEditData.audit.createBy || currentEditData.audit.created_by) ? `by ${currentEditData.audit.createdBy || currentEditData.audit.createBy || currentEditData.audit.created_by}` : ''}</span>
+                    {(currentEditData.audit.updatedAt || currentEditData.audit.updated_at) && (
+                      <span>Updated: {new Date(currentEditData.audit.updatedAt || currentEditData.audit.updated_at).toLocaleString()} {(currentEditData.audit.updatedBy || currentEditData.audit.UpdatedBy || currentEditData.audit.updated_by) ? `by ${currentEditData.audit.updatedBy || currentEditData.audit.UpdatedBy || currentEditData.audit.updated_by}` : ''}</span>
                     )}
                   </div>
                 )}

@@ -272,9 +272,7 @@ function OtpLogin({ onBack, forgotPasswordMode = false }) {
         });
 
         if (!res.headers.get('content-type')?.includes('application/json')) {
-          setError(
-            `Unexpected server error (${res.status}). Please try again later.`
-          );
+          setError(`Unexpected server error (${res.status}). Please try again later.`);
           return;
         }
         const data = await res.json();
@@ -298,7 +296,7 @@ function OtpLogin({ onBack, forgotPasswordMode = false }) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ mobile }),
         });
-
+        
         let pwdData = { exists: false, hasPassword: false };
         if (pwdRes.headers.get('content-type')?.includes('application/json')) {
           pwdData = await pwdRes.json();
@@ -343,9 +341,7 @@ function OtpLogin({ onBack, forgotPasswordMode = false }) {
 
         if (!res.headers.get('content-type')?.includes('application/json')) {
           setResendCountdown(0);
-          setError(
-            `Unexpected server error (${res.status}). Please try again later.`
-          );
+          setError(`Unexpected server error (${res.status}). Please try again later.`);
           return;
         }
         const data = await res.json();
@@ -389,16 +385,16 @@ function OtpLogin({ onBack, forgotPasswordMode = false }) {
 
   return (
     <div className="w-full max-w-[450px] text-center animate-fadeIn px-5">
-      <div className="mb-6 text-left">
-        <button
-          type="button"
-          onClick={onBack}
-          className="inline-flex items-center gap-1 text-sm font-medium text-blue-500 hover:text-blue-400 hover:underline transition-colors duration-200"
-        >
-          <span>←</span>
-          <span>Back to Password Login</span>
-        </button>
-      </div>
+  <div className="mb-6 text-left">
+  <button
+    type="button"
+    onClick={onBack}
+    className="inline-flex items-center gap-1 text-sm font-medium text-blue-500 hover:text-blue-400 hover:underline transition-colors duration-200"
+  >
+    <span>←</span>
+    <span>Back to Password Login</span>
+  </button>
+</div>
 
       {!otpSent && (
         <form onSubmit={requestOtp} className="flex flex-col gap-4">
@@ -552,9 +548,7 @@ export default function LoginPage() {
         });
 
         if (!res.headers.get('content-type')?.includes('application/json')) {
-          throw new Error(
-            `Unexpected server error (${res.status}). Please try again later.`
-          );
+          throw new Error(`Unexpected server error (${res.status}). Please try again later.`);
         }
         const data = await res.json();
 
@@ -701,9 +695,7 @@ export default function LoginPage() {
 
           <div className="relative flex py-4 items-center">
             <div className="flex-grow border-t border-gray-600/30"></div>
-            <span className="flex-shrink mx-4 text-gray-400 text-[14px]">
-              or
-            </span>
+            <span className="flex-shrink mx-4 text-gray-400 text-[14px]">or</span>
             <div className="flex-grow border-t border-gray-600/30"></div>
           </div>
 

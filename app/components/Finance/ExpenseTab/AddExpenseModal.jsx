@@ -101,48 +101,33 @@ const AddExpenseModal = ({
       paymentMode: currentFormPaymentMode,
       amount: currentFormAmount,
       expenseDate: currentFormDateStr,
-      remarks: currentFormRemarks,
+      remarks: currentFormRemarks
     });
 
     const match = existingExpenses.find((existing) => {
       const existingCategory = (existing.category || '').trim().toLowerCase();
       const categoryMatch = existingCategory === currentFormCategory;
 
-      const existingItemName = (existing.itemName || existing.description || '')
-        .trim()
-        .toLowerCase();
+      const existingItemName = (existing.itemName || existing.description || '').trim().toLowerCase();
       const itemNameMatch = existingItemName === currentFormItemName;
 
-      const existingPaymentMode = (
-        existing.paymentMode ||
-        existing.paymentMethod ||
-        ''
-      )
-        .trim()
-        .toLowerCase();
+      const existingPaymentMode = (existing.paymentMode || existing.paymentMethod || '').trim().toLowerCase();
       const paymentModeMatch = existingPaymentMode === currentFormPaymentMode;
 
       const existingAmount = parseFloat(existing.amount);
       const amountMatch = existingAmount === currentFormAmount;
 
-      const existingDateStr = normalizeDateForInput(
-        existing.expenseDate || existing.date
-      );
+      const existingDateStr = normalizeDateForInput(existing.expenseDate || existing.date);
       const dateMatch = existingDateStr === currentFormDateStr;
 
       // Handle remarks carefully to match both db and transformed states
       let existingRemarks = '';
       if (existing.remarks !== undefined && existing.remarks !== null) {
         existingRemarks = existing.remarks.toString();
-      } else if (
-        existing.notes !== undefined &&
-        existing.notes !== null &&
-        existing.notes !== 'No notes'
-      ) {
+      } else if (existing.notes !== undefined && existing.notes !== null && existing.notes !== 'No notes') {
         existingRemarks = existing.notes.toString();
       }
-      const remarksMatch =
-        existingRemarks.trim().toLowerCase() === currentFormRemarks;
+      const remarksMatch = existingRemarks.trim().toLowerCase() === currentFormRemarks;
 
       const isMatch =
         categoryMatch &&
@@ -154,21 +139,17 @@ const AddExpenseModal = ({
 
       const isPartialMatch = categoryMatch && itemNameMatch;
       if (isPartialMatch && !isMatch) {
-        console.log(
-          '[Duplicate Check] Partial match (category & name) but mismatch on ID:',
-          existing.id,
-          {
-            paymentModeMatch,
-            amountMatch,
-            dateMatch,
-            remarksMatch,
-            existingDate: existing.expenseDate || existing.date,
-            existingDateStr,
-            formDateStr: currentFormDateStr,
-            existingRemarks,
-            formRemarks: currentFormRemarks,
-          }
-        );
+        console.log('[Duplicate Check] Partial match (category & name) but mismatch on ID:', existing.id, {
+          paymentModeMatch,
+          amountMatch,
+          dateMatch,
+          remarksMatch,
+          existingDate: existing.expenseDate || existing.date,
+          existingDateStr,
+          formDateStr: currentFormDateStr,
+          existingRemarks,
+          formRemarks: currentFormRemarks
+        });
       }
 
       return isMatch;
@@ -484,6 +465,12 @@ const AddExpenseModal = ({
         remarks: formData.remarks || null,
         status: formData.status,
       };
+
+      if (currentMode === 'add') {
+        payload.createdBy = authUser?.name || null;
+      } else if (currentMode === 'edit') {
+        payload.updatedBy = authUser?.name || null;
+      }
       let url = '/api/expense';
       let method = 'POST';
 
@@ -640,60 +627,55 @@ const AddExpenseModal = ({
               </div>
             </div>
           )}
-          {duplicateExpense && (
-            <div className="mb-4 p-4 bg-amber-50/50 border border-amber-200 rounded-xl animate-in fade-in slide-in-from-bottom-2 duration-300">
-              {/* <div className="flex items-center gap-2 mb-3 text-amber-800 font-semibold text-sm">
+    {duplicateExpense && (
+              <div className="mb-4 p-4 bg-amber-50/50 border border-amber-200 rounded-xl animate-in fade-in slide-in-from-bottom-2 duration-300">
+                {/* <div className="flex items-center gap-2 mb-3 text-amber-800 font-semibold text-sm">
                   <span className="text-base">⚠️</span>
                   <span>Duplicate Expense Detected (An identical record already exists)</span>
                 </div> */}
-
-              <div className="overflow-x-auto border border-amber-100 rounded-lg shadow-sm bg-white">
-                <table className="min-w-full divide-y divide-amber-100 text-xs text-left">
-                  <thead className="bg-amber-50/40 text-amber-800 font-semibold uppercase tracking-wider text-[10px]">
-                    <tr>
-                      <th className="px-4 py-2.5">Category</th>
-                      <th className="px-4 py-2.5">Expense Name</th>
-                      <th className="px-4 py-2.5">Date</th>
-                      <th className="px-4 py-2.5">Payment Mode</th>
-                      <th className="px-4 py-2.5 text-right">Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 text-gray-700 font-medium bg-white">
-                    <tr>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        📁 {duplicateExpense.category}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        {duplicateExpense.itemName}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        📅 {normalizeDateForInput(duplicateExpense.expenseDate)}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        {duplicateExpense.paymentMode}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-right font-bold text-gray-900">
-                        ₹
-                        {parseFloat(duplicateExpense.amount).toLocaleString(
-                          undefined,
-                          {
+                
+                <div className="overflow-x-auto border border-amber-100 rounded-lg shadow-sm bg-white">
+                  <table className="min-w-full divide-y divide-amber-100 text-xs text-left">
+                    <thead className="bg-amber-50/40 text-amber-800 font-semibold uppercase tracking-wider text-[10px]">
+                      <tr>
+                        <th className="px-4 py-2.5">Category</th>
+                        <th className="px-4 py-2.5">Expense Name</th>
+                        <th className="px-4 py-2.5">Date</th>
+                        <th className="px-4 py-2.5">Payment Mode</th>
+                        <th className="px-4 py-2.5 text-right">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 text-gray-700 font-medium bg-white">
+                      <tr>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          📁 {duplicateExpense.category}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          {duplicateExpense.itemName}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          📅 {normalizeDateForInput(duplicateExpense.expenseDate)}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          {duplicateExpense.paymentMode}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-right font-bold text-gray-900">
+                          ₹{parseFloat(duplicateExpense.amount).toLocaleString(undefined, {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
-                          }
-                        )}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              {duplicateExpense.remarks && (
-                <div className="mt-3 text-xs text-gray-500 bg-amber-50/30 p-2.5 rounded border border-amber-100/50">
-                  <span className="font-semibold text-gray-700">Remarks:</span>{' '}
-                  {duplicateExpense.remarks}
+                          })}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
-              )}
-            </div>
-          )}
+                {duplicateExpense.remarks && (
+                  <div className="mt-3 text-xs text-gray-500 bg-amber-50/30 p-2.5 rounded border border-amber-100/50">
+                    <span className="font-semibold text-gray-700">Remarks:</span> {duplicateExpense.remarks}
+                  </div>
+                )}
+              </div>
+            )}
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Expense Category */}
@@ -814,7 +796,7 @@ const AddExpenseModal = ({
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
+               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700">
                   Date <span className="text-red-500">*</span>
                 </label>
@@ -888,6 +870,8 @@ const AddExpenseModal = ({
                   </p>
                 )}
               </div>
+
+             
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
@@ -962,6 +946,8 @@ const AddExpenseModal = ({
               </div>
             </div>
 
+          
+
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">
                 Remarks
@@ -1014,6 +1000,14 @@ const AddExpenseModal = ({
                             }
                           )}
                         </div>
+                        {expenseData?.createdBy && (
+                          <div className="text-xs text-[#004475] font-semibold mt-1.5 flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            {expenseData.createdBy}
+                          </div>
+                        )}
                       </div>
                     )}
                     {expenseData?.updatedAt && (
@@ -1041,6 +1035,14 @@ const AddExpenseModal = ({
                             }
                           )}
                         </div>
+                        {expenseData?.updatedBy && (
+                          <div className="text-xs text-[#004475] font-semibold mt-1.5 flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            {expenseData.updatedBy}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

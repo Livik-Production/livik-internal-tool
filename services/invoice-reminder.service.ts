@@ -1,5 +1,6 @@
 import { prisma } from '../lib/prisma';
 import { sendInvoiceReminderEmail } from '../lib/mailer';
+import { calculateInvoiceCycle, getInvoiceReminderCandidates } from '../helpers/invoice-date.helper';
 import { NotificationService } from './notification.service.js';
 
 export interface InvoiceReminderProcessResult {
@@ -9,18 +10,21 @@ export interface InvoiceReminderProcessResult {
   failed: number;
 }
 
+export interface InvoiceReminderProcessOptions {
+  today?: Date;
+}
+
 /**
- * Service to process daily customer invoice reminders.
+ * Service to process invoice reminders based on the customer billing cycle.
  *
- * Logic:
- *   - For each active customer with `reminderEnabled = true`, compute the
- *     target reminder date as: `invoiceToDay - reminderDaysBefore` days.
- *   - If today matches that computed reminder date, send email + in-app
- *     notifications to all super_admin employees.
- *   - Duplicate prevention: a log entry per (customerId, reminderDate) ensures
- *     we never send the same reminder twice in the same billing cycle.
+ * The invoice cycle spans from the configured invoice-from day in the current
+ * month to the configured invoice-to day in the next month. A reminder is sent
+ * on the real reminder date derived from the invoice end date and the configured
+ * number of days before it.
  */
-export async function processInvoiceReminders(): Promise<InvoiceReminderProcessResult> {
+export async function processInvoiceReminders(
+  options: InvoiceReminderProcessOptions = {}
+): Promise<InvoiceReminderProcessResult> {
   const startTime = Date.now();
 
   console.log('=================================================');
@@ -35,16 +39,12 @@ export async function processInvoiceReminders(): Promise<InvoiceReminderProcessR
   };
 
   try {
-    const today = new Date();
-    const currentDay = today.getDate(); // e.g. 19
-
-    // Normalised "today" at midnight UTC for log key comparisons
+    const today = options.today ? new Date(options.today) : new Date();
     const todayNormalised = new Date(
-      Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())
+      Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())
     );
 
     console.log(`[InvoiceReminderService] Today's date: ${today.toISOString()}`);
-    console.log(`[InvoiceReminderService] Current day-of-month: ${currentDay}`);
 
     console.log('[InvoiceReminderService] SMTP Config:');
     console.log('  EMAIL_ID:', process.env.EMAIL_ID);
@@ -54,13 +54,14 @@ export async function processInvoiceReminders(): Promise<InvoiceReminderProcessR
     );
 
     /**
-     * 1. Fetch all active customers that have reminders enabled and have
-     *    both invoiceFromDay and invoiceToDay configured.
+     * 1. Fetch all active customers that have reminders enabled and a fully
+     *    configured invoice cycle.
      */
     const allCustomers = await prisma.customer.findMany({
       where: {
         status: 'active',
         reminderEnabled: true,
+        invoiceFromDay: { not: null },
         invoiceToDay: { not: null },
       },
     });
@@ -70,33 +71,34 @@ export async function processInvoiceReminders(): Promise<InvoiceReminderProcessR
     );
 
     /**
-     * 2. Filter customers where TODAY is the reminder day.
-     *
-     *    reminderDay = invoiceToDay - reminderDaysBefore
-     *
-     *    We handle month-wrap-around: if the computed day falls below 1 we
-     *    don't bother — such edge cases are rare and the admin can manually
-     *    create the invoice.
+     * 2. Resolve the current invoice cycle for each customer and select only
+     *    those whose reminder date is today.
      */
-    const dueCustomers = allCustomers.filter((c) => {
-      const invoiceToDay = c.invoiceToDay as number;
-      const daysBefore = c.reminderDaysBefore ?? 1;
-      const reminderDay = invoiceToDay - daysBefore;
-
-      console.log(
-        `[InvoiceReminderService] Customer "${c.name}": invoiceToDay=${invoiceToDay}, reminderDaysBefore=${daysBefore}, reminderDay=${reminderDay}, currentDay=${currentDay}`
-      );
-
-      // If reminderDay < 1 skip (edge-case where to-day is 1 and days-before >= 1)
-      if (reminderDay < 1) {
-        console.warn(
-          `[InvoiceReminderService] Customer "${c.name}" has reminderDay=${reminderDay} < 1 — skipping.`
+    const dueCustomers = allCustomers
+      .map((customer) => {
+        const cycles = getInvoiceReminderCandidates(customer, today);
+        const matchingCycle = cycles.find(
+          (cycle) => cycle.reminderDate.getTime() === todayNormalised.getTime()
         );
-        return false;
-      }
 
-      return reminderDay === currentDay;
-    });
+        if (!matchingCycle) {
+          console.log(
+            `[InvoiceReminderService] Customer "${customer.name}" is not due today. Checked cycles: ${cycles
+              .map((cycle) => cycle.reminderDate.toISOString())
+              .join(', ')}`
+          );
+          return null;
+        }
+
+        console.log(
+          `[InvoiceReminderService] Customer "${customer.name}": start=${matchingCycle.invoiceStartDate.toISOString()}, end=${matchingCycle.invoiceEndDate.toISOString()}, reminder=${matchingCycle.reminderDate.toISOString()}`
+        );
+
+        return { customer, cycle: matchingCycle };
+      })
+      .filter(
+        (item): item is { customer: typeof allCustomers[number]; cycle: ReturnType<typeof getInvoiceReminderCandidates>[number] } => Boolean(item)
+      );
 
     console.log(
       `[InvoiceReminderService] ${dueCustomers.length} customer(s) match today's reminder schedule.`
@@ -110,15 +112,15 @@ export async function processInvoiceReminders(): Promise<InvoiceReminderProcessR
     }
 
     /**
-     * 3. Fetch Super Admins
+     * 3. Fetch Super Admins.
      */
     const allEmployees = await prisma.employee.findMany({
       where: { isActive: true },
       include: { role: true },
     });
 
-    const superAdmins = allEmployees.filter((e) => {
-      const role = e.role?.roleName?.toLowerCase() ?? '';
+    const superAdmins = allEmployees.filter((employee) => {
+      const role = employee.role?.roleName?.toLowerCase() ?? '';
       return (
         role === 'super-admin' ||
         role === 'super admin' ||
@@ -130,8 +132,8 @@ export async function processInvoiceReminders(): Promise<InvoiceReminderProcessR
     console.log(
       `[InvoiceReminderService] Found ${superAdmins.length} active super admin(s):`
     );
-    superAdmins.forEach((a) =>
-      console.log(`  - ${a.firstName} (${a.email}) [${a.role?.roleName}]`)
+    superAdmins.forEach((admin) =>
+      console.log(`  - ${admin.firstName} (${admin.email}) [${admin.role?.roleName}]`)
     );
 
     if (superAdmins.length === 0) {
@@ -142,9 +144,9 @@ export async function processInvoiceReminders(): Promise<InvoiceReminderProcessR
     }
 
     /**
-     * 4. Process each due customer
+     * 4. Process each due customer.
      */
-    for (const customer of dueCustomers) {
+    for (const { customer, cycle } of dueCustomers) {
       result.processed++;
 
       const invoiceToDay = customer.invoiceToDay as number;
@@ -153,13 +155,13 @@ export async function processInvoiceReminders(): Promise<InvoiceReminderProcessR
       console.log('-------------------------------------------------');
       console.log(
         `[InvoiceReminderService] Processing Customer: ${customer.name} ` +
-          `(invoice due on day ${invoiceToDay}, reminder ${daysBefore} day(s) before)`
+          `(invoice cycle ${cycle.invoiceStartDate.toISOString()} → ${cycle.invoiceEndDate.toISOString()}, reminder ${cycle.reminderDate.toISOString()})`
       );
       console.log('-------------------------------------------------');
 
       try {
         /**
-         * Duplicate Check — one reminder per customer per calendar day
+         * Duplicate Check — one reminder per customer per reminder date.
          */
         const existingLog = await prisma.invoiceReminderLog.findUnique({
           where: {
@@ -172,19 +174,19 @@ export async function processInvoiceReminders(): Promise<InvoiceReminderProcessR
 
         if (existingLog) {
           console.warn(
-            `[InvoiceReminderService] Reminder already sent for "${customer.name}" today. Skipping.`
+            `[InvoiceReminderService] Reminder already sent for "${customer.name}" on ${todayNormalised.toISOString()}. Skipping.`
           );
           continue;
         }
 
         /**
-         * In-App Notifications for all super admins
+         * In-App Notifications for all super admins.
          */
         const recipientIds = superAdmins.map((admin) => admin.id);
 
         const notificationPayload = {
           title: 'Invoice Creation Reminder',
-          message: `Invoice for ${customer.name} is due in ${daysBefore} day(s) (day ${invoiceToDay}). Please create the invoice.`,
+          message: `Invoice for ${customer.name} is due on ${cycle.invoiceEndDate.toDateString()}. Please create the invoice.`,
           type: 'INVOICE_CYCLE',
           customerId: customer.id,
         };
@@ -204,7 +206,7 @@ export async function processInvoiceReminders(): Promise<InvoiceReminderProcessR
         );
 
         /**
-         * Email to each super admin
+         * Email to each super admin.
          */
         for (const admin of superAdmins) {
           if (!admin.email) {
@@ -242,7 +244,7 @@ export async function processInvoiceReminders(): Promise<InvoiceReminderProcessR
         }
 
         /**
-         * Log success — prevents re-sending within the same day
+         * Log success — prevents re-sending for the same reminder date.
          */
         await prisma.invoiceReminderLog.create({
           data: {

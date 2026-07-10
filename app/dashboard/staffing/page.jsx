@@ -255,6 +255,8 @@ function StaffingContent() {
               projectData={projectData}
               setProjectData={setProjectData}
               loading={loading}
+              benchData={benchData}
+              setBenchData={setBenchData}
             />
           )}
         </div>

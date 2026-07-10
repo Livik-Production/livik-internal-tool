@@ -244,6 +244,20 @@ async function seedPermissions() {
       rightName: 'employee_portal',
       description: 'Access to employee self-service portal',
     },
+
+    // CRM Module - 2 rights
+    {
+      module: 'CRM',
+      displayName: 'CRM Module View',
+      rightName: 'crm_module_view',
+      description: 'Can view CRM module and leads',
+    },
+    {
+      module: 'CRM',
+      displayName: 'CRM Module Control',
+      rightName: 'crm_module_control',
+      description: 'Can create, update, and delete CRM leads',
+    },
     {
       module: 'Payroll Module',
       displayName: 'Payroll view Dashboard',

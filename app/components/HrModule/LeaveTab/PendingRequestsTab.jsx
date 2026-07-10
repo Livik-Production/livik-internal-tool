@@ -191,7 +191,7 @@ const LeaveRequestsTab = ({
 
   if (isLoading) {
     return (
-      <section className="space-y-6">
+      <section className="space-y-6 h-[250px]">
         <Loader
           label="Loading leave requests..."
           size="md"
@@ -245,28 +245,25 @@ const LeaveRequestsTab = ({
           <div className="flex bg-gray-100 p-1 rounded-xl border border-gray-200 shadow-inner relative overflow-hidden h-10 w-64 self-center">
             {/* Sliding Background */}
             <div
-              className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white rounded-lg shadow-md transition-all duration-300 ease-in-out z-0 ${
-                requestType === 'permission'
-                  ? 'translate-x-full'
-                  : 'translate-x-0'
-              }`}
+              className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white rounded-lg shadow-md transition-all duration-300 ease-in-out z-0 ${requestType === 'permission'
+                ? 'translate-x-full'
+                : 'translate-x-0'
+                }`}
             />
 
             <Button
               onClick={() => setRequestType('leave')}
-              className={`flex-1 flex items-center justify-center text-xs font-bold uppercase tracking-wider transition-colors duration-300 relative z-10 ${
-                requestType === 'leave'
-                  ? 'text-blue-600'
-                  : 'text-gray-400 hover:text-gray-600'
-              }`}
+              className={`flex-1 flex items-center justify-center text-xs font-bold uppercase tracking-wider transition-colors duration-300 relative z-10 ${requestType === 'leave'
+                ? 'text-blue-600'
+                : 'text-gray-400 hover:text-gray-600'
+                }`}
             >
               Leave
               <span
-                className={`ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] ${
-                  requestType === 'leave'
-                    ? 'bg-blue-100 text-blue-600'
-                    : 'bg-gray-200 text-gray-500'
-                }`}
+                className={`ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] ${requestType === 'leave'
+                  ? 'bg-blue-100 text-blue-600'
+                  : 'bg-gray-200 text-gray-500'
+                  }`}
               >
                 {
                   approvals.filter(
@@ -280,19 +277,17 @@ const LeaveRequestsTab = ({
 
             <Button
               onClick={() => setRequestType('permission')}
-              className={`flex-1 flex items-center justify-center text-xs font-bold uppercase tracking-wider transition-colors duration-300 relative z-10 ${
-                requestType === 'permission'
-                  ? 'text-blue-600'
-                  : 'text-gray-400 hover:text-gray-600'
-              }`}
+              className={`flex-1 flex items-center justify-center text-xs font-bold uppercase tracking-wider transition-colors duration-300 relative z-10 ${requestType === 'permission'
+                ? 'text-blue-600'
+                : 'text-gray-400 hover:text-gray-600'
+                }`}
             >
               Permission
               <span
-                className={`ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] ${
-                  requestType === 'permission'
-                    ? 'bg-blue-100 text-blue-600'
-                    : 'bg-gray-200 text-gray-500'
-                }`}
+                className={`ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] ${requestType === 'permission'
+                  ? 'bg-blue-100 text-blue-600'
+                  : 'bg-gray-200 text-gray-500'
+                  }`}
               >
                 {
                   approvals.filter(

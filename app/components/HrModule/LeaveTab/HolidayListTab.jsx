@@ -107,9 +107,7 @@ const HolidayListTab = ({
 
   // Year filter logic
   const now = new Date();
-  const [selectedYear, setSelectedYear] = useState(
-    now.getFullYear().toString()
-  );
+  const [selectedYear, setSelectedYear] = useState(now.getFullYear().toString());
 
   const yearOptions = [{ value: 'All', label: 'All Years' }];
   const startYear = 2025;
@@ -180,9 +178,9 @@ const HolidayListTab = ({
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
         (item) =>
-          item.holiday.toLowerCase().includes(query) ||
-          item.type.toLowerCase().includes(query) ||
-          item.description.toLowerCase().includes(query) ||
+          (item.holiday || '').toLowerCase().includes(query) ||
+          (item.type || '').toLowerCase().includes(query) ||
+          (item.description || '').toLowerCase().includes(query) ||
           new Date(item.date)
             .toLocaleDateString('en-IN')
             .toLowerCase()
@@ -203,7 +201,7 @@ const HolidayListTab = ({
     }
 
     setFilteredData(filtered);
-  }, [searchQuery, holidayData, selectedYear]);
+  }, [searchQuery, holidayData, selectedYear, selectedMonthIndex]);
 
   // Get upcoming holidays
   const upcomingHolidays = holidayData
@@ -254,13 +252,12 @@ const HolidayListTab = ({
       label: 'Type',
       render: (row) => (
         <span
-          className={`px-2 py-1 rounded text-xs font-medium text-center${
-            row.type === 'Public Holiday'
-              ? 'bg-purple-100 text-purple-800'
-              : row.type === 'Restricted Holiday'
-                ? 'bg-orange-100 text-orange-800'
-                : 'bg-blue-100 text-blue-800'
-          }`}
+          className={`px-2 py-1 rounded text-xs font-medium text-center${row.type === 'Public Holiday'
+            ? 'bg-purple-100 text-purple-800'
+            : row.type === 'Restricted Holiday'
+              ? 'bg-orange-100 text-orange-800'
+              : 'bg-blue-100 text-blue-800'
+            }`}
         >
           {row.type}
         </span>
@@ -287,25 +284,23 @@ const HolidayListTab = ({
     setIsDetailModalOpen(true);
   };
 
-  const yearToUse =
-    selectedYear === 'All' ? currentYear : parseInt(selectedYear);
+  const yearToUse = selectedYear === 'All' ? currentYear : parseInt(selectedYear);
 
   // Generate 4 months: past 1 month, present month, and 2 future months
   const baseMonth = yearToUse === currentYear ? now.getMonth() : 0; // Use Jan for non-current years
-  const generatedMonths = [-1, 0, 1, 2].map((offset) => {
+  const generatedMonths = [-1, 0, 1, 2].map(offset => {
     const date = new Date(yearToUse, baseMonth + offset, 1);
     return {
       index: date.getMonth(),
       actualYear: date.getFullYear(),
-      monthStr: date
-        .toLocaleString('default', { month: 'short' })
-        .toUpperCase(),
+      monthStr: date.toLocaleString('default', { month: 'short' }).toUpperCase(),
       yearStr: date.getFullYear().toString().slice(-2),
       fullYear: date.getFullYear(),
     };
   });
 
   const renderHeaderLayout = () => {
+
     return (
       <div>
         <h2 className="text-4xl font-extrabold text-[#004475] mb-3 flex justify-center py-2">
@@ -314,58 +309,39 @@ const HolidayListTab = ({
         <div className="flex flex-col md:flex-row items-center justify-between mb-4 gap-4">
           {/* Left Side: Month Selector */}
           <div className="flex flex-col w-full md:w-auto overflow-hidden">
+
             <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 w-full md:max-w-[50vw]">
               {generatedMonths.map((m, idx) => {
-                const isFilterActive =
-                  selectedMonthIndex !== null &&
-                  m.index === selectedMonthIndex &&
-                  (selectedYear === 'All' ||
-                    m.actualYear.toString() === selectedYear);
-                const isDefaultActive =
-                  selectedMonthIndex === null &&
-                  m.index === now.getMonth() &&
-                  m.actualYear === currentYear;
+                const isFilterActive = selectedMonthIndex !== null && m.index === selectedMonthIndex && (selectedYear === 'All' || m.actualYear.toString() === selectedYear);
+                const isDefaultActive = selectedMonthIndex === null && m.index === now.getMonth() && m.actualYear === currentYear;
                 const isActive = isFilterActive || isDefaultActive;
-                const isPast =
-                  m.actualYear < currentYear ||
-                  (m.actualYear === currentYear && m.index < now.getMonth());
+                const isPast = m.actualYear < currentYear || (m.actualYear === currentYear && m.index < now.getMonth());
 
-                let bgClass =
-                  'bg-white border border-gray-100 text-gray-700 hover:border-blue-300 shadow-sm';
+                let bgClass = "bg-white border border-gray-100 text-gray-700 hover:border-blue-300 shadow-sm";
                 if (isActive) {
-                  bgClass =
-                    'bg-[#004475] text-white shadow-md border-[#004475]';
+                  bgClass = "bg-[#004475] text-white shadow-md border-[#004475]";
                 } else if (isPast) {
-                  bgClass = 'bg-[#e0eaf5] text-gray-600 border-transparent';
+                  bgClass = "bg-[#e0eaf5] text-gray-600 border-transparent";
                 }
 
                 return (
                   <div
                     key={idx}
                     onClick={() => {
-                      if (
-                        selectedYear !== 'All' &&
-                        m.actualYear.toString() !== selectedYear
-                      ) {
+                      if (selectedYear !== 'All' && m.actualYear.toString() !== selectedYear) {
                         setSelectedYear(m.actualYear.toString());
                       }
                       setSelectedMonthIndex(isActive ? null : m.index);
                     }}
                     className={`flex flex-col items-center justify-center min-w-[70px] h-[80px] rounded-2xl cursor-pointer transition-all duration-200 shrink-0 ${bgClass}`}
                   >
-                    <span
-                      className={`text-[11px] font-bold tracking-wider ${isActive ? 'text-white/90' : 'text-gray-500'}`}
-                    >
+                    <span className={`text-[11px] font-bold tracking-wider ${isActive ? 'text-white/90' : 'text-gray-500'}`}>
                       {m.monthStr}
                     </span>
-                    <span
-                      className={`text-xl font-bold mt-0.5 ${isActive ? 'text-white' : 'text-gray-800'}`}
-                    >
+                    <span className={`text-xl font-bold mt-0.5 ${isActive ? 'text-white' : 'text-gray-800'}`}>
                       {isActive ? m.fullYear : m.yearStr}
                     </span>
-                    {isActive && (
-                      <div className="w-1.5 h-1.5 bg-white rounded-full mt-1.5 shadow-sm"></div>
-                    )}
+                    {isActive && <div className="w-1.5 h-1.5 bg-white rounded-full mt-1.5 shadow-sm"></div>}
                   </div>
                 );
               })}
@@ -401,16 +377,15 @@ const HolidayListTab = ({
               />
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
               {searchQuery && (
-                <IconButton
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-2 top-0.5 shadow-none bg-transparent hover:bg-transparent"
-                  title="Clear search"
-                >
-                  <X
-                    size={14}
-                    className="text-gray-400 hover:text-red-500 hover:scale-110"
-                  />
-                </IconButton>
+                 <IconButton
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2 top-0.5 shadow-none bg-transparent hover:bg-transparent"
+              title="Clear search"
+            >
+              <X size={14} className="text-gray-400 hover:text-red-500" />
+            </IconButton>
+
               )}
             </div>
 
@@ -418,16 +393,13 @@ const HolidayListTab = ({
             {!hideAddButton && (
               <PrimaryButton
                 onClick={onAddHoliday}
-                className={`px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all shrink-0 ${
-                  canControlAllEmployees
-                    ? 'bg-[#004475] text-white hover:bg-[#003358] hover:shadow-md'
-                    : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
-                }`}
+                className={`px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all shrink-0 ${canControlAllEmployees
+                  ? 'bg-[#004475] text-white hover:bg-[#003358] hover:shadow-md'
+                  : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
+                  }`}
                 disabled={!canControlAllEmployees}
                 title={
-                  !canControlAllEmployees
-                    ? 'Permission required'
-                    : 'Add Holiday List'
+                  !canControlAllEmployees ? 'Permission required' : 'Add Holiday List'
                 }
               >
                 + Add Holiday List
@@ -445,11 +417,7 @@ const HolidayListTab = ({
         {renderHeaderLayout()}
 
         <section className="overflow-hidden rounded-xl border border-gray-300 shadow-inner min-h-[400px] flex items-center justify-center">
-          <Loader
-            label="Loading holiday list..."
-            size="md"
-            fullScreen={false}
-          />
+          <Loader label="Loading holiday list..." size="md" fullScreen={false} />
         </section>
       </div>
     );
@@ -500,14 +468,8 @@ const HolidayListTab = ({
   let activeMonthForBanner = null;
 
   for (const m of generatedMonths) {
-    const isFilterActive =
-      selectedMonthIndex !== null &&
-      m.index === selectedMonthIndex &&
-      (selectedYear === 'All' || m.actualYear.toString() === selectedYear);
-    const isDefaultActive =
-      selectedMonthIndex === null &&
-      m.index === now.getMonth() &&
-      m.actualYear === currentYear;
+    const isFilterActive = selectedMonthIndex !== null && m.index === selectedMonthIndex && (selectedYear === 'All' || m.actualYear.toString() === selectedYear);
+    const isDefaultActive = selectedMonthIndex === null && m.index === now.getMonth() && m.actualYear === currentYear;
     const isActive = isFilterActive || isDefaultActive;
 
     if (isActive) {
@@ -519,31 +481,22 @@ const HolidayListTab = ({
 
   // Compute featured holiday for the active month
   let featuredHoliday = null;
-  let bannerTitle = 'HOLIDAY IN THIS MONTH';
+  let bannerTitle = "HOLIDAY IN THIS MONTH";
 
   if (activeMonthForBanner) {
-    const holidaysInActiveMonth = holidayData
-      .filter((h) => {
-        const d = new Date(h.date);
-        return (
-          d.getMonth() === activeMonthForBanner.index &&
-          d.getFullYear() === activeMonthForBanner.actualYear
-        );
-      })
-      .sort((a, b) => new Date(a.date) - new Date(b.date));
+    const holidaysInActiveMonth = holidayData.filter(h => {
+      const d = new Date(h.date);
+      return d.getMonth() === activeMonthForBanner.index && d.getFullYear() === activeMonthForBanner.actualYear;
+    }).sort((a, b) => new Date(a.date) - new Date(b.date));
 
     if (holidaysInActiveMonth.length > 0) {
-      const upcomingInMonth = holidaysInActiveMonth.filter(
-        (h) =>
-          new Date(h.date).setHours(0, 0, 0, 0) >=
-          new Date().setHours(0, 0, 0, 0)
-      );
+      const upcomingInMonth = holidaysInActiveMonth.filter(h => new Date(h.date).setHours(0, 0, 0, 0) >= new Date().setHours(0, 0, 0, 0));
       if (upcomingInMonth.length > 0) {
         featuredHoliday = upcomingInMonth[0];
-        bannerTitle = 'UPCOMING HOLIDAY IN THIS MONTH';
+        bannerTitle = "UPCOMING HOLIDAY IN THIS MONTH";
       } else {
         featuredHoliday = holidaysInActiveMonth[0];
-        bannerTitle = 'SELECTED MONTH HOLIDAY';
+        bannerTitle = "SELECTED MONTH HOLIDAY";
       }
     }
   }
@@ -561,81 +514,71 @@ const HolidayListTab = ({
     <div className="space-y-4">
       {renderHeaderLayout()}
 
-      {showBanner &&
-        (() => {
-          if (!featuredHoliday) {
-            return (
-              <div className="bg-[#154b9a] rounded-xl p-5 md:p-6 flex flex-col items-center justify-center shadow-md border border-blue-900/20 md:min-h-[160px]">
-                <h3 className="text-xl font-bold text-blue-200/90 tracking-wide">
-                  No leave available for this month
-                </h3>
-              </div>
-            );
-          }
-
-          const daysLeft = calculateDaysLeft(featuredHoliday.date);
+      {showBanner && (() => {
+        if (!featuredHoliday) {
           return (
-            <div
-              className="relative rounded-xl overflow-hidden shadow-md border border-blue-900/20 min-h-[160px] md:min-h-[200px] flex items-end p-5 md:p-6"
-              style={{
-                backgroundColor: '#154b9a',
-                backgroundImage: featuredHoliday.imageUrl
-                  ? `url(${featuredHoliday.imageUrl})`
-                  : 'none',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-              }}
-            >
-              {/* Gradient Overlay for text readability */}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0a254c] via-[#0a254c]/60 to-transparent"></div>
-
-              <div className="relative z-10 w-full flex flex-col md:flex-row items-start md:items-end justify-between gap-4 text-white">
-                <div className="flex flex-col gap-1">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-blue-200/90 mb-0.5">
-                    {bannerTitle}
-                  </span>
-                  <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight drop-shadow-md">
-                    {featuredHoliday.holiday}
-                  </h2>
-                  <div className="flex items-center gap-1.5 text-xs md:text-sm font-medium text-blue-100 mt-1 drop-shadow-md">
-                    <Calendar size={14} />
-                    <span>
-                      {new Date(featuredHoliday.date).toLocaleDateString(
-                        'en-GB',
-                        {
-                          weekday: 'long',
-                          day: 'numeric',
-                          month: 'long',
-                          year: 'numeric',
-                        }
-                      )}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex flex-col items-start md:items-end gap-2 self-start md:self-end">
-                  <div className="px-5 py-2.5 bg-black/30 border border-white/10 rounded-xl flex flex-col items-center justify-center min-w-[100px] backdrop-blur-md shadow-lg">
-                    <span className="text-2xl font-bold leading-none mb-1 drop-shadow-md">
-                      {Math.abs(daysLeft)}
-                    </span>
-                    <span className="text-[9px] font-bold uppercase tracking-widest text-blue-200/90 drop-shadow-md">
-                      {daysLeft === 0
-                        ? 'TODAY'
-                        : daysLeft < 0
-                          ? 'DAYS AGO'
-                          : 'DAYS LEFT'}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => handleViewHoliday(featuredHoliday)}
-                    className="text-[11px] font-bold text-white hover:text-blue-200 flex items-center gap-1 transition-colors mt-1 drop-shadow-md"
-                  >
-                    View Details <span className="text-[14px]">→</span>
-                  </button>
-                </div>
+            <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl p-6 md:p-8 flex flex-col items-center justify-center shadow-sm border border-blue-100 md:min-h-[160px] text-center">
+              <div className="bg-blue-100/50 p-3 rounded-full mb-3">
+                <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
               </div>
+              <h3 className="text-lg font-semibold text-blue-900">No Holidays This Month</h3>
+              <p className="text-sm text-blue-600/70 mt-1">There are no upcoming holidays scheduled for the current month.</p>
             </div>
           );
-        })()}
+        }
+
+        const daysLeft = calculateDaysLeft(featuredHoliday.date);
+        return (
+          <div
+            className="relative rounded-xl overflow-hidden shadow-md border border-blue-900/20 min-h-[160px] md:min-h-[200px] flex items-end p-5 md:p-6"
+            style={{
+              backgroundColor: '#154b9a',
+              backgroundImage: featuredHoliday.imageUrl ? `url(${featuredHoliday.imageUrl})` : 'none',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center'
+            }}
+          >
+            {/* Gradient Overlay for text readability */}
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0a254c] via-[#0a254c]/60 to-transparent"></div>
+
+            <div className="relative z-10 w-full flex flex-col md:flex-row items-start md:items-end justify-between gap-4 text-white">
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-blue-200/90 mb-0.5">
+                  {bannerTitle}
+                </span>
+                <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight drop-shadow-md">{featuredHoliday.holiday}</h2>
+                <div className="flex items-center gap-1.5 text-xs md:text-sm font-medium text-blue-100 mt-1 drop-shadow-md">
+                  <Calendar size={14} />
+                  <span>
+                    {new Date(featuredHoliday.date).toLocaleDateString('en-GB', {
+                      weekday: 'long',
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric'
+                    })}
+                  </span>
+                </div>
+              </div>
+              <div className="flex flex-col items-start md:items-end gap-2 self-start md:self-end">
+                <div className="px-5 py-2.5 bg-black/30 border border-white/10 rounded-xl flex flex-col items-center justify-center min-w-[100px] backdrop-blur-md shadow-lg">
+                  <span className="text-2xl font-bold leading-none mb-1 drop-shadow-md">{Math.abs(daysLeft)}</span>
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-blue-200/90 drop-shadow-md">
+                    {daysLeft === 0 ? "TODAY" : (daysLeft < 0 ? "DAYS AGO" : "DAYS LEFT")}
+                  </span>
+                </div>
+                <button
+                  onClick={() => handleViewHoliday(featuredHoliday)}
+                  className="text-[11px] font-bold text-white hover:text-blue-200 flex items-center gap-1 transition-colors mt-1 drop-shadow-md"
+                >
+                  View Details <span className="text-[14px]">→</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       <section className="overflow-hidden rounded-xl border border-gray-300 shadow-inner">
         {/* <div className="p-4 bg-gray-50 border-b border-gray-300">
@@ -714,7 +657,7 @@ const HolidayListTab = ({
                     selectedYear === 'All'
                       ? true
                       : new Date(item.date).getFullYear().toString() ===
-                        selectedYear
+                      selectedYear
                   ).length
                 }{' '}
                 official holidays
@@ -770,8 +713,8 @@ const HolidayListTab = ({
                   className="w-full h-full object-cover rounded-xl shadow-lg"
                 />
               ) : selectedHoliday.holiday
-                  .toLowerCase()
-                  .includes('mattu pongal') ? (
+                .toLowerCase()
+                .includes('mattu pongal') ? (
                 <img
                   src="/images/holidays/mattu_pongal.png"
                   alt="Mattu Pongal"
@@ -790,24 +733,24 @@ const HolidayListTab = ({
                   className="w-full h-full object-cover rounded-xl shadow-lg"
                 />
               ) : selectedHoliday.holiday
-                  .toLowerCase()
-                  .includes('christmas') ? (
+                .toLowerCase()
+                .includes('christmas') ? (
                 <img
                   src="/images/holidays/christmas.png"
                   alt="Christmas"
                   className="w-full h-full object-cover rounded-xl shadow-lg"
                 />
               ) : selectedHoliday.holiday
-                  .toLowerCase()
-                  .includes('republic day') ? (
+                .toLowerCase()
+                .includes('republic day') ? (
                 <img
                   src="/images/holidays/republic_day.png"
                   alt="Republic Day"
                   className="w-full h-full object-cover rounded-xl shadow-lg"
                 />
               ) : selectedHoliday.holiday
-                  .toLowerCase()
-                  .includes('tamil new year') ? (
+                .toLowerCase()
+                .includes('tamil new year') ? (
                 <img
                   src="/images/holidays/tamil_new_year.png"
                   alt="Tamil New Year"
@@ -826,8 +769,8 @@ const HolidayListTab = ({
                   className="w-full h-full object-cover rounded-xl shadow-lg"
                 />
               ) : selectedHoliday.holiday
-                  .toLowerCase()
-                  .includes('saraswathi') ||
+                .toLowerCase()
+                .includes('saraswathi') ||
                 selectedHoliday.holiday.toLowerCase().includes('ayudha') ? (
                 <img
                   src="/images/holidays/saraswathi_pooja.png"

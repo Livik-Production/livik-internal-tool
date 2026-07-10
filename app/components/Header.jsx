@@ -1,8 +1,7 @@
 'use client';
 
-import React from 'react';
 import PrimaryButton from './Buttons/PrimaryButton';
-import { Icon, UserPlus, UsersIcon } from 'lucide-react';
+import { UserPlus, UsersIcon } from 'lucide-react';
 import NotificationBell from './NotificationBell';
 export default function Header({ employeeCount, onAdd }) {
   return (

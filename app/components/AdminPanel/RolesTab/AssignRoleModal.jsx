@@ -49,8 +49,7 @@ export default function AssignRoleModal({
   const activeEmployees = useMemo(() => {
     return employees.filter((emp) => {
       const statusUpper = (emp.status || emp.__raw?.status || '').toUpperCase();
-      const isPending =
-        statusUpper === 'PENDING' || statusUpper === 'PENDING_ADMIN';
+      const isPending = statusUpper === 'PENDING' || statusUpper === 'PENDING_ADMIN';
       return !isPending;
     });
   }, [employees]);

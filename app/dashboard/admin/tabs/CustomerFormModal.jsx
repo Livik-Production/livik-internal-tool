@@ -192,10 +192,16 @@ const CustomerFormModal = ({
       submitData.invoiceToDay = submitData.invoiceToDay ? parseInt(submitData.invoiceToDay, 10) : null;
       submitData.reminderDaysBefore = submitData.reminderDaysBefore ? parseInt(submitData.reminderDaysBefore, 10) : 1;
 
+      const formDataToSend = new FormData();
+      Object.entries(submitData).forEach(([key, value]) => {
+        if (value !== null && value !== undefined && value !== '') {
+          formDataToSend.append(key, value);
+        }
+      });
+
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(submitData),
+        body: formDataToSend,
       });
 
       if (!res.ok) {

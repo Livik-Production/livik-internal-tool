@@ -19,7 +19,7 @@ export default function HeaderUser() {
   const [open, setOpen] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
   const ref = useRef(null);
-
+  
   const authUser = useSelector((state) => state.auth?.user);
 
   // Derive user info from Redux or localStorage fallback
@@ -31,24 +31,9 @@ export default function HeaderUser() {
 
   // Derive user info from Redux or localStorage fallback
   const user = {
-    name: authUser?.firstName
-      ? `${authUser.firstName} ${authUser.lastName || ''}`.trim()
-      : (typeof window !== 'undefined'
-          ? localStorage.getItem('user_name')
-          : null) || 'Kiran Das',
-    role:
-      authUser?.role?.name ||
-      authUser?.role?.roleName ||
-      (typeof window !== 'undefined'
-        ? localStorage.getItem('user_role')
-        : null) ||
-      'Admin',
-    empId:
-      authUser?.empId ||
-      (typeof window !== 'undefined'
-        ? localStorage.getItem('user_empId')
-        : null) ||
-      'E010',
+    name: authUser?.firstName ? `${authUser.firstName} ${authUser.lastName || ''}`.trim() : (typeof window !== 'undefined' ? localStorage.getItem('user_name') : null) || 'Kiran Das',
+    role: authUser?.role?.name || authUser?.role?.roleName || (typeof window !== 'undefined' ? localStorage.getItem('user_role') : null) || 'Admin',
+    empId: authUser?.empId || (typeof window !== 'undefined' ? localStorage.getItem('user_empId') : null) || 'E010',
     avatar: authUser?.photo || AVATAR_SRC,
   };
 

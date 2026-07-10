@@ -5,7 +5,7 @@ import IconButton from '../../Buttons/IconButton';
 import CloseButton from '../../Buttons/CloseButton';
 
 import { useState, useEffect } from 'react';
-import { Search, FileText, Download } from 'lucide-react';
+import { Search, FileText, Download, X } from 'lucide-react';
 import CustomModalForm from '../../CustomModalForm';
 import Loader from '../../Loader';
 
@@ -123,7 +123,7 @@ export default function AttendanceDetailedModal({ isOpen, onClose, month }) {
           title="Export"
           className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition shadow-sm"
         >
-          <Download size={16} color="blue" />
+          <Download size={16} color='blue'/>
           <span className="text-gray-700">Export</span>
         </PrimaryButton>
       }
@@ -140,6 +140,16 @@ export default function AttendanceDetailedModal({ isOpen, onClose, month }) {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 pr-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-2 focus:ring-blue-500 outline-none text-sm"
             />
+             {searchQuery && (
+               <IconButton
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2 top-0.5 shadow-none bg-transparent hover:bg-transparent"
+              title="Clear search"
+            >
+              <X size={14} className="text-gray-400 hover:text-red-500" />
+            </IconButton>
+            )}
           </div>
           <div className="flex gap-4 text-xs font-medium">
             <span className="flex items-center gap-1">

@@ -12,9 +12,7 @@ export default async function InvoicePage({ params }) {
   }
 
   const companyDetailsRecord = await prisma.companyDetails.findFirst();
-  const initialCompanyDetails = companyDetailsRecord
-    ? JSON.parse(JSON.stringify(companyDetailsRecord))
-    : null;
+  const initialCompanyDetails = companyDetailsRecord ? JSON.parse(JSON.stringify(companyDetailsRecord)) : null;
 
   // Parse if it was returned as Mongoose document or stringified JSON
   const invoice = JSON.parse(JSON.stringify(invoiceData));
@@ -149,11 +147,7 @@ export default async function InvoicePage({ params }) {
       `,
         }}
       />
-      <PreviewForm
-        invoiceData={mappedData}
-        letterPad="with"
-        initialCompanyDetails={initialCompanyDetails}
-      />
+      <PreviewForm invoiceData={mappedData} letterPad="with" initialCompanyDetails={initialCompanyDetails} />
     </div>
   );
 }

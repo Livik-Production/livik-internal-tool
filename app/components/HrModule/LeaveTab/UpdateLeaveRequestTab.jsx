@@ -7,7 +7,7 @@ import { useSelector } from 'react-redux';
 import Loader from '../../Loader';
 import Pagination from '../../Pagination';
 import { showSuccessToast, showErrorToast } from '../../Toast';
-import { Search, SquarePen, Trash, CalendarCheck, Loader2 } from 'lucide-react';
+import { Search, SquarePen, Trash, CalendarCheck, Loader2, X } from 'lucide-react';
 import BalanceDetailModal from './BalanceDetailModal';
 import FilterDropdown from '../../Buttons/FilterDropdown';
 import IconButton from '../../Buttons/IconButton';
@@ -387,8 +387,13 @@ const UpdateLeaveRequestTab = ({
       ),
     },
   ];
-
-  if (loading) return <Loader label="Loading balances..." fullScreen={false} />;
+  if (loading) {
+    return (
+      <div className="mt-25 mr-5">
+        <Loader label="Loading balances..." fullScreen={false} />
+      </div>
+    );
+  }
 
   if (error)
     return <div className="p-8 text-center text-red-500">Error: {error}</div>;

@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import CustomTable from '../../CustomTable';
 import IconButton from '../../Buttons/IconButton';
+import PrimaryButton from '../../Buttons/PrimaryButton';
 import { CheckCircle, XCircle, Eye } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import { showSuccessToast, showErrorToast } from '../../Toast';
@@ -27,6 +28,7 @@ export default function DocumentApprovalsTable({
   // Dialog states
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [isApproveOpen, setIsApproveOpen] = useState(false);
+  const [isApproveAllOpen, setIsApproveAllOpen] = useState(false);
   const [isRejectOpen, setIsRejectOpen] = useState(false);
   const [remarks, setRemarks] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -67,18 +69,25 @@ export default function DocumentApprovalsTable({
   const fetchRequests = async () => {
     try {
       setIsLoading(true);
-      // HR sees EMPLOYEE requests, Admin sees HR requests
+      // Only Super Admin sees HR (Admin/Super Admin/HR) requests
       const userRole = (
         authUser?.role?.name ||
         authUser?.role?.roleName ||
         ''
       ).toUpperCase();
-      const isAdmin =
-        userRole === 'ADMIN' ||
+      const isTrueSuperAdmin =
         userRole === 'SUPER_ADMIN' ||
         userRole === 'SUPER ADMIN' ||
         userRole === 'SUPERADMIN';
-      const roleFilter = isAdmin ? 'HR' : 'EMPLOYEE';
+      
+      let roleFilter = 'EMPLOYEE';
+      if (isTrueSuperAdmin) {
+        roleFilter = 'SUPER_ADMIN,ADMIN,HR_ADMIN,HR,EMPLOYEE';
+      } else if (userRole === 'ADMIN') {
+        roleFilter = 'HR_ADMIN,HR,EMPLOYEE';
+      } else if (userRole === 'HR_ADMIN') {
+        roleFilter = 'HR,EMPLOYEE';
+      }
 
       const res = await fetch(
         `/api/document-requests?status=PENDING&requestedByRole=${roleFilter}`
@@ -126,6 +135,43 @@ export default function DocumentApprovalsTable({
       }
     } catch (err) {
       showErrorToast(err.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleApproveAllClick = () => {
+    if (filteredRequests.length > 0) {
+      setIsApproveAllOpen(true);
+    }
+  };
+
+  const handleApproveAllConfirm = async () => {
+    setIsApproveAllOpen(false);
+    setIsProcessing(true);
+    try {
+      let approvedCount = 0;
+      for (const req of filteredRequests) {
+        const res = await fetch('/api/document-requests', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            requestId: req.id,
+            status: 'APPROVED',
+            processedBy: authUser.id,
+            remarks: 'Bulk approved',
+          }),
+        });
+        if (res.ok) approvedCount++;
+      }
+      
+      if (approvedCount > 0) {
+        showSuccessToast(`${approvedCount} document(s) approved successfully`);
+        fetchRequests();
+        dispatch(fetchEmployees());
+      }
+    } catch (err) {
+      showErrorToast('Error processing bulk approval');
     } finally {
       setIsProcessing(false);
     }
@@ -218,6 +264,21 @@ export default function DocumentApprovalsTable({
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-end items-center mb-2 gap-3 min-h-[56px]">
+        {searchElement && <div>{searchElement}</div>}
+        <PrimaryButton
+          onClick={handleApproveAllClick}
+          disabled={isProcessing || filteredRequests.length === 0}
+          className={`px-4 py-2 m-2 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ${
+            filteredRequests.length > 0 ? '' : 'invisible'
+          }`}
+          title="Approve All"
+        >
+          <CheckCircle size={16} />
+          Approve All ({filteredRequests.length})
+        </PrimaryButton>
+      </div>
+
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
@@ -234,6 +295,7 @@ export default function DocumentApprovalsTable({
             actions={tableActions}
             actionsHeader="Review"
             actionsAlign="center"
+            maxHeight="none"
           />
         ) : (
           <div className="flex flex-col items-center justify-center py-16 text-gray-400">
@@ -257,6 +319,22 @@ export default function DocumentApprovalsTable({
           />
         </div>
       )}
+
+      {/* Approve All Dialog */}
+      <ConfirmDialog
+        open={isApproveAllOpen}
+        onClose={() => setIsApproveAllOpen(false)}
+        title="Approve All Documents"
+        confirmLabel={isProcessing ? 'Approving...' : 'Yes, Approve All'}
+        onConfirm={handleApproveAllConfirm}
+        description={
+          <div className="space-y-4">
+            <p>
+              Are you sure you want to approve all <strong>{filteredRequests.length}</strong> pending document requests?
+            </p>
+          </div>
+        }
+      />
 
       {/* Approve Dialog */}
       <ConfirmDialog

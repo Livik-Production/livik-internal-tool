@@ -122,18 +122,34 @@ const LeaveRequestForm = ({
       }
     }
 
-    return list.map((item) => {
+    // Filter out 'santh' and deduplicate by canonical value
+    const uniqueMap = new Map();
+    list.forEach(item => {
+      if (item.label.toLowerCase() === 'santh' || item.value.toLowerCase() === 'santh') return;
+      
+      const lower = item.value.toLowerCase();
+      let canonValue = item.value;
+      
+      if (lower.includes('sick') || lower === 'sl') canonValue = 'sl';
+      else if (lower.includes('casual') || lower === 'cl') canonValue = 'cl';
+      
+      if (!uniqueMap.has(canonValue)) {
+        uniqueMap.set(canonValue, { ...item, value: canonValue });
+      }
+    });
+
+    const uniqueList = Array.from(uniqueMap.values());
+
+    return uniqueList.map((item) => {
       const val = item.value;
       const lower = val.toLowerCase();
       let balance = 0;
       let canonValue = val;
 
-      if (lower.includes('sick') || lower === 'sl') {
+      if (lower === 'sl') {
         balance = balanceLeaves.sl;
-        canonValue = 'sl';
-      } else if (lower.includes('casual') || lower === 'cl') {
+      } else if (lower === 'cl') {
         balance = balanceLeaves.cl;
-        canonValue = 'cl';
       }
 
       return {

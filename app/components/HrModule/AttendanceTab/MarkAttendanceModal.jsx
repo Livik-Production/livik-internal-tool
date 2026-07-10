@@ -406,7 +406,7 @@ export default function MarkAttendanceModal({
                         (status) => (
                           <label
                             key={status}
-                            className="inline-flex items-center cursor-pointer"
+                            className="relative inline-flex items-center cursor-pointer"
                           >
                             <input
                               type="radio"

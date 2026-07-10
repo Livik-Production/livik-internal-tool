@@ -205,24 +205,31 @@ function DocSlot({
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center gap-3 cursor-pointer w-full h-full justify-center">
-            <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-[#33a8d9] shadow-sm border border-[#e2e8f0] group-hover:scale-110 transition-transform">
-              <Upload size={22} />
-            </div>
-            <div className="text-center">
-              <div className="text-[13px] font-bold text-[#1e293b]">
-                Upload {label}
-              </div>
-              <div className="text-[9px] text-[#94a3b8] font-bold uppercase tracking-widest mt-1">
-                Max 5MB (JPG, PDF)
-              </div>
-            </div>
-            <input
-              type="file"
-              className="absolute inset-0 opacity-0 cursor-pointer"
-              onChange={(e) => onFileSelect(e.target.files?.[0])}
-            />
-          </div>
+      <div className="flex flex-col items-center justify-center w-full h-full gap-3 cursor-pointer">
+  <div className="flex items-center justify-center w-12 h-12 text-[#33a8d9] transition-transform bg-white border rounded-full shadow-sm border-[#e2e8f0] group-hover:scale-110">
+    <Upload size={22} />
+  </div>
+
+  <div className="text-center">
+    <div className="text-[13px] font-bold text-[#1e293b]">
+      Upload {label}
+    </div>
+
+    <div className="mt-1 text-[9px] font-bold tracking-widest uppercase text-[#94a3b8]">
+      Max 1 MB (JPG, PNG)
+    </div>
+
+    <p className="mt-2 text-[11px] leading-4 text-[#64748b]">
+      Only JPG and PNG files are allowed
+    </p>
+  </div>
+
+  <input
+    type="file"
+    className="absolute inset-0 opacity-0 cursor-pointer"
+    onChange={(e) => onFileSelect(e.target.files?.[0])}
+  />
+</div>
         )}
       </div>
     </div>
@@ -288,16 +295,22 @@ function EmployeePortalContent() {
   const searchParams = useSearchParams();
   const authUser = useSelector((state) => state.auth.user);
 
-  // Determine role for request submission: HR roles submit as 'HR', others as 'EMPLOYEE'
+  // Determine role for request submission
   const userRole = (
     authUser?.role?.name ||
     authUser?.role?.roleName ||
     ''
   ).toUpperCase();
-  const requestedByRole =
-    userRole.includes('HR') || userRole.includes('ADMIN') ? 'HR' : 'EMPLOYEE';
-
-  // Deep-linking effect from Dashboard
+  let requestedByRole = 'EMPLOYEE';
+  if (userRole === 'SUPER_ADMIN' || userRole === 'SUPER ADMIN' || userRole === 'SUPERADMIN') {
+    requestedByRole = 'SUPER_ADMIN';
+  } else if (userRole === 'ADMIN') {
+    requestedByRole = 'ADMIN';
+  } else if (userRole === 'HR_ADMIN') {
+    requestedByRole = 'HR_ADMIN';
+  } else if (userRole.includes('HR')) {
+    requestedByRole = 'HR';
+  }
   useEffect(() => {
     const tab = searchParams.get('tab');
     const subtab = searchParams.get('subtab');
@@ -639,7 +652,8 @@ function EmployeePortalContent() {
 
   // Fetch pending document requests
   useEffect(() => {
-    if (!authUser?.id || activeTab !== 'personal') return;
+    if (!authUser?.id || activeTab !== 'personal')
+      return;
 
     const fetchPendingRequests = async () => {
       try {
@@ -839,44 +853,142 @@ function EmployeePortalContent() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
           {/* Existing Proofs */}
-          {personalData.proofs?.map((p, i) => (
-            <div
-              key={`proof-${i}`}
-              className="group relative flex flex-col p-4 bg-white border border-gray-300 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300"
-            >
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-xl bg-[#f8fafc] flex items-center justify-center text-[#94a3b8] shrink-0 border border-[#f1f5f9] group-hover:text-[#33a8d9] group-hover:border-[#33a8d9]/20 transition-colors">
-                  <FileText size={20} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div
-                    className="text-[13px] font-bold text-[#1e293b] truncate"
-                    title={p.label || p.proofLabel || 'Untitled Proof'}
-                  >
-                    {p.label || p.proofLabel || 'Untitled Proof'}
+          {personalData.proofs?.reduce((acc, current) => {
+            const label = current.label || current.proofLabel || 'Untitled Proof';
+            const index = acc.findIndex((item) => (item.label || item.proofLabel || 'Untitled Proof') === label);
+            if (index >= 0) {
+              acc[index] = current; // Keep the latest one
+            } else {
+              acc.push(current);
+            }
+            return acc;
+          }, []).map((p, i) => {
+            const proofLabel = p.label || p.proofLabel || 'Untitled Proof';
+            const pendingReq = pendingRequests.find(
+              (r) => r.documentType === 'proofs' && r.proofLabel === proofLabel
+            );
+
+            if (pendingReq) {
+              return (
+                <div
+                  key={`proof-${i}`}
+                  className="flex flex-col p-4 bg-[#f0f9ff]/40 border border-[#bae6fd] rounded-2xl shadow-sm border-dashed"
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-[#33a8d9] shrink-0 border border-[#bae6fd]">
+                      <FileText size={20} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div
+                        className="text-[13px] font-bold text-[#1e293b] truncate"
+                        title={pendingReq.proofLabel}
+                      >
+                        {pendingReq.proofLabel}
+                      </div>
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <div className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse" />
+                        <span className="text-[9px] uppercase font-bold text-yellow-600 tracking-wider">
+                          Approval Pending
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-[9px] text-[#94a3b8] font-bold uppercase tracking-wider">
-                    Document
+                  <a
+                    href={pendingReq.documentUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-2 bg-white text-center text-[11px] font-bold text-[#33a8d9] rounded-xl border border-[#bae6fd] hover:bg-[#33a8d9] hover:text-white transition-all duration-300"
+                  >
+                    View Pending
+                  </a>
+                </div>
+              );
+            }
+
+            return (
+              <div
+                key={`proof-${i}`}
+                className="group relative flex flex-col p-4 bg-white border border-gray-300 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300"
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#f8fafc] flex items-center justify-center text-[#94a3b8] shrink-0 border border-[#f1f5f9] group-hover:text-[#33a8d9] group-hover:border-[#33a8d9]/20 transition-colors">
+                    <FileText size={20} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div
+                      className="text-[13px] font-bold text-[#1e293b] truncate"
+                      title={proofLabel}
+                    >
+                      {proofLabel}
+                    </div>
+                    <div className="text-[9px] text-[#94a3b8] font-bold uppercase tracking-wider">
+                      Document
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 mt-auto w-full">
+                  <a
+                    href={p.url || p.documentUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 py-2 bg-[#f8fafc] text-center text-[11px] font-bold text-[#33a8d9] rounded-xl border border-blue-200 hover:bg-[#33a8d9] hover:text-white hover:border-[#33a8d9] transition-all duration-300"
+                  >
+                    View
+                  </a>
+                  <div className="relative flex-1 py-2 bg-[#004475] text-center text-[11px] font-bold text-white rounded-xl shadow-md hover:bg-[#003358] transition-all duration-300 cursor-pointer overflow-hidden">
+                    Update
+                    <input
+                      type="file"
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        try {
+                          setUploadingOther(true);
+                          const url = await uploadOtherDocument(file);
+                          const res = await fetch('/api/document-requests', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              employeeId: authUser.id,
+                              documentType: 'proofs',
+                              documentUrl: url,
+                              proofLabel: proofLabel,
+                              requestedByRole: requestedByRole,
+                              requestedById: authUser.id,
+                            }),
+                          });
+                          if (res.ok) {
+                            const newReq = await res.json();
+                            setPendingRequests((prev) => [...prev, newReq]);
+                            showSuccessToast('Document submitted for approval');
+                          } else throw new Error('Request failed');
+                        } catch (err) {
+                          showErrorToast('Upload failed');
+                        } finally {
+                          setUploadingOther(false);
+                        }
+                      }}
+                    />
                   </div>
                 </div>
               </div>
-              <a
-                href={p.url || p.documentUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full py-2 bg-[#f8fafc] text-center text-[11px] font-bold text-[#33a8d9] rounded-xl border border-blue-200 hover:bg-[#33a8d9] hover:text-white hover:border-[#33a8d9] transition-all duration-300"
-              >
-                View Upload
-              </a>
-            </div>
-          ))}
+            );
+          })}
 
-          {/* Pending Proof Requests */}
+          {/* Pending Proof Requests (New ones only) */}
           {pendingRequests
-            .filter((r) => r.documentType === 'proofs')
+            .filter(
+              (r) =>
+                r.documentType === 'proofs' &&
+                !personalData.proofs?.some(
+                  (p) =>
+                    (p.label || p.proofLabel || 'Untitled Proof') === r.proofLabel
+                )
+            )
             .map((r, i) => (
               <div
-                key={`pending-${i}`}
+                key={`pending-new-${i}`}
                 className="flex flex-col p-4 bg-[#f0f9ff]/40 border border-[#bae6fd] rounded-2xl shadow-sm border-dashed"
               >
                 <div className="flex items-center gap-3 mb-3">
@@ -1155,6 +1267,7 @@ function EmployeePortalContent() {
                   <EmployeeView
                     initialData={rawEmployeeData}
                     customUploadSection={customUploadsSection}
+                    hideStatus={true}
                   />
                 )}
               </div>
