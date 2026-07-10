@@ -43,6 +43,7 @@ model Employee {
   bondEndDate              DateTime?                 @map("bond_end_date")
   bondRemarks              String?                   @map("bond_remarks")
   bondStartDate            DateTime?                 @map("bond_start_date")
+  bondNotRequired          Boolean                   @default(false) @map("bond_not_required")
   docDegreeCollected       Boolean                   @default(false) @map("doc_degree_collected")
   docHSCCollected          Boolean                   @default(false) @map("doc_hsc_collected")
   docRemarks               String?                   @map("doc_remarks")

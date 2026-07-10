@@ -34,7 +34,28 @@ const BondDetails = ({ form, setField, errors, isView }) => {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className={isView ? "font-bold text-xl text-gray-800 mb-4 border-b pb-2" : "text-lg font-semibold mb-4"}>Bond & Documents Details</h3>
+        <div className="flex items-start justify-between">
+          <h3 className={isView ? "font-bold text-xl text-gray-800 mb-4 border-b pb-2" : "text-lg font-semibold mb-4"}>Bond & Documents Details</h3>
+          {!isView && (
+            <label className="ml-4 flex items-center text-sm text-gray-600">
+              <input
+                type="checkbox"
+                checked={!!form.bondNotRequired}
+                onChange={(e) => {
+                  const v = !!e.target.checked;
+                  setField('bondNotRequired', v);
+                  if (v) {
+                    // Clear bond fields when bond is not required
+                    setField('bondDuration', '');
+                    setField('documentsCollected', []);
+                  }
+                }}
+                className="h-4 w-4 rounded cursor-pointer"
+              />
+              <span className="ml-2">Bond not required</span>
+            </label>
+          )}
+        </div>
         {/* Bond Duration */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -49,16 +70,18 @@ const BondDetails = ({ form, setField, errors, isView }) => {
                   value={form.bondDuration || ''}
                   onChange={(e) => setField('bondDuration', e.target.value)}
                   readOnly={isView}
-                  disabled={isView}
+                  disabled={isView || !!form.bondNotRequired}
                   className={`px-3 py-1 border rounded-md text-sm outline-none w-24 ${errors.bondDuration
                     ? 'border-red-500 focus:ring-red-400'
                     : 'border-gray-300 focus:ring-blue-400'
-                    } ${isView ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                    } ${isView || form.bondNotRequired ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                   placeholder="e.g., 2.5"
                 />
                 <span className="ml-2">years</span>
               </div>
-              <span className="text-red-500 ml-1">*</span>
+              {!form.bondNotRequired && (
+                <span className="text-red-500 ml-1">*</span>
+              )}
             </div>
           </label>
           {errors.bondDuration && (
@@ -83,7 +106,7 @@ const BondDetails = ({ form, setField, errors, isView }) => {
                     handleDocumentChange(doc.id, e.target.checked)
                   }
                   readOnly={isView}
-                  disabled={isView}
+                  disabled={isView || !!form.bondNotRequired}
                   className={`h-4 w-4 rounded ${isView ? 'cursor-not-allowed' : 'cursor-pointer'
                     }`}
                 />

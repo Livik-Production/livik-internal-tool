@@ -201,6 +201,7 @@ export default function EmployeeForm({
     documentsCollected:
       initialData.documentsCollected ?? reconstructDocuments(initialData),
     bondRemarks: initialData.bondRemarks ?? '',
+    bondNotRequired: initialData.bondNotRequired ?? false,
   });
 
   const [educations, setEducations] = useState(
@@ -318,7 +319,7 @@ export default function EmployeeForm({
           newErrors.workMode = 'Work mode is required.';
         }
     } else if (s === 3) {
-      if (form.workType !== 'CONTRACT') {
+      if (form.workType !== 'CONTRACT' && !form.bondNotRequired) {
         if (!form.bondDuration || !String(form.bondDuration).trim()) {
           newErrors.bondDuration = 'Bond duration is required.';
         } else {
@@ -626,6 +627,7 @@ export default function EmployeeForm({
       bondDuration: String(form.bondDuration ?? '').trim() || undefined,
       documentsCollected: form.documentsCollected || undefined,
       bondRemarks: form.bondRemarks?.trim() || undefined,
+      bondNotRequired: !!form.bondNotRequired,
         workMode: form.workMode?.trim() || undefined,
         wfoOffice: form.wfoOffice?.trim() || undefined,
         workType: form.workType?.trim() || undefined,
