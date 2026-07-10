@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useMemo, useState, useRef, useEffect } from 'react';
+import { useCallback, useMemo, useState, useRef, useEffect, Suspense } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { logoutSuccess } from '../../store/slices/authSlice';
 import {
@@ -21,6 +21,7 @@ import {
   UserCheck,
   Globe,
   Clock,
+  Handshake,
 } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
 
@@ -107,6 +108,12 @@ const navItems = [
       },
     ],
   },
+   {
+    id: 'crm',
+    title: 'CRM',
+    href: '/dashboard/crm',
+    icon: <Handshake size={20} />,
+  },
   {
     id: 'employee-portal',
     title: 'Employee Portal',
@@ -192,7 +199,7 @@ const hasModuleRight = (itemId, userRights) => {
   }
 };
 
-export default function Sidebar({ onLinkClick }) {
+function SidebarContent({ onLinkClick }) {
   const pathname = usePathname() || '';
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -498,5 +505,13 @@ export default function Sidebar({ onLinkClick }) {
         onCancel={() => setLogoutConfirmOpen(false)}
       />
     </div>
+  );
+}
+
+export default function Sidebar(props) {
+  return (
+    <Suspense fallback={<SidebarSkeleton />}>
+      <SidebarContent {...props} />
+    </Suspense>
   );
 }

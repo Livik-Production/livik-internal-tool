@@ -59,9 +59,7 @@ export default function CompanyDetailsTab() {
               swiftCode: data.swiftCode || '',
               exportCountry: data.exportCountry || '',
               lutBondNo: data.lutBondNo || '',
-              lutValidFrom: data.lutValidFrom
-                ? data.lutValidFrom.split('T')[0]
-                : '',
+              lutValidFrom: data.lutValidFrom ? data.lutValidFrom.split('T')[0] : '',
               lutValidTo: data.lutValidTo ? data.lutValidTo.split('T')[0] : '',
             });
           }
@@ -87,9 +85,7 @@ export default function CompanyDetailsTab() {
     if (companyDetails.cinNumber) {
       const cinRegex = /^[LU][0-9]{5}[A-Z]{2}[0-9]{4}[A-Z]{3}[0-9]{6}$/i;
       if (!cinRegex.test(companyDetails.cinNumber)) {
-        showErrorToast(
-          'Invalid CIN Number format. Example: L12345MH2000PLC123456'
-        );
+        showErrorToast('Invalid CIN Number format. Example: L12345MH2000PLC123456');
         return;
       }
     }
@@ -329,7 +325,7 @@ export default function CompanyDetailsTab() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
               />
             </div>
-
+            
             {/* LUT / Export Details */}
             <div className="space-y-2">
               <label className="text-sm font-semibold text-gray-700 block text-left">
@@ -381,14 +377,14 @@ export default function CompanyDetailsTab() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
               />
             </div>
-            <div className="space-y-2">
+             <div className="space-y-2">
               <label className="text-sm font-semibold text-gray-700 block text-left">
                 CIN Number
               </label>
               <input
                 type="text"
                 name="cinNumber"
-                value={companyDetails.cinNumber || ''}
+                value={companyDetails.cinNumber}
                 onChange={handleCompanyDetailsChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
               />

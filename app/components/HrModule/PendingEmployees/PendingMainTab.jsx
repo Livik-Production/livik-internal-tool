@@ -7,9 +7,7 @@ import DocumentApprovalsTable from './DocumentApprovalsTable';
 import { UserCheck, FileText } from 'lucide-react';
 
 export default function PendingMainTab({ initialSubTab, ...props }) {
-  const [activeSubTab, setActiveSubTab] = useState(
-    initialSubTab || 'employees'
-  ); // employees | documents
+  const [activeSubTab, setActiveSubTab] = useState(initialSubTab || 'employees'); // employees | documents
 
   const subTabs = [
     { id: 'employees', label: 'Pending Employees' },

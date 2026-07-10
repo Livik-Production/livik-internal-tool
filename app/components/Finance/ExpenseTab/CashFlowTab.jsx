@@ -359,7 +359,7 @@ const CashFlowTab = ({
             data={currentData}
             rowKey="id"
             className="border border-gray-100 rounded-xl overflow-hidden shadow-sm"
-            maxHeight="60vh"
+            maxHeight="none"
           />
 
           <div className="mt-4">

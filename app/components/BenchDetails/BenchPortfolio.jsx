@@ -824,10 +824,7 @@ export default function BenchPortfolio({
                 className="absolute right-2 top-1 shadow-none bg-transparent hover:bg-transparent"
                 title="Clear search"
               >
-                <X
-                  size={14}
-                  className="text-gray-400 hover:text-red-500 hover:scale-110"
-                />
+                <X size={14} className="text-gray-400 hover:text-red-500 hover:scale-110" />
               </IconButton>
             )}
           </div>

@@ -46,12 +46,12 @@ export default function CustomTable({
       className={`relative w-full border border-gray-300 rounded-xl text-gray-900 overflow-hidden ${className}`}
     >
       <div
-        // container handles both x and y overflow; y scroll hidden visually
+        // container handles both x and y overflow
         style={{
           maxHeight,
           minHeight,
           overflowX: 'auto',
-          overflowY: 'hidden',
+          overflowY: 'auto',
           msOverflowStyle: showScrollbar ? 'auto' : 'none',
           scrollbarWidth: showScrollbar ? 'auto' : 'none',
         }}

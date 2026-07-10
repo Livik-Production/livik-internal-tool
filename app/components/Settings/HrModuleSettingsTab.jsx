@@ -2,13 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import {
-  CalendarDays,
-  SquarePen,
-  Trash,
-  AlertCircle,
-  Loader2,
-} from 'lucide-react';
+import { CalendarDays, SquarePen, Trash, AlertCircle, Loader2 } from 'lucide-react';
 import CustomTable from '../CustomTable';
 import { showSuccessToast, showErrorToast } from '../Toast';
 import IconButton from '../Buttons/IconButton';
@@ -356,13 +350,8 @@ export default function HrModuleSettingsTab() {
                 <div className="animate-in fade-in duration-300">
                   {isHistoryLoading ? (
                     <div className="flex justify-center items-center py-10 min-h-[200px]">
-                      <Loader2
-                        className="animate-spin text-[#004475]"
-                        size={36}
-                      />
-                      <span className="ml-3 text-sm text-gray-500 font-semibold">
-                        Loading history...
-                      </span>
+                      <Loader2 className="animate-spin text-[#004475]" size={36} />
+                      <span className="ml-3 text-sm text-gray-500 font-semibold">Loading history...</span>
                     </div>
                   ) : (
                     <CustomTable
@@ -476,140 +465,136 @@ export default function HrModuleSettingsTab() {
         </div>
       </div>
 
-      {editingRecord &&
-        mounted &&
-        createPortal(
-          <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg animate-in fade-in zoom-in duration-200 overflow-hidden">
-              <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-                <h3 className="text-lg font-bold text-gray-900">
-                  {isViewOnly
-                    ? 'View Attendance Setting'
-                    : 'Edit Attendance Setting'}
-                </h3>
+      {editingRecord && mounted && createPortal(
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg animate-in fade-in zoom-in duration-200 overflow-hidden">
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+              <h3 className="text-lg font-bold text-gray-900">
+                {isViewOnly
+                  ? 'View Attendance Setting'
+                  : 'Edit Attendance Setting'}
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingRecord(null);
+                  setIsViewOnly(false);
+                }}
+                className="p-2 hover:bg-gray-200 rounded-full transition-colors"
+              >
+                <AlertCircle size={20} className="rotate-45" />
+              </button>
+            </div>
+            <form
+              onSubmit={handleUpdatePayrollSetting}
+              className="p-6 space-y-4"
+            >
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  Effective Date
+                </label>
+                <input
+                  type="date"
+                  value={editingRecord.effectiveDate}
+                  onChange={(e) =>
+                    setEditingRecord({
+                      ...editingRecord,
+                      effectiveDate: e.target.value,
+                    })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-50 disabled:text-gray-500"
+                  required
+                  disabled={isViewOnly}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  Sunday Working Type
+                </label>
+                <select
+                  value={editingRecord.sunday}
+                  onChange={(e) =>
+                    setEditingRecord({
+                      ...editingRecord,
+                      sunday: e.target.value,
+                    })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-50 disabled:text-gray-500"
+                  disabled={isViewOnly}
+                >
+                  <option value="Full">Full Day</option>
+                  <option value="Half">Half Day</option>
+                  <option value="Leave">Weekend Off</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  Saturday Working Type
+                </label>
+                <select
+                  value={editingRecord.saturday}
+                  onChange={(e) =>
+                    setEditingRecord({
+                      ...editingRecord,
+                      saturday: e.target.value,
+                    })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-50 disabled:text-gray-500"
+                  disabled={isViewOnly}
+                >
+                  <option value="Full">Full Day</option>
+                  <option value="Half">Half Day</option>
+                  <option value="Leave">Weekend Off</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-2 py-2">
+                <input
+                  type="checkbox"
+                  id="edit-holiday"
+                  checked={editingRecord.companyHoliday}
+                  onChange={(e) =>
+                    setEditingRecord({
+                      ...editingRecord,
+                      companyHoliday: e.target.checked,
+                    })
+                  }
+                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
+                  disabled={isViewOnly}
+                />
+                <label
+                  htmlFor="edit-holiday"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Company Holiday enabled
+                </label>
+              </div>
+              <div className="pt-4 flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => {
                     setEditingRecord(null);
                     setIsViewOnly(false);
                   }}
-                  className="p-2 hover:bg-gray-200 rounded-full transition-colors"
+                  className="px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                 >
-                  <AlertCircle size={20} className="rotate-45" />
+                  {isViewOnly ? 'Close' : 'Cancel'}
                 </button>
-              </div>
-              <form
-                onSubmit={handleUpdatePayrollSetting}
-                className="p-6 space-y-4"
-              >
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">
-                    Effective Date
-                  </label>
-                  <input
-                    type="date"
-                    value={editingRecord.effectiveDate}
-                    onChange={(e) =>
-                      setEditingRecord({
-                        ...editingRecord,
-                        effectiveDate: e.target.value,
-                      })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-50 disabled:text-gray-500"
-                    required
-                    disabled={isViewOnly}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">
-                    Sunday Working Type
-                  </label>
-                  <select
-                    value={editingRecord.sunday}
-                    onChange={(e) =>
-                      setEditingRecord({
-                        ...editingRecord,
-                        sunday: e.target.value,
-                      })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-50 disabled:text-gray-500"
-                    disabled={isViewOnly}
-                  >
-                    <option value="Full">Full Day</option>
-                    <option value="Half">Half Day</option>
-                    <option value="Leave">Weekend Off</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">
-                    Saturday Working Type
-                  </label>
-                  <select
-                    value={editingRecord.saturday}
-                    onChange={(e) =>
-                      setEditingRecord({
-                        ...editingRecord,
-                        saturday: e.target.value,
-                      })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-50 disabled:text-gray-500"
-                    disabled={isViewOnly}
-                  >
-                    <option value="Full">Full Day</option>
-                    <option value="Half">Half Day</option>
-                    <option value="Leave">Weekend Off</option>
-                  </select>
-                </div>
-                <div className="flex items-center gap-2 py-2">
-                  <input
-                    type="checkbox"
-                    id="edit-holiday"
-                    checked={editingRecord.companyHoliday}
-                    onChange={(e) =>
-                      setEditingRecord({
-                        ...editingRecord,
-                        companyHoliday: e.target.checked,
-                      })
-                    }
-                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
-                    disabled={isViewOnly}
-                  />
-                  <label
-                    htmlFor="edit-holiday"
-                    className="text-sm font-medium text-gray-700"
-                  >
-                    Company Holiday enabled
-                  </label>
-                </div>
-                <div className="pt-4 flex justify-end gap-3">
+                {!isViewOnly && (
                   <button
-                    type="button"
-                    onClick={() => {
-                      setEditingRecord(null);
-                      setIsViewOnly(false);
-                    }}
-                    className="px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                    type="submit"
+                    disabled={isLoading}
+                    className="px-6 py-2 bg-[#004475] text-white text-sm font-bold rounded-lg shadow-sm transition-all disabled:opacity-50 flex items-center justify-center"
                   >
-                    {isViewOnly ? 'Close' : 'Cancel'}
+                    {isLoading && <Loader2 className="animate-spin mr-2" size={16} />}
+                    {isLoading ? 'Updating...' : 'Update Record'}
                   </button>
-                  {!isViewOnly && (
-                    <button
-                      type="submit"
-                      disabled={isLoading}
-                      className="px-6 py-2 bg-[#004475] text-white text-sm font-bold rounded-lg shadow-sm transition-all disabled:opacity-50 flex items-center justify-center"
-                    >
-                      {isLoading && (
-                        <Loader2 className="animate-spin mr-2" size={16} />
-                      )}
-                      {isLoading ? 'Updating...' : 'Update Record'}
-                    </button>
-                  )}
-                </div>
-              </form>
-            </div>
-          </div>,
-          document.body
-        )}
+                )}
+              </div>
+            </form>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {/* Delete Confirmation Modal */}
       <CustomAlertForm

@@ -168,22 +168,27 @@ const ClientSelectionModal = ({
         const targetClientName =
           initialData.client?.name ||
           initialData.clientName ||
-          initialData.client;
+          (typeof initialData.client === 'string' ? initialData.client : null) ||
+          initialData.companyName ||
+          '';
 
         const clientToSelect = clientData.find((c) => {
           const cId = getClientId(c);
-          // Check ID match (converting to string to be safe)
-          if (targetCustomerId && String(cId) === String(targetCustomerId))
+          // Check ID match
+          if (targetCustomerId && cId && String(cId) === String(targetCustomerId)) {
             return true;
+          }
 
-          // Fallback to Name match if no ID or ID match failed
+          // Fallback to Name match
           const cName = getClientName(c);
           if (
             targetClientName &&
             typeof targetClientName === 'string' &&
-            cName.toLowerCase() === targetClientName.toLowerCase()
-          )
+            cName &&
+            cName.trim().toLowerCase() === targetClientName.trim().toLowerCase()
+          ) {
             return true;
+          }
 
           return false;
         });
@@ -212,8 +217,8 @@ const ClientSelectionModal = ({
         setSelectedProducts(products);
         setTotalAmount(initialData.subTotal || 0); // Use subTotal from invoice
 
-        // If initialData is present (editing or duplicating), go directly to Step 2 (Product Selection)
-        setShowProductModal(true);
+        // If initialData is present (editing or duplicating), start at Step 1
+        setShowProductModal(false);
         setShowGSTModal(false);
       } else {
         // Reset for new invoice
@@ -425,9 +430,7 @@ const ClientSelectionModal = ({
                   <div className="flex items-center gap-4 min-w-0 w-1/5 pr-4">
                     <input
                       type="radio"
-                      checked={
-                        getClientId(selectedClient) === getClientId(client)
-                      }
+                      checked={getClientId(selectedClient) === getClientId(client)}
                       onChange={() => handleToggleSelectClient(client)}
                       onClick={(e) => e.stopPropagation()}
                       className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 cursor-pointer flex-shrink-0"

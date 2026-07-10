@@ -131,6 +131,17 @@ const RowActions = ({
               </button>
               <div className="border-t border-gray-100 my-1"></div>
               <button
+                onClick={() => {
+                  setIsOpen(false);
+                  onDuplicate(invoice);
+                }}
+                className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2 text-gray-700"
+              >
+                <Copy size={14} className="text-gray-600" />
+                <span>Duplicate Invoice</span>
+              </button>
+              <div className="border-t border-gray-100 my-1"></div>
+              <button
                 disabled={!isSuperAdmin}
                 onClick={() => {
                   if (!isSuperAdmin) return;

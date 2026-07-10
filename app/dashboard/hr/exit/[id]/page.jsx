@@ -16,6 +16,17 @@ export default function EmployeeExitPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
+  const [formData, setFormData] = useState({
+    exitType: 'RESIGNATION',
+    resignationDate: '',
+    lastWorkingDay: '',
+    reason: '',
+    employeeFeedback: '',
+    hrRemarks: '',
+    isAssetsReturned: false,
+    isHandoverCompleted: false,
+  });
+
   useEffect(() => {
     if (!id) return;
     const fetchEmployee = async () => {
@@ -35,27 +46,34 @@ export default function EmployeeExitPage() {
     fetchEmployee();
   }, [id]);
 
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/employees/${id}`, {
-        method: 'PUT',
+      const res = await fetch(`/api/employees/${id}/exit`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          status: 'Inactive',
-        }),
+        body: JSON.stringify(formData),
       });
 
-      if (!res.ok) throw new Error('Failed to submit exit information');
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to submit exit information');
+      }
 
-      alert(
-        'Employee exit information processed successfully. Status updated to Inactive.'
-      );
+      alert('Employee exit information processed successfully. Status updated to Inactive.');
       router.push('/dashboard/hr');
     } catch (err) {
       console.error(err);
-      alert('Failed to submit exit information');
+      alert(err.message || 'Failed to submit exit information');
     } finally {
       setSubmitting(false);
     }
@@ -114,7 +132,7 @@ export default function EmployeeExitPage() {
       {/* Form Area */}
       <div className="flex-1 bg-white border border-gray-200 shadow-sm rounded-2xl p-6 overflow-y-auto w-full">
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
                 Employee Name
@@ -141,102 +159,122 @@ export default function EmployeeExitPage() {
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+                Exit Type *
+              </label>
+              <select
+                required
+                name="exitType"
+                value={formData.exitType}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white text-gray-800 font-medium cursor-pointer"
+              >
+                <option value="RESIGNATION">Resignation</option>
+                <option value="TERMINATION">Termination</option>
+                <option value="ABSCONDING">Absconding</option>
+                <option value="RETIREMENT">Retirement</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+                Resignation Date
+              </label>
+              <input
+                type="date"
+                name="resignationDate"
+                value={formData.resignationDate}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white text-gray-800"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
                 Last Working Date *
               </label>
               <input
                 type="date"
                 required
-                name="exitDate"
+                name="lastWorkingDay"
+                value={formData.lastWorkingDay}
+                onChange={handleChange}
                 className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white text-gray-800"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
+          <div className="space-y-1">
+            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+              Detailed Reason for Exit *
+            </label>
+            <textarea
+              name="reason"
+              required
+              rows={2}
+              value={formData.reason}
+              onChange={handleChange}
+              placeholder="State the detailed reason for the exit..."
+              className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white text-gray-800"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1">
               <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
-                Reason for Exit *
+                Employee Feedback
               </label>
-              <select
-                required
-                name="reason"
-                className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white text-gray-800 font-medium cursor-pointer"
-              >
-                <option value="Resignation">Resignation</option>
-                <option value="Termination">Termination</option>
-                <option value="Retirement">Retirement</option>
-                <option value="Health Reasons">Health Reasons</option>
-                <option value="Other">Other</option>
-              </select>
+              <textarea
+                name="employeeFeedback"
+                rows={3}
+                value={formData.employeeFeedback}
+                onChange={handleChange}
+                placeholder="Feedback provided by the employee during exit interview..."
+                className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white text-gray-800"
+              />
             </div>
-            <div>
+            <div className="space-y-1">
               <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
-                Exit Interview Conducted?
+                HR Remarks
               </label>
-              <select
-                name="interviewConducted"
-                className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white text-gray-800 font-medium cursor-pointer"
-              >
-                <option value="Yes">Yes</option>
-                <option value="No">No</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
-                Notice Period Served?
-              </label>
-              <select
-                name="noticeServed"
-                className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white text-gray-800 font-medium cursor-pointer"
-              >
-                <option value="Yes">Yes</option>
-                <option value="No">No</option>
-              </select>
+              <textarea
+                name="hrRemarks"
+                rows={3}
+                value={formData.hrRemarks}
+                onChange={handleChange}
+                placeholder="HR's internal notes or remarks..."
+                className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white text-gray-800"
+              />
             </div>
           </div>
 
           <div className="border-t border-gray-100 pt-4">
             <span className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
-              Departmental Clearances
+              Clearance Checklist
             </span>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <label className="flex items-center gap-2.5 text-sm font-medium text-gray-700 cursor-pointer p-3 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors">
                 <input
                   type="checkbox"
-                  name="clearanceIT"
+                  name="isAssetsReturned"
+                  checked={formData.isAssetsReturned}
+                  onChange={handleChange}
                   className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer h-4 w-4"
                 />
-                <span>IT Clearance</span>
+                <span>All Company Assets Returned</span>
               </label>
               <label className="flex items-center gap-2.5 text-sm font-medium text-gray-700 cursor-pointer p-3 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors">
                 <input
                   type="checkbox"
-                  name="clearanceHR"
+                  name="isHandoverCompleted"
+                  checked={formData.isHandoverCompleted}
+                  onChange={handleChange}
                   className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer h-4 w-4"
                 />
-                <span>HR Clearance</span>
-              </label>
-              <label className="flex items-center gap-2.5 text-sm font-medium text-gray-700 cursor-pointer p-3 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors">
-                <input
-                  type="checkbox"
-                  name="clearanceFinance"
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer h-4 w-4"
-                />
-                <span>Finance Clearance</span>
+                <span>Work Handover Completed</span>
               </label>
             </div>
-          </div>
-
-          <div className="space-y-1">
-            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
-              Exit Remarks / Notes
-            </label>
-            <textarea
-              name="remarks"
-              rows={4}
-              placeholder="Enter exit interview summary or remarks..."
-              className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white text-gray-800"
-            />
           </div>
 
           <div className="flex justify-end gap-3 pt-4">

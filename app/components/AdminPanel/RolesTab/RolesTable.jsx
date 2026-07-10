@@ -230,7 +230,7 @@ export default function RolesTable({
       <div className="flex flex-col sm:flex-row justify-end items-start sm:items-center gap-3 mb-3 mt-1">
         <div className="relative w-full sm:w-auto">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="absolute left-3 h-4 w-4 text-gray-400" />
+        <Search className="absolute left-3 h-4 w-4 text-gray-400" />
           </div>
           <input
             placeholder="Search roles by name or description..."

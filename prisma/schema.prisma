@@ -82,6 +82,8 @@ model Employee {
   isActive                 Boolean                   @default(true)
   birthdayEmailLogs        BirthdayEmailLog[]
   workAnniversaryEmailLogs WorkAnniversaryEmailLog[]
+  crmLeads                 CrmLead[]
+  employeeExit             EmployeeExit?             @relation("ExitEmployee")
 }
 
 model BenchDetail {
@@ -123,6 +125,8 @@ model Rights {
   description String?      @map("description")
   createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt   DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  createdBy   String?
+  updatedBy   String?
   roles       RoleRights[]
 }
 
@@ -133,6 +137,8 @@ model Role {
   description String?      @map("description")
   createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt   DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  createdBy   String?
+  updatedBy   String?
   employees   Employee[]
   rights      RoleRights[]
 }
@@ -157,6 +163,7 @@ model Asset {
   categoryId    String            @map("category_id")
   deviceType    String?           @map("device_type")
   brand         String?
+  branch        String?
   modelName     String?           @map("model_name")
   serialNumber  String?           @map("serial_number")
   vendor        String?
@@ -243,6 +250,8 @@ model Expense {
   attachment  String?
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
+  createdBy   String?
+  updatedBy   String?
 
   @@index([category])
   @@index([expenseDate])
@@ -771,4 +780,53 @@ model WorkAnniversaryEmailLog {
   employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
   @@unique([employeeId, sentYear])
+}
+
+model CrmLead {
+  id String @id @default(cuid())
+
+  companyName    String  @map("company_name")
+  companyAddress String? @map("company_address")
+  companyEmail   String? @map("company_email")
+  companyWebsite String? @map("company_website")
+
+  pocName       String  @map("poc_name")
+  pocDepartment String? @map("poc_department")
+  pocMobile     String? @map("poc_mobile")
+  pocEmail      String? @map("poc_email")
+
+  assigneeType String    @map("assignee_type") // "EMPLOYEE" | "CONTRACT_EMPLOYEE"
+  assigneeId   String?   @map("assignee_id")
+  assignee     Employee? @relation(fields: [assigneeId], references: [id])
+
+  date      DateTime? @map("date")
+  time      String?   @map("time")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  createdBy String?   @map("created_by")
+  updatedBy String?   @map("updated_by")
+  notes     String?   @map("notes")
+
+  reminderName String?   @map("reminder_name")
+  reminderDate DateTime? @map("reminder_date")
+
+  status String @default("New")
+
+  @@map("crm_leads")
+}
+
+model EmployeeExit {
+  id                  String    @id @default(cuid())
+  employeeId          String    @unique @map("employee_id")
+  exitType            String    @map("exit_type")
+  resignationDate     DateTime? @map("resignation_date")
+  lastWorkingDay      DateTime  @map("last_working_day")
+  reason              String
+  employeeFeedback    String?   @map("employee_feedback")
+  hrRemarks           String?   @map("hr_remarks")
+  isAssetsReturned    Boolean   @default(false) @map("is_assets_returned")
+  isHandoverCompleted Boolean   @default(false) @map("is_handover_completed")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+  employee            Employee  @relation("ExitEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
 }

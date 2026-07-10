@@ -24,8 +24,8 @@ export default function AddAssignForm({
     selectedAssetId: '',
     assignmentType: 'EMPLOYEE',
     employeeName: '',
-    employeeId: '', // This is the display ID (LK001)
-    selectedEmployeeDbId: '', // This is the cuid for the database
+    employeeId: '',
+    selectedEmployeeDbId: '',
     locationId: '',
     assignmentDate: new Date().toISOString().split('T')[0],
     assignmentNotes: '',
@@ -61,21 +61,21 @@ export default function AddAssignForm({
   const employees = useMemo(() => {
     return employeesFromRedux && employeesFromRedux.length > 0
       ? employeesFromRedux
-          .filter((emp) => emp.status?.toUpperCase() === 'ACTIVE')
-          .map((emp) => ({
-            dbId: emp.__raw?.id || emp.id,
-            empId: emp.id,
-            name: emp.name || '',
-            phone: emp.mobile || '',
-            email: emp.email || '',
-            role: emp.role || '',
-            status: emp.status || 'Active',
-          }))
-          .filter(
-            (emp) =>
-              emp.empId !== 'LOCATION' &&
-              !emp.name.toLowerCase().includes('meeting hall')
-          )
+        .filter((emp) => emp.status?.toUpperCase() === 'ACTIVE')
+        .map((emp) => ({
+          dbId: emp.__raw?.id || emp.id,
+          empId: emp.id,
+          name: emp.name || '',
+          phone: emp.mobile || '',
+          email: emp.email || '',
+          role: emp.role || '',
+          status: emp.status || 'Active',
+        }))
+        .filter(
+          (emp) =>
+            emp.empId !== 'LOCATION' &&
+            !emp.name.toLowerCase().includes('meeting hall')
+        )
       : [];
   }, [employeesFromRedux]);
 
@@ -92,9 +92,7 @@ export default function AddAssignForm({
               locs = locs.concat(allDropdowns[key]);
             }
           }
-          setLocations(
-            locs.filter((l) => l.status === 'active' || l.status === 'Active')
-          );
+          setLocations(locs.filter(l => l.status === 'active' || l.status === 'Active'));
         }
       } catch (err) {
         console.error('Failed to fetch locations', err);
@@ -195,12 +193,8 @@ export default function AddAssignForm({
       setEmployeeSuggestions(employees);
     } else {
       const filtered = employees.filter((emp) => {
-        const matchesId = idTerm
-          ? emp.empId?.toLowerCase().includes(idTerm)
-          : false;
-        const matchesName = nameTerm
-          ? emp.name?.toLowerCase().includes(nameTerm)
-          : false;
+        const matchesId = idTerm ? emp.empId?.toLowerCase().includes(idTerm) : false;
+        const matchesName = nameTerm ? emp.name?.toLowerCase().includes(nameTerm) : false;
         return matchesId || matchesName;
       });
       setEmployeeSuggestions(filtered);
@@ -231,10 +225,7 @@ export default function AddAssignForm({
       );
 
       if (foundEmployee) {
-        if (
-          formData.employeeName !== foundEmployee.name &&
-          foundEmployee.name
-        ) {
+        if (formData.employeeName !== foundEmployee.name && foundEmployee.name) {
           setFormData((prev) => ({
             ...prev,
             employeeName: foundEmployee.name,
@@ -264,9 +255,9 @@ export default function AddAssignForm({
         const foundAsset = assets.find(
           (asset) =>
             asset.assetTag?.trim().toLowerCase() ===
-              formData.assetTag.trim().toLowerCase() ||
+            formData.assetTag.trim().toLowerCase() ||
             asset.tag?.trim().toLowerCase() ===
-              formData.assetTag.trim().toLowerCase()
+            formData.assetTag.trim().toLowerCase()
         );
 
         if (foundAsset) {
@@ -486,13 +477,11 @@ export default function AddAssignForm({
           placeholder="Select or enter asset tag"
           disabled={mode === 'view'}
           autoComplete="off"
-          className={`w-full px-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${
-            errors.assetTag ? 'border-red-300' : 'border-gray-300'
-          } ${
-            mode === 'view'
+          className={`w-full px-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${errors.assetTag ? 'border-red-300' : 'border-gray-300'
+            } ${mode === 'view'
               ? 'bg-gray-50 opacity-70 cursor-not-allowed'
               : 'bg-white'
-          }`}
+            }`}
         />
 
         {/* Dropdown for Asset Tag */}
@@ -560,6 +549,7 @@ export default function AddAssignForm({
         </div>
       </div>
 
+
       {/* Assignment Type Toggle */}
       <div className="pt-4 border-t border-gray-200">
         <label className="block text-sm font-medium text-gray-700 mb-3">
@@ -576,9 +566,7 @@ export default function AddAssignForm({
               disabled={mode === 'view'}
               className="text-blue-600 focus:ring-blue-500 mr-2"
             />
-            <span className="text-sm font-medium text-gray-700">
-              Assign to Employee
-            </span>
+            <span className="text-sm font-medium text-gray-700">Assign to Employee</span>
           </label>
           <label className="flex items-center cursor-pointer">
             <input
@@ -590,9 +578,7 @@ export default function AddAssignForm({
               disabled={mode === 'view'}
               className="text-blue-600 focus:ring-blue-500 mr-2"
             />
-            <span className="text-sm font-medium text-gray-700">
-              Assign to Location
-            </span>
+            <span className="text-sm font-medium text-gray-700">Assign to Location</span>
           </label>
         </div>
       </div>
@@ -600,9 +586,7 @@ export default function AddAssignForm({
       {/* Conditional Details */}
       <div className="pt-4 border-t border-gray-200">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
-          {formData.assignmentType === 'EMPLOYEE'
-            ? 'Employee Details'
-            : 'Location Details'}
+          {formData.assignmentType === 'EMPLOYEE' ? 'Employee Details' : 'Location Details'}
         </h3>
 
         {formData.assignmentType === 'EMPLOYEE' ? (
@@ -621,13 +605,11 @@ export default function AddAssignForm({
                 onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                 placeholder="Enter Employee ID"
                 disabled={mode === 'view'}
-                className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.employeeId ? 'border-red-300' : 'border-gray-300'
-                } ${
-                  mode === 'view'
+                className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${errors.employeeId ? 'border-red-300' : 'border-gray-300'
+                  } ${mode === 'view'
                     ? 'bg-gray-50 opacity-70 cursor-not-allowed'
                     : 'bg-white'
-                }`}
+                  }`}
               />
               {errors.employeeId && (
                 <p className="mt-1 text-xs text-red-600">{errors.employeeId}</p>
@@ -648,22 +630,18 @@ export default function AddAssignForm({
                 onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                 placeholder="Employee name will auto-fill"
                 disabled={mode === 'view'}
-                className={`w-full px-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.employeeName
+                className={`w-full px-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${errors.employeeName
                     ? 'border-red-300'
                     : isNameAutoFilled && mode !== 'view'
                       ? 'border-blue-300 bg-blue-50'
                       : 'border-gray-300'
-                } ${
-                  mode === 'view'
+                  } ${mode === 'view'
                     ? 'bg-gray-50 opacity-70 cursor-not-allowed'
                     : 'bg-white'
-                }`}
+                  }`}
               />
               {errors.employeeName && (
-                <p className="mt-1 text-xs text-red-600">
-                  {errors.employeeName}
-                </p>
+                <p className="mt-1 text-xs text-red-600">{errors.employeeName}</p>
               )}
             </div>
 
@@ -726,12 +704,11 @@ export default function AddAssignForm({
                 value={formData.locationId}
                 onChange={handleChange}
                 disabled={mode === 'view'}
-                className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.locationId ? 'border-red-300' : 'border-gray-300'
-                } ${mode === 'view' ? 'bg-gray-50 opacity-70' : 'bg-white'}`}
+                className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${errors.locationId ? 'border-red-300' : 'border-gray-300'
+                  } ${mode === 'view' ? 'bg-gray-50 opacity-70' : 'bg-white'}`}
               >
                 <option value="">-- Select Location --</option>
-                {locations.map((loc) => (
+                {locations.map(loc => (
                   <option key={loc.id} value={loc.id}>
                     {loc.label}
                   </option>
@@ -761,13 +738,11 @@ export default function AddAssignForm({
               value={formData.assignmentDate}
               onChange={handleChange}
               disabled={mode === 'view'}
-              className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${
-                errors.assignmentDate ? 'border-red-300' : 'border-gray-300'
-              } ${
-                mode === 'view'
+              className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${errors.assignmentDate ? 'border-red-300' : 'border-gray-300'
+                } ${mode === 'view'
                   ? 'bg-gray-50 opacity-70 cursor-not-allowed'
                   : 'bg-white'
-              }`}
+                }`}
             />
           </div>
           {errors.assignmentDate && (
@@ -817,8 +792,7 @@ export default function AddAssignForm({
               disabled={
                 isSubmitting ||
                 !formData.selectedAssetId ||
-                (formData.assignmentType === 'EMPLOYEE' &&
-                  (!formData.employeeId || !formData.employeeName)) ||
+                (formData.assignmentType === 'EMPLOYEE' && (!formData.employeeId || !formData.employeeName)) ||
                 (formData.assignmentType === 'LOCATION' && !formData.locationId)
               }
               className="min-w-[150px]"

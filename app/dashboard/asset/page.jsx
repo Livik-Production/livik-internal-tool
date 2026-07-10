@@ -138,6 +138,7 @@ export default function AssetPage() {
   const [tableLoading, setTableLoading] = useState(false);
   const [isRefreshingAsset, setIsRefreshingAsset] = useState(false);
 
+
   // New Category State type
   const [showNewCategoryForm, setShowNewCategoryForm] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -147,6 +148,9 @@ export default function AssetPage() {
   const [assetCategories, setAssetCategories] = useState([]);
   const [categoriesStatus, setCategoriesStatus] = useState('idle');
   const [categoriesError, setCategoriesError] = useState(null);
+
+  // Branches State
+  const [branches, setBranches] = useState([]);
 
   // Fetch asset categories on component mount
   useEffect(() => {
@@ -173,6 +177,29 @@ export default function AssetPage() {
 
     fetchAssetCategories();
   }, [categoriesStatus]);
+
+  // Fetch branches on mount
+  useEffect(() => {
+    const fetchBranches = async () => {
+      try {
+        const res = await fetch('/api/dropdowns?type=branch');
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.data)) {
+            const activeBranches = data.data.filter((b) => b.status !== 'inactive');
+            setBranches(activeBranches);
+            // Default to first active branch if selectedBranch is not set or DGL isn't present
+            if (activeBranches.length > 0 && !activeBranches.some(b => b.value === 'DGL')) {
+              setSelectedBranch(activeBranches[0].value);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch branches', err);
+      }
+    };
+    fetchBranches();
+  }, []);
 
   // Fetch assets on component mount
   useEffect(() => {
@@ -251,7 +278,7 @@ export default function AssetPage() {
   const closeAdd = () => {
     setIsAddOpen(false);
     setSelectedAssetType('');
-    setSelectedBranch('DGL');
+    setSelectedBranch(branches.length > 0 ? branches[0].value : 'DGL');
     setShowAssetForm(false);
   };
 
@@ -321,6 +348,7 @@ export default function AssetPage() {
           assetTag: formData.assetTag,
           categoryId: categoryId,
           deviceType: selectedAssetType,
+          branch: formData.branch,
           brand: formData.brand,
           modelName: formData.modelName,
           serialNumber: formData.serialNumber,
@@ -364,6 +392,7 @@ export default function AssetPage() {
         },
         body: JSON.stringify({
           assetTag: formData.assetTag,
+          branch: formData.branch,
           brand: formData.brand,
           modelName: formData.modelName,
           serialNumber: formData.serialNumber,
@@ -444,15 +473,7 @@ export default function AssetPage() {
     }
   };
 
-  const handleAssign = async (
-    assetId,
-    empId,
-    empName,
-    assignDate,
-    notes,
-    assignmentType,
-    locationId
-  ) => {
+  const handleAssign = async (assetId, empId, empName, assignDate, notes, assignmentType, locationId) => {
     try {
       const response = await fetch('/api/asset-assignment', {
         method: 'POST',
@@ -465,7 +486,7 @@ export default function AssetPage() {
           assignedDate: assignDate,
           notes,
           assignmentType,
-          locationId,
+          locationId
         }),
       });
 
@@ -543,10 +564,7 @@ export default function AssetPage() {
 
       // Also update the selected asset if it's currently open
       if (selectedAsset) {
-        const response = await fetch(
-          `/api/assets/${selectedAsset.id}?_t=${Date.now()}`,
-          { cache: 'no-store' }
-        );
+        const response = await fetch(`/api/assets/${selectedAsset.id}?_t=${Date.now()}`, { cache: 'no-store' });
         if (response.ok) {
           const updatedAsset = await response.json();
           setSelectedAsset(updatedAsset);
@@ -568,6 +586,7 @@ export default function AssetPage() {
     return {
       assetTag: asset.assetTag || asset.tag,
       deviceType: asset.deviceType || asset.type,
+      branch: asset.branch || '',
       brand: asset.brand,
       modelName: asset.modelName || asset.model,
       serialNumber: asset.serialNumber || asset.serial,
@@ -630,11 +649,10 @@ export default function AssetPage() {
           <button
             onClick={handleNextToForm}
             disabled={!selectedAssetType}
-            className={`mt-6 px-6 py-3 rounded-lg font-medium transition-colors ${
-              selectedAssetType
-                ? 'bg-[#1E90FF] text-white hover:bg-[#1873cc]'
-                : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-            }`}
+            className={`mt-6 px-6 py-3 rounded-lg font-medium transition-colors ${selectedAssetType
+              ? 'bg-[#1E90FF] text-white hover:bg-[#1873cc]'
+              : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+              }`}
           >
             Next
           </button>
@@ -644,7 +662,9 @@ export default function AssetPage() {
   );
 
   return (
-    <div className="text-left h-full flex flex-col min-h-0 animate-dashboard-reveal">
+    <div
+      className="text-left h-full flex flex-col min-h-0 animate-dashboard-reveal"
+    >
       <div className="bg-white rounded-2xl shadow-sm p-3 m-0.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -681,7 +701,9 @@ export default function AssetPage() {
               onClick={openAdd}
               disabled={isViewOnly || categoriesStatus === 'loading'}
             >
-              {categoriesStatus === 'loading' ? 'Loading...' : '+ Add Asset'}
+              {categoriesStatus === 'loading'
+                ? 'Loading...'
+                : '+ Add Asset'}
             </PrimaryButton>
           </div>
         </div>
@@ -766,11 +788,7 @@ export default function AssetPage() {
               <div className="p-2.5">
                 {assetsStatus === 'loading' || isRefreshingAsset ? (
                   <div className="flex justify-center items-center py-20 min-h-[400px]">
-                    <Loader
-                      label="Loading assets..."
-                      size="md"
-                      fullScreen={false}
-                    />
+                    <Loader label="Loading assets..." size="md" fullScreen={false} />
                   </div>
                 ) : (
                   <AssetsForm
@@ -829,8 +847,12 @@ export default function AssetPage() {
               {activeModalTab === 'details' && (
                 <div>
                   <AssetForm
-                    assetType={selectedAsset?.deviceType || selectedAsset?.type}
-                    onSubmit={modalMode === 'edit' ? handleAssetUpdate : null}
+                    assetType={
+                      selectedAsset?.deviceType || selectedAsset?.type
+                    }
+                    onSubmit={
+                      modalMode === 'edit' ? handleAssetUpdate : null
+                    }
                     onCancel={closeModal}
                     onEdit={
                       modalMode === 'view' && !isViewOnly
@@ -852,51 +874,51 @@ export default function AssetPage() {
                     Assignment History
                   </h3>
                   {selectedAsset.assignments &&
-                  selectedAsset.assignments.length > 0 ? (
+                    selectedAsset.assignments.length > 0 ? (
                     <div className="space-y-3">
-                      {selectedAsset.assignments.map((assignment, index) => (
-                        <div
-                          key={index}
-                          className="p-4 bg-gray-50 rounded-lg border border-gray-200"
-                        >
-                          <div className="flex justify-between items-start mb-2">
-                            <div>
-                              {assignment.assignmentType === 'LOCATION' ? (
-                                <span className="font-semibold text-gray-900">
-                                  Location:{' '}
-                                  {assignment.locationName ||
-                                    assignment.locationId?.substring(0, 6)}
-                                </span>
-                              ) : (
-                                <>
+                      {selectedAsset.assignments.map(
+                        (assignment, index) => (
+                          <div
+                            key={index}
+                            className="p-4 bg-gray-50 rounded-lg border border-gray-200"
+                          >
+                            <div className="flex justify-between items-start mb-2">
+                              <div>
+                                {assignment.assignmentType === 'LOCATION' ? (
                                   <span className="font-semibold text-gray-900">
-                                    {assignment.employee?.firstName}{' '}
-                                    {assignment.employee?.lastName}
+                                    Location: {assignment.locationName || assignment.locationId?.substring(0, 6)}
                                   </span>
-                                  {assignment.employee?.empId && (
-                                    <span className="text-gray-600 ml-2">
-                                      ({assignment.employee?.empId})
+                                ) : (
+                                  <>
+                                    <span className="font-semibold text-gray-900">
+                                      {assignment.employee?.firstName}{' '}
+                                      {assignment.employee?.lastName}
                                     </span>
-                                  )}
-                                </>
-                              )}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {new Date(
-                                assignment.assignedDate
-                              ).toLocaleDateString()}
-                              {assignment.returnDate && (
-                                <>
-                                  {' to '}
-                                  {new Date(
-                                    assignment.returnDate
-                                  ).toLocaleDateString()}
-                                </>
-                              )}
+                                    {assignment.employee?.empId && (
+                                      <span className="text-gray-600 ml-2">
+                                        ({assignment.employee?.empId})
+                                      </span>
+                                    )}
+                                  </>
+                                )}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {new Date(
+                                  assignment.assignedDate
+                                ).toLocaleDateString()}
+                                {assignment.returnDate && (
+                                  <>
+                                    {' to '}
+                                    {new Date(
+                                      assignment.returnDate
+                                    ).toLocaleDateString()}
+                                  </>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        )
+                      )}
                     </div>
                   ) : (
                     <div className="text-center py-10 bg-gray-50 rounded-xl border border-dashed border-gray-300">
@@ -915,7 +937,9 @@ export default function AssetPage() {
                     assetId={selectedAsset.id}
                     assetSpecs={selectedAsset.specs || {}}
                     assetTag={selectedAsset.assetTag || selectedAsset.tag}
-                    assetModel={selectedAsset.modelName || selectedAsset.model}
+                    assetModel={
+                      selectedAsset.modelName || selectedAsset.model
+                    }
                     onEditRepair={null}
                     onDeleteRepair={handleRepairChange}
                     onRepairAdded={handleRepairChange}
@@ -936,7 +960,9 @@ export default function AssetPage() {
         onClose={closeAdd}
         widthClass="max-w-5xl"
         title={
-          showAssetForm ? `Add ${selectedAssetType} Asset` : 'Select Asset Type'
+          showAssetForm
+            ? `Add ${selectedAssetType} Asset`
+            : 'Select Asset Type'
         }
       >
         <div className="p-6">
@@ -959,10 +985,17 @@ export default function AssetPage() {
                     <select
                       value={selectedBranch}
                       onChange={(e) => setSelectedBranch(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-700 bg-white transition-all duration-200 mb-4"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-700 text-sm bg-white transition-all duration-200 mb-4"
                     >
-                      <option value="DGL">DGL</option>
-                      <option value="Other">Other</option>
+                      {branches.length > 0 ? (
+                        branches.map((b) => (
+                          <option key={b.id} value={b.value}>
+                            {b.label} {b.label !== b.value ? `(${b.value})` : ''}
+                          </option>
+                        ))
+                      ) : (
+                        <option value="DGL">DGL</option>
+                      )}
                     </select>
 
                     <div className="flex items-center justify-between mb-2">
@@ -988,7 +1021,9 @@ export default function AssetPage() {
                           <input
                             type="text"
                             value={newCategoryName}
-                            onChange={(e) => setNewCategoryName(e.target.value)}
+                            onChange={(e) =>
+                              setNewCategoryName(e.target.value)
+                            }
                             placeholder="e.g. Webcam, Headphones, Server"
                             className="flex-1 px-3 py-2 border border-blue-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                             autoFocus
@@ -998,11 +1033,10 @@ export default function AssetPage() {
                             disabled={
                               isCreatingCategory || !newCategoryName.trim()
                             }
-                            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                              newCategoryName.trim()
-                                ? 'bg-[#004475] text-white  shadow-sm'
-                                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                            }`}
+                            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${newCategoryName.trim()
+                              ? 'bg-[#004475] text-white  shadow-sm'
+                              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                              }`}
                           >
                             {isCreatingCategory ? '...' : 'Create'}
                           </button>
@@ -1032,7 +1066,9 @@ export default function AssetPage() {
                     ) : (
                       <select
                         value={selectedAssetType}
-                        onChange={(e) => setSelectedAssetType(e.target.value)}
+                        onChange={(e) =>
+                          setSelectedAssetType(e.target.value)
+                        }
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-700 bg-white transition-all duration-200"
                       >
                         <option value="">-- Select an asset type --</option>

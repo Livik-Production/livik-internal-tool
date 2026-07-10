@@ -291,11 +291,7 @@ export default function TimesheetTab({ authUser }) {
 
         {loading ? (
           <div className="flex justify-center items-center py-16 bg-white rounded-2xl border border-gray-200 shadow-sm min-h-[200px]">
-            <Loader
-              label="Loading timesheets..."
-              size="md"
-              fullScreen={false}
-            />
+            <Loader label="Loading timesheets..." size="md" fullScreen={false} />
           </div>
         ) : paginatedLogs.length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-200 p-10 text-center text-gray-400 font-bold">
@@ -334,6 +330,7 @@ export default function TimesheetTab({ authUser }) {
                       disabled={loadingEditId !== null}
                     >
                       <SquarePen size={14} />
+
                     </IconButton>
                     <IconButton
                       title="Remove Timesheet"

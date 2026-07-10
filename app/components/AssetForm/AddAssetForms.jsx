@@ -246,11 +246,11 @@ const assetTypeConfigs = {
   },
 };
 
-const generateAssetTag = (assetType, existingAssets = [], formats = {}) => {
+const generateAssetTag = (assetType, existingAssets = [], formats = {}, branch = '') => {
   const customConfig = formats[`asset_${assetType}`];
-
+  
   let prefix, padding, suffix;
-
+  
   if (customConfig) {
     prefix = customConfig.prefix || '';
     padding = customConfig.padding || 3;
@@ -261,6 +261,16 @@ const generateAssetTag = (assetType, existingAssets = [], formats = {}) => {
     padding = 3;
     const yearSuffix = String(new Date().getFullYear()).slice(-2);
     suffix = `-${yearSuffix}`;
+  }
+
+  if (branch) {
+    if (prefix.endsWith('-')) {
+      prefix = `${prefix}${branch}-`;
+    } else if (prefix) {
+      prefix = `${prefix}-${branch}-`;
+    } else {
+      prefix = `${branch}-`;
+    }
   }
 
   const relevantAssets = existingAssets.filter((asset) => {
@@ -294,10 +304,10 @@ const generateAssetTag = (assetType, existingAssets = [], formats = {}) => {
 
   let nextSequence = maxSeq + 1;
   if (customConfig && customConfig.nextNumber) {
-    const dbNext = parseInt(customConfig.nextNumber, 10);
-    if (!isNaN(dbNext) && dbNext > nextSequence) {
-      nextSequence = dbNext;
-    }
+     const dbNext = parseInt(customConfig.nextNumber, 10);
+     if (!isNaN(dbNext) && dbNext > nextSequence) {
+         nextSequence = dbNext;
+     }
   }
 
   return `${prefix}${String(nextSequence).padStart(padding, '0')}${suffix}`;
@@ -447,9 +457,11 @@ const AssetForm = ({
   existingAssets = [],
   isSubmitting = false,
 }) => {
+  const [branches, setBranches] = useState([]);
   const [formData, setFormData] = useState({
     assetTag: '',
     deviceType: assetType,
+    branch: branch,
     brand: '',
     modelName: '',
     serialNumber: '',
@@ -465,6 +477,21 @@ const AssetForm = ({
 
   useEffect(() => {
     const initForm = async () => {
+      // 1. Unconditionally fetch branch dropdown data
+      let branchData = [];
+      try {
+        const res = await fetch('/api/dropdowns?type=branch');
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.data)) {
+            branchData = data.data.filter(b => b.status !== 'inactive');
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch branch dropdowns', error);
+      }
+      setBranches(branchData);
+
       if (initialData) {
         setFormData(initialData);
       } else {
@@ -488,15 +515,13 @@ const AssetForm = ({
           console.error('Failed to fetch number formats', error);
         }
 
-        const newAssetTag = generateAssetTag(
-          assetType,
-          existingAssets,
-          formats
-        );
+        const initialBranch = branch || (branchData.length > 0 ? branchData[0].value : '');
+        const newAssetTag = generateAssetTag(assetType, existingAssets, formats, initialBranch);
 
         setFormData({
           assetTag: newAssetTag,
           deviceType: assetType,
+          branch: initialBranch,
           brand: '',
           modelName: '',
           serialNumber: '',
@@ -512,7 +537,7 @@ const AssetForm = ({
       }
     };
     initForm();
-  }, [assetType, initialData, existingAssets]);
+  }, [assetType, branch, initialData, existingAssets]);
 
   const handleChange = (e) => {
     if (isViewMode) return;
@@ -559,12 +584,34 @@ const AssetForm = ({
             <div className="space-y-1">
               <label className="text-xs text-gray-600 block">
                 Branch
-                <input
-                  value={branch}
-                  className="mt-1 w-full px-3 py-2 border rounded-md text-sm bg-gray-50 cursor-not-allowed"
-                  readOnly
-                  disabled
-                />
+                <select
+                  name="branch"
+                  value={formData.branch}
+                  onChange={(e) => {
+                    handleChange(e);
+                    // Also regenerate the asset tag dynamically when branch changes
+                    const fetchFormatsAndRegenerate = async () => {
+                       try {
+                         const res = await fetch('/api/number-formats');
+                         const formats = res.ok ? await res.json() : {};
+                         const newTag = generateAssetTag(assetType, existingAssets, formats, e.target.value);
+                         setFormData(prev => ({ ...prev, assetTag: newTag }));
+                       } catch (err) {
+                         console.error(err);
+                       }
+                    };
+                    fetchFormatsAndRegenerate();
+                  }}
+                  className={`mt-1 w-full px-3 py-2 border rounded-md text-sm outline-none ${
+                    (isViewMode || !!initialData) ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'
+                  }`}
+                  disabled={isViewMode || !!initialData}
+                >
+                  <option value="">Select Branch</option>
+                  {branches.map(b => (
+                    <option key={b.id} value={b.value}>{b.label}</option>
+                  ))}
+                </select>
               </label>
             </div>
 

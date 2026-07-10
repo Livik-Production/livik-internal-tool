@@ -52,30 +52,17 @@ const SkillsDirectory = ({ isTab = false, isViewOnly = false }) => {
   // Derive final departments and levels
   const finalDepartments =
     dropdownDepartments.length > 0
-      ? [
-          'All Departments',
-          ...dropdownDepartments.filter(
-            (d) => d && d.toLowerCase() !== 'all departments'
-          ),
-        ]
+      ? ['All Departments', ...dropdownDepartments.filter(d => d && d.toLowerCase() !== 'all departments')]
       : [
-          'All Departments',
-          ...Array.from(
-            new Set(employees.map((e) => e.department).filter(Boolean))
-          ).sort(),
-        ];
+        'All Departments',
+        ...Array.from(
+          new Set(employees.map((e) => e.department).filter(Boolean))
+        ).sort(),
+      ];
 
   const finalLevels =
     dropdownLevels.length > 0
-      ? [
-          'All Employees',
-          ...dropdownLevels.filter(
-            (l) =>
-              l &&
-              l.toLowerCase() !== 'all levels' &&
-              l.toLowerCase() !== 'all employees'
-          ),
-        ]
+      ? ['All Employees', ...dropdownLevels.filter(l => l && l.toLowerCase() !== 'all levels' && l.toLowerCase() !== 'all employees')]
       : ['All Employees', 'Junior', 'Mid', 'Senior', 'Expert'];
 
   useEffect(() => {
@@ -124,9 +111,9 @@ const SkillsDirectory = ({ isTab = false, isViewOnly = false }) => {
     setEditForm({
       skills: employee.skills
         ? employee.skills.map((s) => ({
-            name: s.name,
-            category: s.category || 'Mid',
-          }))
+          name: s.name,
+          category: s.category || 'Mid',
+        }))
         : [],
       totalExperience: employee.totalExperience || '',
       projectsDone: employee.projectsDone || '',
@@ -199,9 +186,7 @@ const SkillsDirectory = ({ isTab = false, isViewOnly = false }) => {
 
     const searchLower = searchTerm.toLowerCase().trim();
     // Allow matching plural "developers" to singular "developer"
-    const searchLowerSingular = searchLower.endsWith('s')
-      ? searchLower.slice(0, -1)
-      : searchLower;
+    const searchLowerSingular = searchLower.endsWith('s') ? searchLower.slice(0, -1) : searchLower;
 
     const matchesSearch =
       searchLower === '' ||
@@ -225,8 +210,7 @@ const SkillsDirectory = ({ isTab = false, isViewOnly = false }) => {
         ));
 
     const matchesDept =
-      selectedDept === 'All Departments' ||
-      emp.department?.toLowerCase() === selectedDept.toLowerCase();
+      selectedDept === 'All Departments' || emp.department?.toLowerCase() === selectedDept.toLowerCase();
 
     // Handle the level filtering based on the employee's overall level
     const matchesExp =
@@ -235,17 +219,14 @@ const SkillsDirectory = ({ isTab = false, isViewOnly = false }) => {
 
     const status = (emp.status || '').toLowerCase();
     // Default to true if status is missing to prevent hiding active users
-    const isApproved =
-      status === '' || status === 'active' || status === 'approved';
+    const isApproved = status === '' || status === 'active' || status === 'approved';
 
-    const isMeetingHall =
+    const isMeetingHall = 
       emp.empId === 'LOCATION' ||
       fullName.includes('meeting hall') ||
       emp.name?.toLowerCase().includes('meeting hall');
 
-    return (
-      matchesSearch && matchesDept && matchesExp && isApproved && !isMeetingHall
-    );
+    return matchesSearch && matchesDept && matchesExp && isApproved && !isMeetingHall;
   });
 
   // Reset pagination when search query or filters change
@@ -352,10 +333,7 @@ const SkillsDirectory = ({ isTab = false, isViewOnly = false }) => {
                   className="absolute right-2 top-1.5 shadow-none bg-transparent hover:bg-transparent"
                   title="Clear search"
                 >
-                  <X
-                    size={16}
-                    className="text-gray-400 hover:text-red-500 hover:scale-110"
-                  />
+                  <X size={16} className="text-gray-400 hover:text-red-500 hover:scale-110" />
                 </IconButton>
               )}
             </div>
@@ -412,19 +390,12 @@ const SkillsDirectory = ({ isTab = false, isViewOnly = false }) => {
             <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-gray-200 mb-4">
               <Search className="text-gray-400" size={28} />
             </div>
-            <h3 className="text-xl font-black text-gray-800">
-              No professionals found
-            </h3>
+            <h3 className="text-xl font-black text-gray-800">No professionals found</h3>
             <p className="text-sm font-medium text-gray-500 mt-2 max-w-md text-center">
-              We couldn't find any employees matching your current search or
-              filters. Try adjusting your criteria.
+              We couldn't find any employees matching your current search or filters. Try adjusting your criteria.
             </p>
             <button
-              onClick={() => {
-                setSearchTerm('');
-                setSelectedDept('All Departments');
-                setSelectedExp('All Employees');
-              }}
+              onClick={() => { setSearchTerm(''); setSelectedDept('All Departments'); setSelectedExp('All Employees'); }}
               className="mt-6 px-6 py-2.5 bg-white border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-100 transition-colors shadow-sm flex items-center gap-2"
             >
               <X size={16} /> Clear All Filters
@@ -469,7 +440,7 @@ const SkillsDirectory = ({ isTab = false, isViewOnly = false }) => {
                           {emp.firstName} {emp.lastName}
                         </h3>
                         <div className="text-md font-bold text-gray-700 truncate">
-                          - {emp.designation || 'DEVELOPER'}
+                          -  {emp.designation || 'DEVELOPER'}
                         </div>
                       </div>
                       <div className="text-sm font-bold text-[#004475] truncate mt-1.5">
@@ -509,8 +480,7 @@ const SkillsDirectory = ({ isTab = false, isViewOnly = false }) => {
                         </span>
                         <div className="flex items-baseline gap-1 text-[#004475]">
                           <span className="text-xl font-black leading-none">
-                            {(emp.totalExperience || '0').replace(/\D/g, '') ||
-                              '0'}
+                            {(emp.totalExperience || '0').replace(/\D/g, '') || '0'}
                           </span>
                           <span className="text-xs font-bold">Y</span>
                         </div>
@@ -531,11 +501,7 @@ const SkillsDirectory = ({ isTab = false, isViewOnly = false }) => {
                     <div className="flex-1 p-4 flex flex-col bg-white">
                       <div className="flex-1 flex flex-col">
                         <div className="flex items-center gap-2 mb-3">
-                          <Sparkles
-                            size={16}
-                            className="text-black"
-                            strokeWidth={2}
-                          />
+                          <Sparkles size={16} className="text-black" strokeWidth={2} />
                           <h4 className="text-[12px] font-extrabold text-black uppercase tracking-widest">
                             Core Proficiencies
                           </h4>
@@ -554,14 +520,8 @@ const SkillsDirectory = ({ isTab = false, isViewOnly = false }) => {
                           </div>
                         ) : (
                           <div className="flex-1 border-[2px] border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center p-2 text-center min-h-[10px]">
-                            <ZapOff
-                              size={20}
-                              className="text-gray-400 mb-2"
-                              strokeWidth={2}
-                            />
-                            <p className="text-[13px] font-bold text-gray-500">
-                              No skills listed
-                            </p>
+                            <ZapOff size={20} className="text-gray-400 mb-2" strokeWidth={2} />
+                            <p className="text-[13px] font-bold text-gray-500">No skills listed</p>
                           </div>
                         )}
                       </div>
@@ -569,19 +529,11 @@ const SkillsDirectory = ({ isTab = false, isViewOnly = false }) => {
                       {/* Footer */}
                       <div className="mt-4 pt-3 flex flex-wrap items-center justify-between border-t-[2px] border-black/10">
                         <span className="text-[10px] font-bold text-gray-600 uppercase tracking-wide">
-                          UPDATED :{' '}
-                          {emp.updatedAt
-                            ? new Date(emp.updatedAt).toLocaleDateString(
-                                'en-US',
-                                { month: 'short', day: 'numeric' }
-                              )
-                            : 'TODAY'}
+                          UPDATED : {emp.updatedAt ? new Date(emp.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'TODAY'}
                         </span>
                         <div className="flex items-center gap-1.5">
                           <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
-                          <span className="text-[11px] font-bold text-black">
-                            Active
-                          </span>
+                          <span className="text-[11px] font-bold text-black">Active</span>
                         </div>
                       </div>
                     </div>
@@ -668,10 +620,7 @@ const SkillsDirectory = ({ isTab = false, isViewOnly = false }) => {
                         className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600 transition-all font-medium appearance-none text-black"
                       >
                         {finalLevels
-                          .filter(
-                            (lvl) =>
-                              lvl !== 'All Employees' && lvl !== 'All Levels'
-                          )
+                          .filter((lvl) => lvl !== 'All Employees' && lvl !== 'All Levels')
                           .map((lvl) => (
                             <option key={lvl} value={lvl}>
                               {lvl}

@@ -122,10 +122,7 @@ const SalarySetupModal = ({
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setShowEmployeeDropdown(false);
       }
-      if (
-        dropdownNameRef.current &&
-        !dropdownNameRef.current.contains(e.target)
-      ) {
+      if (dropdownNameRef.current && !dropdownNameRef.current.contains(e.target)) {
         setShowNameDropdown(false);
       }
     };
@@ -534,32 +531,10 @@ const SalarySetupModal = ({
       label: 'Audit Info',
       render: (row) => (
         <div className="flex flex-col text-[10px] text-gray-400 font-medium whitespace-nowrap">
-          {(row.createdAt ||
-            row.updatedAt ||
-            row.createdBy ||
-            row.createBy ||
-            row.created_by) && (
+          {(row.createdAt || row.updatedAt || row.createdBy || row.createBy || row.created_by) && (
             <>
-              <span>
-                Created:{' '}
-                {row.createdAt
-                  ? new Date(row.createdAt).toLocaleDateString()
-                  : ''}{' '}
-                {row.createdBy || row.createBy || row.created_by
-                  ? `by ${row.createdBy || row.createBy || row.created_by}`
-                  : ''}
-              </span>
-              {(row.updatedAt || row.updated_at) && (
-                <span>
-                  Updated:{' '}
-                  {new Date(
-                    row.updatedAt || row.updated_at
-                  ).toLocaleDateString()}{' '}
-                  {row.updatedBy || row.UpdatedBy || row.updated_by
-                    ? `by ${row.updatedBy || row.UpdatedBy || row.updated_by}`
-                    : ''}
-                </span>
-              )}
+              <span>Created: {row.createdAt ? new Date(row.createdAt).toLocaleDateString() : ''} {(row.createdBy || row.createBy || row.created_by) ? `by ${row.createdBy || row.createBy || row.created_by}` : ''}</span>
+              {(row.updatedAt || row.updated_at) && <span>Updated: {new Date(row.updatedAt || row.updated_at).toLocaleDateString()} {(row.updatedBy || row.UpdatedBy || row.updated_by) ? `by ${row.updatedBy || row.UpdatedBy || row.updated_by}` : ''}</span>}
             </>
           )}
         </div>
@@ -843,14 +818,10 @@ const SalarySetupModal = ({
                                   (e) =>
                                     e.name
                                       ?.toLowerCase()
-                                      .includes(
-                                        employeeNameSearch.toLowerCase()
-                                      ) ||
+                                      .includes(employeeNameSearch.toLowerCase()) ||
                                     e.empId
                                       ?.toLowerCase()
-                                      .includes(
-                                        employeeNameSearch.toLowerCase()
-                                      )
+                                      .includes(employeeNameSearch.toLowerCase())
                                 )
                                 .map((e) => (
                                   <button
@@ -882,9 +853,7 @@ const SalarySetupModal = ({
                                 (e) =>
                                   e.name
                                     ?.toLowerCase()
-                                    .includes(
-                                      employeeNameSearch.toLowerCase()
-                                    ) ||
+                                    .includes(employeeNameSearch.toLowerCase()) ||
                                   e.empId
                                     ?.toLowerCase()
                                     .includes(employeeNameSearch.toLowerCase())
@@ -991,6 +960,67 @@ const SalarySetupModal = ({
                     )}
                   </p>
                 </div>
+                
+                {/* Record Info */}
+                {isViewMode && historyData.length > 0 && (historyData[0].createdAt || historyData[0].updatedAt) && (
+                  <div className="pt-6 mt-4 border-t border-gray-100">
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
+                      Record Info
+                    </p>
+                    <div className="grid grid-cols-2 gap-4">
+                      {historyData[0].createdAt && (
+                        <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                          <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
+                            Created At
+                          </div>
+                          <div className="text-sm font-medium text-gray-800">
+                            {new Date(historyData[0].createdAt).toLocaleDateString('en-IN', {
+                              day: '2-digit', month: 'short', year: 'numeric',
+                            })}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-0.5">
+                            {new Date(historyData[0].createdAt).toLocaleTimeString('en-IN', {
+                              hour: '2-digit', minute: '2-digit', hour12: true,
+                            })}
+                          </div>
+                          {(historyData[0].createdBy || historyData[0].createBy || historyData[0].created_by) && (
+                            <div className="text-xs text-[#004475] font-semibold mt-1.5 flex items-center gap-1">
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                              </svg>
+                              {historyData[0].createdBy || historyData[0].createBy || historyData[0].created_by}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {(historyData[0].updatedAt || historyData[0].updated_at) && (
+                        <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                          <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
+                            Last Updated
+                          </div>
+                          <div className="text-sm font-medium text-gray-800">
+                            {new Date(historyData[0].updatedAt || historyData[0].updated_at).toLocaleDateString('en-IN', {
+                              day: '2-digit', month: 'short', year: 'numeric',
+                            })}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-0.5">
+                            {new Date(historyData[0].updatedAt || historyData[0].updated_at).toLocaleTimeString('en-IN', {
+                              hour: '2-digit', minute: '2-digit', hour12: true,
+                            })}
+                          </div>
+                          {(historyData[0].updatedBy || historyData[0].UpdatedBy || historyData[0].updated_by) && (
+                            <div className="text-xs text-[#004475] font-semibold mt-1.5 flex items-center gap-1">
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                              </svg>
+                              {historyData[0].updatedBy || historyData[0].UpdatedBy || historyData[0].updated_by}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               /* History Tab - Only for view and edit modes */

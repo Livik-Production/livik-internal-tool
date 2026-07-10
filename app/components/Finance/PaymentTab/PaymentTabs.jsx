@@ -142,11 +142,10 @@ export default function PaymentTabs({
           </span>
           {invoice.invoiceType && (
             <span
-              className={`inline-block mt-1 px-2 py-0.5 text-xs rounded ${
-                invoice.invoiceType === 'proforma'
-                  ? 'bg-yellow-100 text-yellow-800'
-                  : 'bg-blue-100 text-blue-800'
-              }`}
+              className={`inline-block mt-1 px-2 py-0.5 text-xs rounded ${invoice.invoiceType === 'proforma'
+                ? 'bg-yellow-100 text-yellow-800'
+                : 'bg-blue-100 text-blue-800'
+                }`}
               title="click to view pending payments"
             >
               {invoice.invoiceType === 'proforma' ? 'Proforma' : 'Actual'}
@@ -230,13 +229,12 @@ export default function PaymentTabs({
         return (
           <div className="text-center">
             <span
-              className={`inline-block px-3 py-1.5 rounded-full text-xs font-semibold ${
-                isPartial
-                  ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
-                  : dueStatus.text === 'Overdue'
-                    ? 'bg-red-100 text-red-800 border border-red-200'
-                    : 'bg-blue-100 text-blue-800 border border-blue-200'
-              }`}
+              className={`inline-block px-3 py-1.5 rounded-full text-xs font-semibold ${isPartial
+                ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                : dueStatus.text === 'Overdue'
+                  ? 'bg-red-100 text-red-800 border border-red-200'
+                  : 'bg-blue-100 text-blue-800 border border-blue-200'
+                }`}
             >
               {isPartial ? `Partial ` : 'Pending'}
             </span>
@@ -345,11 +343,10 @@ export default function PaymentTabs({
           </span>
           {invoice.invoiceType && (
             <span
-              className={`inline-block mt-1 px-2 py-0.5 text-xs rounded ${
-                invoice.invoiceType === 'proforma'
-                  ? 'bg-yellow-100 text-yellow-800'
-                  : 'bg-blue-100 text-blue-800'
-              }`}
+              className={`inline-block mt-1 px-2 py-0.5 text-xs rounded ${invoice.invoiceType === 'proforma'
+                ? 'bg-yellow-100 text-yellow-800'
+                : 'bg-blue-100 text-blue-800'
+                }`}
               title="click to view completed payments"
             >
               {invoice.invoiceType === 'proforma' ? 'Proforma' : 'Actual'}
@@ -416,19 +413,18 @@ export default function PaymentTabs({
       render: (invoice) => (
         <div className="text-right">
           <span
-            className={`inline-block px-3 py-1.5 text-xs font-medium rounded-lg ${
-              invoice.paymentMethod === 'Bank Transfer'
-                ? 'bg-purple-100 text-purple-800 border border-purple-200'
-                : invoice.paymentMethod === 'Credit Card'
-                  ? 'bg-blue-100 text-blue-800 border border-blue-200'
-                  : invoice.paymentMethod === 'UPI'
-                    ? 'bg-green-100 text-green-800 border border-green-200'
-                    : invoice.paymentMethod === 'Cheque'
-                      ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
-                      : invoice.paymentMethod === 'Cash'
-                        ? 'bg-gray-100 text-gray-800 border border-gray-200'
-                        : 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-            }`}
+            className={`inline-block px-3 py-1.5 text-xs font-medium rounded-lg ${invoice.paymentMethod === 'Bank Transfer'
+              ? 'bg-purple-100 text-purple-800 border border-purple-200'
+              : invoice.paymentMethod === 'Credit Card'
+                ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                : invoice.paymentMethod === 'UPI'
+                  ? 'bg-green-100 text-green-800 border border-green-200'
+                  : invoice.paymentMethod === 'Cheque'
+                    ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                    : invoice.paymentMethod === 'Cash'
+                      ? 'bg-gray-100 text-gray-800 border border-gray-200'
+                      : 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+              }`}
           >
             {invoice.paymentMethod}
           </span>
@@ -552,7 +548,7 @@ export default function PaymentTabs({
         <div className="w-full max-w-md">
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="absolute left-3 h-4 w-4 text-gray-400" />
+             <Search className="absolute left-3 h-4 w-4 text-gray-400" />
             </div>
             <input
               type="text"

@@ -216,17 +216,7 @@ export async function GET(req) {
 export async function POST(req) {
   try {
     const body = await req.json();
-    const {
-      employeeId,
-      month,
-      year,
-      cl,
-      sl,
-      lop,
-      remarks,
-      createdBy,
-      updatedBy,
-    } = body;
+    const { employeeId, month, year, cl, sl, lop, remarks, createdBy, updatedBy } = body;
 
     if (!employeeId || month === undefined || year === undefined) {
       return NextResponse.json(

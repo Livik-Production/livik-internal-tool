@@ -28,6 +28,7 @@ const RightsModal = ({
     'Asset Module',
     'Admin Module ',
     'Payroll Module',
+    "CRM Module"
   ]);
 
   useEffect(() => {

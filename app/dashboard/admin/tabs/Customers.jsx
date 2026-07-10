@@ -13,6 +13,7 @@ import PrimaryButton from '../../../components/Buttons/PrimaryButton';
 import IconButton from '../../../components/Buttons/IconButton';
 import { useMemo } from 'react';
 import HyperlinkButton from '../../../components/Buttons/HyperlinkButton';
+import { toast } from 'react-toastify';
 
 const CustomersTable = () => {
   const router = useRouter();
@@ -140,6 +141,8 @@ const CustomersTable = () => {
     if (!customerToDelete) return;
 
     setIsDeleting(true);
+    const toastId = toast.loading('Deleting customer...');
+    
     try {
       const res = await fetch(`/api/customers/${customerToDelete.id}`, {
         method: 'DELETE',
@@ -153,9 +156,21 @@ const CustomersTable = () => {
       setCustomers((prev) => prev.filter((c) => c.id !== customerToDelete.id));
       setShowDeleteConfirm(false);
       setCustomerToDelete(null);
+      
+      toast.update(toastId, {
+        render: 'Customer deleted successfully!',
+        type: 'success',
+        isLoading: false,
+        autoClose: 3000,
+      });
     } catch (err) {
       console.error('Delete customer failed:', err);
-      alert(err.message || 'Unable to delete customer');
+      toast.update(toastId, {
+        render: err.message || 'Unable to delete customer',
+        type: 'error',
+        isLoading: false,
+        autoClose: 3000,
+      });
     } finally {
       setIsDeleting(false);
     }
@@ -206,10 +221,7 @@ const CustomersTable = () => {
           <div className="font-medium text-gray-900 line-clamp-1">
             {row.city}, {row.state}
           </div>
-          <div
-            className="text-xs text-gray-500 line-clamp-1"
-            title={row.address1}
-          >
+          <div className="text-xs text-gray-500 line-clamp-1" title={row.address1}>
             {row.address1}
           </div>
         </div>
@@ -248,11 +260,10 @@ const CustomersTable = () => {
         return (
           <div className="flex justify-center">
             <span
-              className={`px-3 py-1 rounded-full text-xs font-medium ${
-                isActive
-                  ? 'bg-green-100 text-green-700'
-                  : 'bg-red-100 text-red-700'
-              }`}
+              className={`px-3 py-1 rounded-full text-xs font-medium ${isActive
+                ? 'bg-green-100 text-green-700'
+                : 'bg-red-100 text-red-700'
+                }`}
             >
               {isActive ? 'Active' : 'Inactive'}
             </span>

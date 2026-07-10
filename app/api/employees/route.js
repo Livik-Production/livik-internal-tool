@@ -13,31 +13,23 @@ export async function GET() {
     const employees = await getAllEmployees();
 
     // Resolve S3 keys to signed URLs for photo, aadhaarCard, panCard
-    const { getEmployeeDocument } =
-      await import('../../../lib/employeeDocumentService');
+    const { getEmployeeDocument } = await import('../../../lib/employeeDocumentService');
     const docFields = {
       photo: 'PROFILE_PHOTO',
       aadhaarCard: 'AADHAR',
-      panCard: 'PAN',
+      panCard: 'PAN'
     };
 
     for (const emp of employees) {
       for (const [field, docType] of Object.entries(docFields)) {
         const value = emp[field];
-        const isS3Key =
-          value &&
-          !value.startsWith('http://') &&
-          !value.startsWith('https://') &&
-          !value.startsWith('blob:');
+        const isS3Key = value && !value.startsWith('http://') && !value.startsWith('https://') && !value.startsWith('blob:');
         if (isS3Key) {
           try {
             const s3Result = await getEmployeeDocument(emp.empId, docType);
             emp[field] = s3Result.url; // Provide pre-signed URL to the client
           } catch (s3Error) {
-            console.error(
-              `Failed to generate signed URL for ${field}:`,
-              s3Error
-            );
+            console.error(`Failed to generate signed URL for ${field}:`, s3Error);
           }
         }
       }
@@ -60,7 +52,7 @@ export async function POST(req) {
     const cookieStore = await cookies();
     const sessionValue = cookieStore.get('auth_session')?.value;
     let session = null;
-
+    
     if (sessionValue) {
       try {
         session = JSON.parse(sessionValue);
@@ -97,12 +89,7 @@ export async function POST(req) {
     // Add createdByRole to body if session exists
     if (session && session.roleName) {
       const rn = session.roleName.toUpperCase();
-      if (
-        rn === 'ADMIN' ||
-        rn === 'SUPER_ADMIN' ||
-        rn === 'SUPER ADMIN' ||
-        rn === 'SUPERADMIN'
-      ) {
+      if (rn === 'ADMIN' || rn === 'SUPER_ADMIN' || rn === 'SUPER ADMIN' || rn === 'SUPERADMIN') {
         body.createdByRole = 'SUPER_ADMIN';
       } else {
         body.createdByRole = rn;
@@ -113,10 +100,10 @@ export async function POST(req) {
 
     if (employee.email) {
       try {
-        await sendMail({
-          to: employee.email,
-          subject: `Welcome to Livik - Let's Get You Onboarded`,
-          html: `
+     await sendMail({
+  to: employee.email,
+  subject: `Welcome to Livik - Let's Get You Onboarded`,
+  html: `
     <div style="font-family: Arial, Helvetica, sans-serif; line-height: 1.7; color: #333; max-width: 650px; margin: auto;">
       
       <h2 style="color:#2563eb; margin-bottom:0;">
@@ -178,7 +165,7 @@ export async function POST(req) {
 
     </div>
   `,
-        });
+});
       } catch (mailError) {
         console.error('Failed to send onboarding email:', mailError);
       }
@@ -187,12 +174,10 @@ export async function POST(req) {
     return NextResponse.json(employee, { status: 201 });
   } catch (error) {
     console.error('POST employee error:', error);
-
+    
     if (error.code === 'P2002') {
       return NextResponse.json(
-        {
-          error: 'An employee with this email or phone number already exists.',
-        },
+        { error: 'An employee with this email or phone number already exists.' },
         { status: 400 }
       );
     }

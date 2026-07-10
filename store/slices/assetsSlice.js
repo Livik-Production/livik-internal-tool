@@ -27,19 +27,17 @@ export const fetchAssets = createAsyncThunk(
         let assignedTo = null;
         if (activeAssignment) {
           if (activeAssignment.assignmentType === 'LOCATION') {
-            assignedTo = {
-              id: activeAssignment.locationId,
-              empId: 'LOCATION',
-              name:
-                activeAssignment.locationName ||
-                `Location (ID: ${activeAssignment.locationId?.substring(0, 6) || 'Unknown'})`,
-            };
+             assignedTo = {
+               id: activeAssignment.locationId,
+               empId: 'LOCATION',
+               name: activeAssignment.locationName || `Location (ID: ${activeAssignment.locationId?.substring(0,6) || 'Unknown'})`,
+             };
           } else if (activeAssignment.employee) {
-            assignedTo = {
-              id: activeAssignment.employee.id,
-              empId: activeAssignment.employee.empId,
-              name: `${activeAssignment.employee.firstName} ${activeAssignment.employee.lastName}`,
-            };
+             assignedTo = {
+               id: activeAssignment.employee.id,
+               empId: activeAssignment.employee.empId,
+               name: `${activeAssignment.employee.firstName} ${activeAssignment.employee.lastName}`,
+             };
           }
         }
 

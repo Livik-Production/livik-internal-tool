@@ -22,35 +22,27 @@ export default function DashboardLayoutContent({ children }) {
       setIsBellOpen(e.detail.open);
     };
     window.addEventListener('bell-state-change', handleBellChange);
-    return () =>
-      window.removeEventListener('bell-state-change', handleBellChange);
+    return () => window.removeEventListener('bell-state-change', handleBellChange);
   }, []);
 
   const authUser = useSelector(selectAuthUser);
-
+  
   // Check if this is a new employee who needs to complete their profile.
   // Only show wizard for PENDING employees who haven't filled their details.
   // Active / PENDING_ADMIN employees must never be redirected to the wizard.
   const statusUpper = authUser?.status?.toUpperCase();
   const isPending = statusUpper === 'PENDING';
   const isActive = statusUpper === 'ACTIVE' || statusUpper === 'PENDING_ADMIN';
-  const isContract =
-    (authUser?.workType || '').toString().toUpperCase() === 'CONTRACT';
+  const isContract = (authUser?.workType || '').toString().toUpperCase() === 'CONTRACT';
   const hasCompletedSetup = isContract
     ? !!(authUser?.name && authUser?.mobile && authUser?.bondRemarks)
-    : !!(
-        authUser?.aadhaarNumber &&
-        authUser?.panNumber &&
-        authUser?.dateOfBirth &&
-        authUser?.presentAddress
-      );
+    : !!(authUser?.aadhaarNumber && authUser?.panNumber && authUser?.dateOfBirth && authUser?.presentAddress);
 
   // Show setup wizard only for truly pending+incomplete employees
   // Active / PENDING_ADMIN employees must never be redirected to the wizard.
   if (authUser && isPending && !isActive) {
     const wt = (authUser.workType || '').toString().toUpperCase();
-    if (wt === 'CONTRACT')
-      return <ProfileSetupWizardContract rawEmployeeData={authUser} />;
+    if (wt === 'CONTRACT') return <ProfileSetupWizardContract rawEmployeeData={authUser} />;
     return <ProfileSetupWizard rawEmployeeData={authUser} />;
   }
 

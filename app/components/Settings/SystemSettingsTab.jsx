@@ -58,7 +58,9 @@ export default function SystemSettingsTab() {
     setIsSavingEmail(true);
     setTimeout(() => {
       setIsSavingEmail(false);
-      showSuccessToast('System Email Configuration saved successfully (Mock)!');
+      showSuccessToast(
+        'System Email Configuration saved successfully (Mock)!'
+      );
       setEmailHistory((prev) => [
         {
           id: Date.now(),
@@ -161,9 +163,7 @@ export default function SystemSettingsTab() {
                   disabled={isSavingEmail}
                   className="px-6 py-2.5 text-sm font-bold text-white bg-[#004475] rounded-xl shadow-sm shadow-blue-200 transition-all active:scale-95 flex items-center justify-center disabled:opacity-75 disabled:cursor-not-allowed"
                 >
-                  {isSavingEmail && (
-                    <Loader2 className="animate-spin mr-2" size={16} />
-                  )}
+                  {isSavingEmail && <Loader2 className="animate-spin mr-2" size={16} />}
                   {isSavingEmail ? 'Saving...' : 'Save Email Settings'}
                 </button>
               </div>
@@ -219,13 +219,11 @@ export default function SystemSettingsTab() {
             </div>
             {(tempFontSize !== fontSize || isApplyingFont) && (
               <div className="mt-4 flex justify-end">
-                <PrimaryButton
+                <PrimaryButton 
                   onClick={() => setIsFontModalOpen(true)}
                   disabled={isApplyingFont}
                 >
-                  {isApplyingFont && (
-                    <Loader2 className="animate-spin mr-2" size={16} />
-                  )}
+                  {isApplyingFont && <Loader2 className="animate-spin mr-2" size={16} />}
                   {isApplyingFont ? 'Applying...' : 'Apply Changes'}
                 </PrimaryButton>
               </div>

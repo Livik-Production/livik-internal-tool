@@ -1,7 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { CreditCard, Users, Package } from 'lucide-react';
+import {
+  CreditCard,
+  Users,
+  Package,
+} from 'lucide-react';
 import { showSuccessToast, showErrorToast } from '../Toast';
 
 export default function NumberFormatsTab() {
@@ -43,9 +47,9 @@ export default function NumberFormatsTab() {
       try {
         const [resFormats, resCategories] = await Promise.all([
           fetch('/api/number-formats'),
-          fetch('/api/asset-categories'),
+          fetch('/api/asset-categories')
         ]);
-
+        
         let categories = [];
         if (resCategories.ok) {
           categories = await resCategories.json();
@@ -59,18 +63,17 @@ export default function NumberFormatsTab() {
           const data = await resFormats.json();
           if (data.invoice) setInvoiceConfig(data.invoice);
           if (data.employee) setEmployeeConfig(data.employee);
-          if (data.contract_employee)
-            setContractEmployeeConfig(data.contract_employee);
-
+          if (data.contract_employee) setContractEmployeeConfig(data.contract_employee);
+          
           const newAssetConfigs = {};
-          Object.keys(data).forEach((key) => {
+          Object.keys(data).forEach(key => {
             if (key.startsWith('asset_')) {
               const type = key.slice(6);
               newAssetConfigs[type] = data[key];
             }
           });
           if (data.asset && !newAssetConfigs['Other']) {
-            newAssetConfigs['Other'] = data.asset;
+             newAssetConfigs['Other'] = data.asset;
           }
           setAssetConfigs(newAssetConfigs);
         }
@@ -115,10 +118,9 @@ export default function NumberFormatsTab() {
     setAssetConfigs((prev) => ({
       ...prev,
       [selectedAssetType]: {
-        ...(prev[selectedAssetType] ||
-          getAssetDefaultConfig(selectedAssetType)),
+        ...(prev[selectedAssetType] || getAssetDefaultConfig(selectedAssetType)),
         [field]: value,
-      },
+      }
     }));
   };
 
@@ -132,7 +134,7 @@ export default function NumberFormatsTab() {
         employee: employeeConfig,
         contract_employee: contractEmployeeConfig,
       };
-      Object.keys(assetConfigs).forEach((type) => {
+      Object.keys(assetConfigs).forEach(type => {
         payload[`asset_${type}`] = assetConfigs[type];
       });
 
@@ -181,8 +183,7 @@ export default function NumberFormatsTab() {
     };
   };
 
-  const currentAssetConfig =
-    assetConfigs[selectedAssetType] || getAssetDefaultConfig(selectedAssetType);
+  const currentAssetConfig = assetConfigs[selectedAssetType] || getAssetDefaultConfig(selectedAssetType);
 
   if (isLoading) {
     return (
@@ -454,10 +455,7 @@ export default function NumberFormatsTab() {
                       min="1"
                       value={contractEmployeeConfig.nextNumber}
                       onChange={(e) =>
-                        handleContractEmployeeChange(
-                          'nextNumber',
-                          e.target.value
-                        )
+                        handleContractEmployeeChange('nextNumber', e.target.value)
                       }
                       placeholder="e.g. 101"
                       className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-50/50 focus:border-blue-400 outline-none transition-all font-mono"
@@ -545,12 +543,10 @@ export default function NumberFormatsTab() {
                   onChange={(e) => setSelectedAssetType(e.target.value)}
                   className="w-full px-3 py-2 border border-orange-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-400 outline-none transition-all bg-white font-medium text-orange-900"
                 >
-                  {assetCategories.map((cat) => (
-                    <option key={cat.id} value={cat.name}>
-                      {cat.name}
-                    </option>
+                  {assetCategories.map(cat => (
+                    <option key={cat.id} value={cat.name}>{cat.name}</option>
                   ))}
-                  {!assetCategories.find((c) => c.name === 'Other') && (
+                  {!assetCategories.find(c => c.name === 'Other') && (
                     <option value="Other">Other</option>
                   )}
                 </select>

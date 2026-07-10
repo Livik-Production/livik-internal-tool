@@ -19,10 +19,7 @@ import IconButton from '../../../Buttons/IconButton';
 import Pagination from '../../../Pagination';
 import Loader from '../../../Loader';
 
-export default function ContactSubmissionsTab({
-  navigationState,
-  clearNavigationState,
-}) {
+export default function ContactSubmissionsTab({ navigationState, clearNavigationState }) {
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
@@ -260,15 +257,12 @@ export default function ContactSubmissionsTab({
       ...filteredSubmissions.map((row) => {
         const dateReceived = row.createdAt
           ? new Date(row.createdAt).toLocaleDateString('en-US', {
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric',
-            })
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          })
           : '';
-        const name =
-          row.name ||
-          `${row.firstName || ''} ${row.lastName || ''}`.trim() ||
-          'Unknown';
+        const name = row.name || `${row.firstName || ''} ${row.lastName || ''}`.trim() || 'Unknown';
         const phone = row.whatsapp || row.phoneNumber || '';
         const message = row.message || row.projectDetails || '';
 
@@ -329,9 +323,8 @@ export default function ContactSubmissionsTab({
       {/* Toast Notification */}
       {toast && (
         <div
-          className={`fixed top-5 right-5 z-[99999] px-5 py-3 rounded-xl shadow-lg text-sm font-semibold text-white transition-all ${
-            toast.type === 'error' ? 'bg-red-500' : 'bg-green-600'
-          }`}
+          className={`fixed top-5 right-5 z-[99999] px-5 py-3 rounded-xl shadow-lg text-sm font-semibold text-white transition-all ${toast.type === 'error' ? 'bg-red-500' : 'bg-green-600'
+            }`}
         >
           {toast.message}
         </div>
@@ -423,10 +416,7 @@ export default function ContactSubmissionsTab({
                   className="absolute right-2 top-0.5 shadow-none bg-transparent hover:bg-transparent"
                   title="Clear search"
                 >
-                  <X
-                    size={14}
-                    className="text-gray-400 hover:text-red-500 hover:scale-110"
-                  />
+                  <X size={14} className="text-gray-400 hover:text-red-500 hover:scale-110" />
                 </IconButton>
               )}
             </div>
@@ -466,173 +456,173 @@ export default function ContactSubmissionsTab({
       {/* View Details Modal */}
       {selectedSubmission && typeof document !== 'undefined'
         ? createPortal(
-            <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity">
-              <div className="bg-white rounded-2xl max-w-2xl w-full mx-4 shadow-2xl overflow-hidden border border-gray-100 flex flex-col animate-in fade-in zoom-in-95 duration-200 max-h-[90vh]">
-                {/* Modal Header */}
-                <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50 shrink-0">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-[#004475]/10 text-[#004475] flex items-center justify-center">
-                      <Eye size={18} />
-                    </div>
-                    <h3 className="font-bold text-gray-900 text-base">
-                      Client Enquiry Details
-                    </h3>
+          <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity">
+            <div className="bg-white rounded-2xl max-w-2xl w-full mx-4 shadow-2xl overflow-hidden border border-gray-100 flex flex-col animate-in fade-in zoom-in-95 duration-200 max-h-[90vh]">
+              {/* Modal Header */}
+              <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50 shrink-0">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-[#004475]/10 text-[#004475] flex items-center justify-center">
+                    <Eye size={18} />
                   </div>
-                  <button
-                    onClick={() => setSelectedSubmission(null)}
-                    className="w-8 h-8 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 flex items-center justify-center transition-colors cursor-pointer"
-                  >
-                    <X size={18} />
-                  </button>
+                  <h3 className="font-bold text-gray-900 text-base">
+                    Client Enquiry Details
+                  </h3>
                 </div>
+                <button
+                  onClick={() => setSelectedSubmission(null)}
+                  className="w-8 h-8 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 flex items-center justify-center transition-colors cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
 
-                {/* Modal Body */}
-                <div className="p-6 space-y-4 overflow-y-auto flex-1 text-gray-700">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
-                        Enquiry ID
-                      </label>
-                      <input
-                        type="text"
-                        readOnly
-                        disabled
-                        value={selectedSubmission.id}
-                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 font-mono cursor-not-allowed focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
-                        Date Received
-                      </label>
-                      <input
-                        type="text"
-                        readOnly
-                        disabled
-                        value={new Date(
-                          selectedSubmission.createdAt
-                        ).toLocaleString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
-                        Client Name
-                      </label>
-                      <input
-                        type="text"
-                        readOnly
-                        disabled
-                        value={
-                          selectedSubmission.name ||
-                          `${selectedSubmission.firstName || ''} ${selectedSubmission.lastName || ''}`.trim() ||
-                          'Unknown'
-                        }
-                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
-                        Work Email
-                      </label>
-                      <input
-                        type="text"
-                        readOnly
-                        disabled
-                        value={selectedSubmission.email}
-                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
-                        WhatsApp / Phone
-                      </label>
-                      <input
-                        type="text"
-                        readOnly
-                        disabled
-                        value={
-                          selectedSubmission.whatsapp ||
-                          selectedSubmission.phoneNumber ||
-                          '-'
-                        }
-                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
-                        Service Interested
-                      </label>
-                      <input
-                        type="text"
-                        readOnly
-                        disabled
-                        value={selectedSubmission.service}
-                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none"
-                      />
-                    </div>
-                  </div>
-
+              {/* Modal Body */}
+              <div className="p-6 space-y-4 overflow-y-auto flex-1 text-gray-700">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
-                      Project Details / Message
+                      Enquiry ID
                     </label>
-                    <textarea
+                    <input
+                      type="text"
                       readOnly
                       disabled
-                      rows={3}
-                      value={
-                        selectedSubmission.message ||
-                        selectedSubmission.projectDetails
-                      }
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none resize-none"
+                      value={selectedSubmission.id}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 font-mono cursor-not-allowed focus:outline-none"
                     />
                   </div>
-
-                  {/* Divider */}
-                  <div className="border-t border-gray-100 my-4" />
-
-                  {/* Feedback Section */}
                   <div>
-                    <label className="block text-xs font-bold text-[#004475] uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                      Feedback / Internal Notes
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                      Date Received
                     </label>
-                    <textarea
-                      rows={3}
-                      value={feedbackText}
-                      onChange={(e) => setFeedbackText(e.target.value)}
-                      placeholder="Add internal feedback or notes about this client enquiry..."
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#004475]/20 focus:border-[#004475] resize-none"
+                    <input
+                      type="text"
+                      readOnly
+                      disabled
+                      value={new Date(
+                        selectedSubmission.createdAt
+                      ).toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                      Client Name
+                    </label>
+                    <input
+                      type="text"
+                      readOnly
+                      disabled
+                      value={
+                        selectedSubmission.name ||
+                        `${selectedSubmission.firstName || ''} ${selectedSubmission.lastName || ''}`.trim() ||
+                        'Unknown'
+                      }
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                      Work Email
+                    </label>
+                    <input
+                      type="text"
+                      readOnly
+                      disabled
+                      value={selectedSubmission.email}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                      WhatsApp / Phone
+                    </label>
+                    <input
+                      type="text"
+                      readOnly
+                      disabled
+                      value={
+                        selectedSubmission.whatsapp ||
+                        selectedSubmission.phoneNumber ||
+                        '-'
+                      }
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                      Service Interested
+                    </label>
+                    <input
+                      type="text"
+                      readOnly
+                      disabled
+                      value={selectedSubmission.service}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none"
                     />
                   </div>
                 </div>
 
-                {/* Modal Footer */}
-                <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/50 shrink-0">
-                  <button
-                    onClick={() => setSelectedSubmission(null)}
-                    className="px-5 py-2.5 border border-gray-300 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
-                  >
-                    Close
-                  </button>
-                  <button
-                    onClick={handleSaveFeedback}
-                    disabled={savingFeedback}
-                    className="px-6 py-2.5 bg-[#004475] rounded-xl text-white font-bold text-sm hover:bg-[#004475]/90 transition-colors shadow-sm disabled:opacity-60 flex items-center gap-1.5 cursor-pointer animate-pulse-subtle"
-                  >
-                    {savingFeedback ? 'Saving...' : 'Save Feedback'}
-                  </button>
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                    Project Details / Message
+                  </label>
+                  <textarea
+                    readOnly
+                    disabled
+                    rows={3}
+                    value={
+                      selectedSubmission.message ||
+                      selectedSubmission.projectDetails
+                    }
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none resize-none"
+                  />
+                </div>
+
+                {/* Divider */}
+                <div className="border-t border-gray-100 my-4" />
+
+                {/* Feedback Section */}
+                <div>
+                  <label className="block text-xs font-bold text-[#004475] uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                    Feedback / Internal Notes
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={feedbackText}
+                    onChange={(e) => setFeedbackText(e.target.value)}
+                    placeholder="Add internal feedback or notes about this client enquiry..."
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#004475]/20 focus:border-[#004475] resize-none"
+                  />
                 </div>
               </div>
-            </div>,
-            document.body
-          )
+
+              {/* Modal Footer */}
+              <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/50 shrink-0">
+                <button
+                  onClick={() => setSelectedSubmission(null)}
+                  className="px-5 py-2.5 border border-gray-300 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={handleSaveFeedback}
+                  disabled={savingFeedback}
+                  className="px-6 py-2.5 bg-[#004475] rounded-xl text-white font-bold text-sm hover:bg-[#004475]/90 transition-colors shadow-sm disabled:opacity-60 flex items-center gap-1.5 cursor-pointer animate-pulse-subtle"
+                >
+                  {savingFeedback ? 'Saving...' : 'Save Feedback'}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )
         : null}
     </div>
   );

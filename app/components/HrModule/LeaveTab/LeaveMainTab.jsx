@@ -333,11 +333,8 @@ export default function LeaveMainTab({
       {/* TAB CONTENT */}
       <div
         key={activeLeaveTab}
-        className={`transition-all duration-400 ${
-          animatingSubTab
-            ? 'opacity-0 translate-y-4'
-            : 'animate-dashboard-reveal'
-        }`}
+        className={`transition-all duration-400 ${animatingSubTab ? 'opacity-0 translate-y-4' : 'animate-dashboard-reveal'
+          }`}
       >
         {activeLeaveTab === 'attendance' && (
           <AttendanceTab

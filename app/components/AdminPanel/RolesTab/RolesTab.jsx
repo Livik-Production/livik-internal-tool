@@ -14,6 +14,7 @@ export default function RolesTab() {
   const user = useSelector(selectAuthUser);
   const userRole = user?.role?.name?.toUpperCase() || '';
   const isSuperAdmin = userRole === 'SUPER_ADMIN';
+  const currentUserName = user?.name || (user?.firstName ? (user.firstName + ' ' + (user?.lastName || '')).trim() : '') || user?.email || 'Admin';
 
   const [roles, setRoles] = useState([]);
 
@@ -251,6 +252,10 @@ export default function RolesTab() {
         description: roleDetails.description || '',
         effectiveDate: getTodayDate(),
         selectedRights: selectedRights,
+        createdAt: roleDetails.createdAt,
+        createdBy: roleDetails.createdBy,
+        updatedAt: roleDetails.updatedAt,
+        updatedBy: roleDetails.updatedBy,
       });
       setShowViewRole(true);
     } catch (error) {
@@ -370,6 +375,7 @@ export default function RolesTab() {
           onEffectiveDateChange: handleEffectiveDateChange,
           onDescriptionChange: handleDescriptionChange,
         }}
+        currentUserName={currentUserName}
         onSave={handleSaveAdd}
         onCancel={handleCancelModal}
       />
@@ -385,6 +391,7 @@ export default function RolesTab() {
           onEffectiveDateChange: handleEffectiveDateChange,
           onDescriptionChange: handleDescriptionChange,
         }}
+        currentUserName={currentUserName}
         onSave={handleSaveEdit}
         onCancel={handleCancelModal}
       />
@@ -394,6 +401,7 @@ export default function RolesTab() {
         onClose={handleCancelModal}
         mode="view"
         roleData={currentRole}
+        currentUserName={currentUserName}
         onCancel={handleCancelModal}
         onEdit={() => {
           setShowViewRole(false);

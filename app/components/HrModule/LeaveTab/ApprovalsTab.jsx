@@ -100,7 +100,7 @@ const ApprovalsTab = ({ onViewLeaveDetails }) => {
           req.status === 'APPROVED' && !req.isConfirmed
             ? 'Pending Confirmation'
             : req.status.charAt(0).toUpperCase() +
-              req.status.slice(1).toLowerCase(),
+            req.status.slice(1).toLowerCase(),
         appliedDate: req.createdAt,
         category: 'permission',
         __raw: {
@@ -244,17 +244,16 @@ const ApprovalsTab = ({ onViewLeaveDetails }) => {
       label: 'Status',
       render: (row) => (
         <span
-          className={`px-2 py-1 rounded text-xs font-medium ${
-            row.status === 'Pending'
-              ? 'bg-yellow-100 text-yellow-800'
-              : row.status === 'Pending Confirmation'
-                ? 'bg-orange-100 text-orange-800 animate-pulse'
-                : row.status === 'Approved'
-                  ? 'bg-green-100 text-green-800'
-                  : row.status === 'Rejected'
-                    ? 'bg-red-100 text-red-800'
-                    : 'bg-gray-100 text-gray-800'
-          }`}
+          className={`px-2 py-1 rounded text-xs font-medium ${row.status === 'Pending'
+            ? 'bg-yellow-100 text-yellow-800'
+            : row.status === 'Pending Confirmation'
+              ? 'bg-orange-100 text-orange-800 animate-pulse'
+              : row.status === 'Approved'
+                ? 'bg-green-100 text-green-800'
+                : row.status === 'Rejected'
+                  ? 'bg-red-100 text-red-800'
+                  : 'bg-gray-100 text-gray-800'
+            }`}
         >
           {row.status}
         </span>
@@ -283,10 +282,7 @@ const ApprovalsTab = ({ onViewLeaveDetails }) => {
                 className="absolute right-2 top-0.5 shadow-none bg-transparent hover:bg-transparent"
                 title="Clear search"
               >
-                <X
-                  size={14}
-                  className="text-gray-400 hover:text-red-500 hover:scale-110"
-                />
+                <X size={14} className="text-gray-400 hover:text-red-500 hover:scale-110" />
               </IconButton>
             )}
           </div>
@@ -346,7 +342,11 @@ const ApprovalsTab = ({ onViewLeaveDetails }) => {
               </p>
             </div>
           ) : (
-            <CustomTable columns={columns} data={paginatedData} rowKey="id" />
+            <CustomTable
+              columns={columns}
+              data={paginatedData}
+              rowKey="id"
+            />
           )}
         </div>
         {!loading && !error && filteredData.length > 0 && (

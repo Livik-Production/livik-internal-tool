@@ -149,7 +149,7 @@ function EmployeeLeaveHistoryTab({ initialData }) {
         data={leaveHistory}
         isLoading={isLoadingLeaves}
         isViewMode={true}
-        onOpenLeaveForm={() => {}}
+        onOpenLeaveForm={() => { }}
       />
     </div>
   );
@@ -333,7 +333,10 @@ function HRPageContent() {
     if (!searchQuery.trim()) {
       if (activeMainTab === 'all') {
         setFilteredEmployees(
-          employees.filter((e) => e.status === 'Active' && !isPendingStatus(e))
+          employees.filter((e) => {
+            const statusUpper = (e.status || e.__raw?.status || '').toUpperCase();
+            return (statusUpper === 'ACTIVE' || statusUpper === 'INACTIVE') && !isPendingStatus(e);
+          })
         );
       } else if (activeMainTab !== 'pendingEmployees') {
         setFilteredEmployees(employees.filter((e) => !isPendingStatus(e)));
@@ -356,7 +359,8 @@ function HRPageContent() {
         }
 
         if (activeMainTab === 'all') {
-          return matchesQuery && employee.status === 'Active';
+          const statusUpper = (employee.status || employee.__raw?.status || '').toUpperCase();
+          return matchesQuery && (statusUpper === 'ACTIVE' || statusUpper === 'INACTIVE');
         }
         return matchesQuery;
       });
@@ -611,15 +615,14 @@ function HRPageContent() {
         let errData;
         try {
           errData = await res.json();
-        } catch (e) {}
+        } catch (e) { }
         throw new Error(errData?.error || 'Failed to create employee');
       }
 
       const created = await res.json();
       const id = created.empId ?? created.id;
-      const name = `${created.firstName ?? ''} ${
-        created.lastName ?? ''
-      }`.trim();
+      const name = `${created.firstName ?? ''} ${created.lastName ?? ''
+        }`.trim();
 
       const uiRow = {
         id,
@@ -665,9 +668,8 @@ function HRPageContent() {
 
       const updated = await res.json();
       const id = updated.empId ?? updated.id;
-      const name = `${updated.firstName ?? ''} ${
-        updated.lastName ?? ''
-      }`.trim();
+      const name = `${updated.firstName ?? ''} ${updated.lastName ?? ''
+        }`.trim();
 
       const calculatedDocs = [
         updated.docSSLCCollected ? 'sslc' : null,
@@ -718,9 +720,8 @@ function HRPageContent() {
     const row = employees.find((r) => r.id === id);
     const displayName =
       (row?.name ??
-        `${row?.__raw?.firstName ?? ''} ${
-          row?.__raw?.lastName ?? ''
-        }`.trim()) ||
+        `${row?.__raw?.firstName ?? ''} ${row?.__raw?.lastName ?? ''
+          }`.trim()) ||
       id;
 
     setConfirmMessage(
@@ -924,6 +925,28 @@ function HRPageContent() {
       render: (row) => {
         const doj = row?.__raw?.dateOfJoining;
         return doj ? new Date(doj).toLocaleDateString('en-GB') : '-';
+      },
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      align: 'center',
+      render: (row) => {
+        const status = (row?.status || row?.__raw?.status || '').toUpperCase();
+        const isActive = status === 'ACTIVE' || status === 'APPROVED';
+        return (
+          <div className="flex justify-center">
+            <span
+              className={`px-3 py-1 rounded-full text-xs font-medium border ${
+                isActive 
+                  ? 'bg-green-100 text-green-800 border-green-200' 
+                  : 'bg-red-100 text-red-800 border-red-200'
+              }`}
+            >
+              {status || 'UNKNOWN'}
+            </span>
+          </div>
+        );
       },
     },
   ];
@@ -1142,10 +1165,7 @@ function HRPageContent() {
                       className="absolute right-2 top-0.5 shadow-none bg-transparent hover:bg-transparent"
                       title="Clear search"
                     >
-                      <X
-                        size={14}
-                        className="text-gray-400 hover:text-red-500 hover:scale-110"
-                      />
+                      <X size={14} className="text-gray-400 hover:text-red-500 hover:scale-110" />
                     </IconButton>
                   )}
                 </div>
@@ -1155,11 +1175,10 @@ function HRPageContent() {
                 <>
                   <div
                     key={activeMainTab}
-                    className={`flex-1 overflow-y-auto no-scrollbar transition-all duration-400 min-h-0 ${
-                      animating
-                        ? 'opacity-0 translate-y-4'
-                        : 'animate-dashboard-reveal'
-                    }`}
+                    className={`flex-1 overflow-y-auto no-scrollbar transition-all duration-400 min-h-0 ${animating
+                      ? 'opacity-0 translate-y-4'
+                      : 'animate-dashboard-reveal'
+                      }`}
                   >
                     {/* DASHBOARD TAB */}
                     {activeMainTab === 'dashboard' && (
@@ -1410,17 +1429,17 @@ function HRPageContent() {
               const complete =
                 r.workType === 'CONTRACT'
                   ? !!(
-                      r.firstName &&
-                      r.lastName &&
-                      r.phoneNumber &&
-                      r.bondRemarks
-                    )
+                    r.firstName &&
+                    r.lastName &&
+                    r.phoneNumber &&
+                    r.bondRemarks
+                  )
                   : !!(
-                      r.aadhaarNumber &&
-                      r.panNumber &&
-                      r.dateOfBirth &&
-                      r.presentAddress
-                    );
+                    r.aadhaarNumber &&
+                    r.panNumber &&
+                    r.dateOfBirth &&
+                    r.presentAddress
+                  );
               return complete;
             })() &&
             ((isAdmin &&
@@ -1497,11 +1516,10 @@ function HRPageContent() {
                 {(selectedStatsData.monthlyStats || []).map((m, idx) => (
                   <div
                     key={idx}
-                    className={`border rounded-2xl p-4 shadow-sm transition-all hover:shadow-md ${
-                      idx === 0
-                        ? 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-100'
-                        : 'bg-white border-gray-100'
-                    }`}
+                    className={`border rounded-2xl p-4 shadow-sm transition-all hover:shadow-md ${idx === 0
+                      ? 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-100'
+                      : 'bg-white border-gray-100'
+                      }`}
                   >
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center justify-between">
@@ -1621,13 +1639,12 @@ function HRPageContent() {
                               <td className="px-6 py-4">
                                 <span
                                   className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm
-                                  ${
-                                    leave.status === 'APPROVED'
+                                  ${leave.status === 'APPROVED'
                                       ? 'bg-green-100 text-green-700 ring-1 ring-green-600/20'
                                       : leave.status === 'REJECTED'
                                         ? 'bg-red-100 text-red-700 ring-1 ring-red-600/20'
                                         : 'bg-yellow-100 text-yellow-700 ring-1 ring-yellow-600/20'
-                                  }`}
+                                    }`}
                                 >
                                   {leave.status}
                                 </span>
@@ -1651,10 +1668,8 @@ function HRPageContent() {
               </div>
             </div>
 
-            <div
-              className="p-3 border-t border-gray-200 
-            flex justify-end rounded-b-xl"
-            >
+            <div className="p-3 border-t border-gray-200 
+            flex justify-end rounded-b-xl">
               <PrimaryButton
                 onClick={handleCloseStats}
                 className="px-6 py-3 bg-white border border-gray-300 text-black rounded-xl hover:bg-gray-200 transition-all font-bold shadow-sm active:scale-[0.98]"
@@ -1749,8 +1764,8 @@ function HRPageContent() {
                       label: 'DOB',
                       value: selectedQuickInfo.dateOfBirth
                         ? new Date(
-                            selectedQuickInfo.dateOfBirth
-                          ).toLocaleDateString('en-GB')
+                          selectedQuickInfo.dateOfBirth
+                        ).toLocaleDateString('en-GB')
                         : 'N/A',
                     },
                     {

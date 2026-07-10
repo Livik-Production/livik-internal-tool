@@ -10,14 +10,9 @@ export async function GET(req) {
     // If employeeId is provided, return FULL history for that specific employee
     if (employeeId) {
       let targetEmployeeId = employeeId;
-      if (
-        !targetEmployeeId.startsWith('c') &&
-        !targetEmployeeId.includes('-')
-      ) {
+      if (!targetEmployeeId.startsWith('c') && !targetEmployeeId.includes('-')) {
         const emp = await prisma.employee.findFirst({
-          where: {
-            OR: [{ id: targetEmployeeId }, { empId: targetEmployeeId }],
-          },
+          where: { OR: [{ id: targetEmployeeId }, { empId: targetEmployeeId }] },
         });
         if (emp) targetEmployeeId = emp.id;
       }
@@ -226,8 +221,7 @@ export async function DELETE(req) {
 export async function PATCH(req) {
   try {
     const body = await req.json();
-    const { id, effectiveDate, basicPay, hra, otherAllowances, updatedBy } =
-      body;
+    const { id, effectiveDate, basicPay, hra, otherAllowances, updatedBy } = body;
 
     if (!id) {
       return NextResponse.json(

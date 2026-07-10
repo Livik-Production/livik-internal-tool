@@ -128,7 +128,7 @@ export default function BasicInfo({
       </h2>
       <div>
         <label className="text-[13px] text-gray-500 font-semibold">
-          First Name <span className="text-red-500">*</span>
+          First Name <span className='text-red-500'>*</span>
         </label>
         <input {...inputProps('firstName')} />
         {errors.firstName && (
@@ -138,7 +138,7 @@ export default function BasicInfo({
 
       <div>
         <label className="text-[13px] text-gray-500 font-semibold">
-          Last Name <span className="text-red-500">*</span>
+          Last Name <span className='text-red-500'>*</span>
         </label>
         <input {...inputProps('lastName')} />
         {errors.lastName && (
@@ -208,9 +208,7 @@ export default function BasicInfo({
       </div>
 
       <div>
-        <label className="text-[13px] text-gray-500 font-semibold">
-          Email <span className="text-red-500">*</span>
-        </label>
+        <label className="text-[13px] text-gray-500 font-semibold">Email <span className='text-red-500'>*</span></label>
         <input {...inputProps('email', 'email')} />
         {errors.email && (
           <div className="text-xs text-red-600 mt-1">{errors.email}</div>
@@ -219,7 +217,7 @@ export default function BasicInfo({
 
       <div>
         <label className="text-[13px] text-gray-500 font-semibold">
-          Phone Number <span className="text-red-500">*</span>
+          Phone Number <span className='text-red-500'>*</span>
         </label>
         <input {...inputProps('phoneNumber')} />
         {errors.phoneNumber && (

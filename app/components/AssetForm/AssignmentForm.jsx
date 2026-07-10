@@ -2,10 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import {
-  fetchEmployees,
-  selectEmployeesItems,
-} from '../../../store/slices/employeesSlice';
+import { fetchEmployees, selectEmployeesItems } from '../../../store/slices/employeesSlice';
 import { fetchAssets } from '../../../store/slices/assetsSlice';
 import { SquarePen, LogOut, Eye, X, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -188,15 +185,7 @@ export default function AssignmentForm({
         dispatch(fetchAssets());
       } else {
         if (onAssign) {
-          await onAssign(
-            assetId,
-            empId,
-            empName,
-            assignDate,
-            notes,
-            assignmentType,
-            locationId
-          );
+          await onAssign(assetId, empId, empName, assignDate, notes, assignmentType, locationId);
         }
         toast.success('Asset assigned successfully!');
         handleCloseAssignForm();
@@ -242,15 +231,11 @@ export default function AssignmentForm({
       employeeId: asset.assignedTo?.empId || '',
       employeeName: asset.assignedTo?.name || '',
       assignmentDate:
-        (asset.assignmentDate &&
-          new Date(asset.assignmentDate).toISOString().split('T')[0]) ||
-        new Date().toISOString().split('T')[0],
+        (asset.assignmentDate && new Date(asset.assignmentDate).toISOString().split('T')[0]) || new Date().toISOString().split('T')[0],
       assignmentNotes: asset.assignmentNotes || '',
       assignedFrom: asset.assignedFrom || 'IT Department',
-      assignmentType:
-        asset.assignedTo?.empId === 'LOCATION' ? 'LOCATION' : 'EMPLOYEE',
-      locationId:
-        asset.assignedTo?.empId === 'LOCATION' ? asset.assignedTo?.dbId : '',
+      assignmentType: asset.assignedTo?.empId === 'LOCATION' ? 'LOCATION' : 'EMPLOYEE',
+      locationId: asset.assignedTo?.empId === 'LOCATION' ? asset.assignedTo?.dbId : '',
     });
     setShowEditForm(true);
   };
@@ -353,13 +338,12 @@ export default function AssignmentForm({
             <div className="font-medium text-gray-700">{warrantyInfo.text}</div>
             {warrantyInfo.daysRemaining !== null && (
               <div
-                className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                  warrantyInfo.isExpired
+                className={`px-2 py-1 rounded-full text-xs font-semibold ${warrantyInfo.isExpired
                     ? 'bg-red-100 text-red-800'
                     : warrantyInfo.isNearExpiry
                       ? 'bg-yellow-100 text-yellow-800'
                       : 'bg-green-100 text-green-800'
-                }`}
+                  }`}
               >
                 {warrantyInfo.isExpired
                   ? `Expired ${Math.abs(warrantyInfo.daysRemaining)} days ago`
@@ -431,9 +415,9 @@ export default function AssignmentForm({
       render: (asset) =>
         asset.assignedTo ? (
           <span className="font-medium">
-            {asset.assignedTo.empId === 'LOCATION'
-              ? asset.assignedTo.name
-              : `${asset.assignedTo.name} (${asset.assignedTo.empId})`}
+          {asset.assignedTo.empId === 'LOCATION'
+            ? asset.assignedTo.name
+            : `${asset.assignedTo.name} (${asset.assignedTo.empId})`}
           </span>
         ) : (
           <span className="text-gray-400">—</span>
@@ -454,13 +438,12 @@ export default function AssignmentForm({
       label: 'STATUS',
       render: (asset) => (
         <span
-          className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-            asset.status === 'Assigned'
+          className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${asset.status === 'Assigned'
               ? 'bg-green-100 text-green-800'
               : asset.status === 'In Repair'
                 ? 'bg-red-100 text-red-800'
                 : 'bg-gray-100 text-gray-800'
-          }`}
+            }`}
         >
           {asset.status}
         </span>

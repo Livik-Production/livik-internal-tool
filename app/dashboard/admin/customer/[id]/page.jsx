@@ -18,6 +18,7 @@ import CustomTable from '../../../../components/CustomTable';
 import Pagination from '../../../../components/Pagination';
 import Loader from '../../../../components/Loader';
 import PrimaryButton from '../../../../components/Buttons/PrimaryButton';
+import { toast } from 'react-toastify';
 
 function CustomerDetailsContent() {
   const params = useParams();
@@ -28,6 +29,7 @@ function CustomerDetailsContent() {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [loadingDoc, setLoadingDoc] = useState(false);
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -70,6 +72,23 @@ function CustomerDetailsContent() {
   const handleItemsPerPageChange = (newVal) => {
     setItemsPerPage(newVal);
     setCurrentPage(1);
+  };
+
+  const handleViewDocument = async () => {
+    try {
+      setLoadingDoc(true);
+      const res = await fetch(`/api/customers/${customerId}/document`);
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Failed to fetch document');
+      }
+      const data = await res.json();
+      window.open(data.url, '_blank');
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setLoadingDoc(false);
+    }
   };
 
   const paginatedInvoices = useMemo(() => {
@@ -375,12 +394,17 @@ function CustomerDetailsContent() {
 
             {customer.uploads && (
               <div className="border-t border-gray-100 pt-3">
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-2">
                   Uploads
                 </span>
-                <span className="text-sm font-medium text-gray-900 mt-1 block">
-                  {typeof customer.uploads === 'string' ? customer.uploads : 'File Uploaded'}
-                </span>
+                <PrimaryButton 
+                  onClick={handleViewDocument}
+                  disabled={loadingDoc}
+                  className="!bg-blue-50 !text-blue-700 hover:!bg-blue-100 border border-blue-200 text-sm px-3 py-1.5 shadow-none w-full flex justify-center gap-2"
+                >
+                  <FileText size={16} />
+                  {loadingDoc ? 'Loading Document...' : 'View Document'}
+                </PrimaryButton>
               </div>
             )}
 
