@@ -14,6 +14,7 @@ export async function GET() {
 
     // Resolve S3 keys to signed URLs for photo, aadhaarCard, panCard
     const { getEmployeeDocument } = await import('../../../lib/employeeDocumentService');
+    const { refreshS3Url } = await import('../../../lib/documentService');
     const docFields = {
       photo: 'PROFILE_PHOTO',
       aadhaarCard: 'AADHAR',
@@ -23,7 +24,9 @@ export async function GET() {
     for (const emp of employees) {
       for (const [field, docType] of Object.entries(docFields)) {
         const value = emp[field];
-        const isS3Key = value && !value.startsWith('http://') && !value.startsWith('https://') && !value.startsWith('blob:');
+        if (!value) continue;
+
+        const isS3Key = !value.startsWith('http://') && !value.startsWith('https://') && !value.startsWith('blob:');
         if (isS3Key) {
           try {
             const s3Result = await getEmployeeDocument(emp.empId, docType);
@@ -31,7 +34,18 @@ export async function GET() {
           } catch (s3Error) {
             console.error(`Failed to generate signed URL for ${field}:`, s3Error);
           }
+        } else {
+          // If it's a full URL, try to refresh it if it's an S3 URL
+          emp[field] = await refreshS3Url(value);
         }
+      }
+
+      // Also refresh proofs array
+      if (Array.isArray(emp.proofs)) {
+        emp.proofs = await Promise.all(emp.proofs.map(async (proof) => ({
+          ...proof,
+          url: await refreshS3Url(proof.url)
+        })));
       }
     }
 

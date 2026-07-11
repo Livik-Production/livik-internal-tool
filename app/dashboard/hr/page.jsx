@@ -169,6 +169,9 @@ function HRPageContent() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
+  // Sort state
+  const [sortConfig, setSortConfig] = useState({ key: 'id', direction: 'asc' });
+
   // ... (rest of the logic remains the same)
 
   // tabs + animation
@@ -382,10 +385,42 @@ function HRPageContent() {
     setCurrentPage(1);
   };
 
+  const sortedEmployees = useMemo(() => {
+    let sortableEmployees = [...filteredEmployees];
+    if (sortConfig !== null) {
+      sortableEmployees.sort((a, b) => {
+        let aValue = '';
+        let bValue = '';
+        
+        if (sortConfig.key === 'id') {
+          aValue = (a.id ?? a.empId) ?? (a.__raw?.empId ?? a.__raw?.id) ?? '';
+          bValue = (b.id ?? b.empId) ?? (b.__raw?.empId ?? b.__raw?.id) ?? '';
+        } else if (sortConfig.key === 'name') {
+          aValue = a.name || ((a.__raw?.firstName || '') + ' ' + (a.__raw?.lastName || '')).trim() || '';
+          bValue = b.name || ((b.__raw?.firstName || '') + ' ' + (b.__raw?.lastName || '')).trim() || '';
+        } else if (sortConfig.key === 'dateOfJoining') {
+          aValue = new Date(a.__raw?.dateOfJoining || a.dateOfJoining || 0).getTime();
+          bValue = new Date(b.__raw?.dateOfJoining || b.dateOfJoining || 0).getTime();
+          
+          if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+          if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+          return 0;
+        } else {
+          aValue = a[sortConfig.key] || '';
+          bValue = b[sortConfig.key] || '';
+        }
+        
+        // Use natural string comparison for IDs like LK001, LK002
+        return String(aValue).localeCompare(String(bValue), undefined, { numeric: true, sensitivity: 'base' }) * (sortConfig.direction === 'asc' ? 1 : -1);
+      });
+    }
+    return sortableEmployees;
+  }, [filteredEmployees, sortConfig]);
+
   const paginatedEmployees = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
-    return filteredEmployees.slice(startIndex, startIndex + itemsPerPage);
-  }, [filteredEmployees, currentPage, itemsPerPage]);
+    return sortedEmployees.slice(startIndex, startIndex + itemsPerPage);
+  }, [sortedEmployees, currentPage, itemsPerPage]);
 
   useEffect(() => {
     const tabParam = searchParams?.get('tab');
@@ -892,11 +927,31 @@ function HRPageContent() {
     }, 400);
   };
 
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
   // columns
   const employeeColumns = [
     {
       key: 'id',
-      label: 'EmpID',
+      label: (
+        <div 
+          className="flex items-center gap-1 cursor-pointer select-none" 
+          onClick={() => handleSort('id')}
+        >
+          EmpID
+          {sortConfig.key === 'id' && (
+            <span className="text-[10px] text-gray-500">
+              {sortConfig.direction === 'asc' ? '▲' : '▼'}
+            </span>
+          )}
+        </div>
+      ),
       render: (row) => {
         const empId =
           (row && (row.id ?? row.empId)) ??
@@ -915,13 +970,40 @@ function HRPageContent() {
         );
       },
     },
-    { key: 'name', label: 'Name' },
+    { 
+      key: 'name', 
+      label: (
+        <div 
+          className="flex items-center justify-center w-full gap-1 cursor-pointer select-none" 
+          onClick={() => handleSort('name')}
+        >
+          Name
+          {sortConfig.key === 'name' && (
+            <span className="text-[10px] text-gray-500">
+              {sortConfig.direction === 'asc' ? '▲' : '▼'}
+            </span>
+          )}
+        </div>
+      ) 
+    },
     { key: 'designation', label: 'Designation' },
     { key: 'email', label: 'Email' },
     { key: 'mobile', label: 'Mobile' },
     {
       key: 'dateOfJoining',
-      label: 'Date of Joining',
+      label: (
+        <div 
+          className="flex items-center justify-center w-full gap-1 cursor-pointer select-none" 
+          onClick={() => handleSort('dateOfJoining')}
+        >
+          Date of Joining
+          {sortConfig.key === 'dateOfJoining' && (
+            <span className="text-[10px] text-gray-500">
+              {sortConfig.direction === 'asc' ? '▲' : '▼'}
+            </span>
+          )}
+        </div>
+      ),
       render: (row) => {
         const doj = row?.__raw?.dateOfJoining;
         return doj ? new Date(doj).toLocaleDateString('en-GB') : '-';
