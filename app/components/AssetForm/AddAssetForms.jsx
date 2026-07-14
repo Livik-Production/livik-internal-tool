@@ -456,6 +456,7 @@ const AssetForm = ({
   initialData = null,
   existingAssets = [],
   isSubmitting = false,
+  isAdmin = false,
 }) => {
   const [branches, setBranches] = useState([]);
   const [formData, setFormData] = useState({
@@ -574,8 +575,32 @@ const AssetForm = ({
       <div className="flex-1 overflow-y-auto pr-2 max-h-[calc(70vh-120px)] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-white [&::-webkit-scrollbar-thumb]:rounded-full">
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            {/* Branch Section */}
+            {/* Asset Identity Section */}
             <div className="md:col-span-2">
+              <h3 className="text-sm font-semibold text-gray-700 mb-2 border-b pb-1">
+                Asset Identity
+              </h3>
+            </div>
+            
+            <div className="space-y-1">
+              <label className="text-xs text-gray-600 block">
+                Asset Tag {!isViewMode && '*'}
+                <input
+                  name="assetTag"
+                  value={formData.assetTag}
+                  onChange={handleChange}
+                  className={`mt-1 w-full px-3 py-2 border rounded-md text-sm outline-none ${
+                    isViewMode || !isAdmin ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'
+                  }`}
+                  readOnly={isViewMode || !isAdmin}
+                  disabled={isViewMode || !isAdmin}
+                  required={!isViewMode}
+                />
+              </label>
+            </div>
+
+            {/* Branch Section */}
+            <div className="md:col-span-2 mt-2">
               <h3 className="text-sm font-semibold text-gray-700 mb-2 border-b pb-1">
                 Branch
               </h3>
@@ -619,20 +644,6 @@ const AssetForm = ({
               <h3 className="text-sm font-semibold text-gray-700 mb-2 border-b pb-1">
                 Basic Information
               </h3>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs text-gray-600 block">
-                Asset Tag
-                <input
-                  name="assetTag"
-                  value={formData.assetTag}
-                  onChange={handleChange}
-                  className="mt-1 w-full px-3 py-2 border rounded-md text-sm outline-none bg-gray-50 cursor-not-allowed"
-                  readOnly={true}
-                  disabled={true}
-                />
-              </label>
             </div>
 
             <div className="space-y-1">
