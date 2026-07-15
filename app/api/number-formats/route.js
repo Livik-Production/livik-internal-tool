@@ -192,31 +192,6 @@ export async function PUT(request) {
               data: { empId: newEmpId, contractEmpId: newEmpId },
             });
           }
-        } else if (mod.startsWith('asset_')) {
-          const assetType = mod.slice(6); // remove 'asset_'
-          const assets = await prisma.asset.findMany({ where: { deviceType: assetType } });
-
-          // Step 1: Set temporary tags to avoid unique constraint collisions
-          for (const asset of assets) {
-            await prisma.asset.update({
-              where: { id: asset.id },
-              data: { assetTag: asset.assetTag + '_temp' },
-            });
-          }
-          const usedSequences = new Set();
-          // Step 2: Format to final new tags
-          for (const asset of assets) {
-            let seq = extractSequence(asset.assetTag, oldS.prefix, oldS.suffix);
-            while (usedSequences.has(seq)) {
-              seq++;
-            }
-            usedSequences.add(seq);
-            const newAssetTag = `${prefix || ''}${String(seq).padStart(Number(padding || 3), '0')}${suffix || ''}`;
-            await prisma.asset.update({
-              where: { id: asset.id },
-              data: { assetTag: newAssetTag },
-            });
-          }
         } else if (mod === 'invoice') {
           const invoices = await prisma.invoice.findMany();
           

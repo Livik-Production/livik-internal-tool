@@ -864,6 +864,7 @@ export default function AssetPage() {
                     initialData={formatDataForAssetForm(selectedAsset)}
                     existingAssets={assets}
                     isSubmitting={isSubmitting}
+                    isAdmin={isAdmin}
                   />
                 </div>
               )}
@@ -1132,6 +1133,7 @@ export default function AssetPage() {
                   initialData={null}
                   existingAssets={assets}
                   isSubmitting={isSubmitting}
+                  isAdmin={isAdmin}
                 />
               </div>
             </div>
