@@ -38,15 +38,6 @@ export default function CRMDashboardOverview({
   }
   return (
     <div className="space-y-6 [animation-delay:100ms] animate-dashboard-reveal">
-      {/* Greetings Banner */}
-      <div className="pl-1">
-        <h2 className="text-2xl font-semibold text-gray-900">
-          Welcome back, <span className="text-[#33a8d9]">{authUser?.name || 'Rahul'}</span>
-        </h2>
-        <p className="text-xs font-bold text-gray-400 mt-1 uppercase tracking-widest">
-          You have {tasksCount} follow-ups scheduled for today. Let's close some deals.
-        </p>
-      </div>
 
       {/* Summary stats cards - designed exactly like Finance dashboard overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">

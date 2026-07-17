@@ -26,39 +26,74 @@ const AddHolidayList = ({ onCancel }) => {
     setUploading(true);
 
     try {
-      const workbook = new ExcelJS.Workbook();
+      let jsonData = [];
 
-      const buffer = await file.arrayBuffer();
+      if (file.name.toLowerCase().endsWith('.csv')) {
+        const text = await file.text();
+        const lines = text.split(/\r?\n/).filter(l => l.trim());
+        if (lines.length < 2) throw new Error('No data found in CSV file');
 
-      await workbook.xlsx.load(buffer);
+        const parseCSVLine = (line) => {
+          const result = [];
+          let current = '';
+          let inQuotes = false;
+          for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            if (char === '"' && line[i+1] === '"' && inQuotes) {
+              current += '"';
+              i++;
+            } else if (char === '"') {
+              inQuotes = !inQuotes;
+            } else if (char === ',' && !inQuotes) {
+              result.push(current);
+              current = '';
+            } else {
+              current += char;
+            }
+          }
+          result.push(current);
+          return result;
+        };
 
-      const worksheet = workbook.worksheets[0];
+        const headers = parseCSVLine(lines[0]).map(h => h.trim());
 
-      if (!worksheet) {
-        throw new Error('No worksheet found in file');
-      }
+        jsonData = lines.slice(1).map(line => {
+           const row = parseCSVLine(line);
+           const obj = {};
+           headers.forEach((header, index) => {
+              obj[header] = row[index] !== undefined ? row[index].trim() : '';
+           });
+           return obj;
+        });
+      } else {
+        const workbook = new ExcelJS.Workbook();
+        const buffer = await file.arrayBuffer();
+        await workbook.xlsx.load(buffer);
+        const worksheet = workbook.worksheets[0];
 
-      const rows = [];
+        if (!worksheet) {
+          throw new Error('No worksheet found in file');
+        }
 
-      worksheet.eachRow((row) => {
-        rows.push(row.values);
-      });
-
-      if (rows.length < 2) {
-        throw new Error('No data found in file');
-      }
-
-      const headers = rows[0].slice(1).map((header) => String(header).trim());
-
-      const jsonData = rows.slice(1).map((row) => {
-        const obj = {};
-
-        headers.forEach((header, index) => {
-          obj[header] = row[index + 1];
+        const rows = [];
+        worksheet.eachRow((row) => {
+          rows.push(row.values);
         });
 
-        return obj;
-      });
+        if (rows.length < 2) {
+          throw new Error('No data found in file');
+        }
+
+        const headers = rows[0].slice(1).map((header) => String(header).trim());
+
+        jsonData = rows.slice(1).map((row) => {
+          const obj = {};
+          headers.forEach((header, index) => {
+            obj[header] = row[index + 1];
+          });
+          return obj;
+        });
+      }
 
       const formattedData = jsonData
         .map((row) => {
@@ -79,39 +114,50 @@ const AddHolidayList = ({ onCancel }) => {
           if (date) {
             // ExcelJS date cell
             if (date instanceof Date) {
-              parsedDate = date.toISOString().split('T')[0];
+              const y = date.getFullYear();
+              const m = String(date.getMonth() + 1).padStart(2, '0');
+              const d = String(date.getDate()).padStart(2, '0');
+              parsedDate = `${y}-${m}-${d}`;
             }
 
             // Excel serial number
             else if (typeof date === 'number') {
               const excelEpoch = new Date(1899, 11, 30);
-
               const jsDate = new Date(excelEpoch.getTime() + date * 86400000);
-
-              parsedDate = jsDate.toISOString().split('T')[0];
+              const y = jsDate.getFullYear();
+              const m = String(jsDate.getMonth() + 1).padStart(2, '0');
+              const d = String(jsDate.getDate()).padStart(2, '0');
+              parsedDate = `${y}-${m}-${d}`;
             }
 
             // String date
             else if (typeof date === 'string') {
-              const testDate = new Date(date);
-
-              if (!isNaN(testDate.getTime())) {
-                parsedDate = testDate.toISOString().split('T')[0];
+              const parts = date.split(/[-/]/).map(p => p.trim());
+              
+              if (parts.length === 3 && parts[0].length === 4) {
+                 // Format: YYYY-MM-DD
+                 parsedDate = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+              } else if (parts.length === 3 && parts[2].length === 4 && !isNaN(parts[1])) {
+                 // Format: DD/MM/YYYY or MM/DD/YYYY
+                 const y = parts[2];
+                 let m = parts[1];
+                 let d = parts[0];
+                 
+                 // If the middle part is > 12, it must be DD/MM/YYYY
+                 // Wait, if middle is > 12, it's NOT a month. It means parts[0] is month and parts[1] is day (MM/DD/YYYY)
+                 if (parseInt(m, 10) > 12) {
+                    m = parts[0];
+                    d = parts[1];
+                 }
+                 // Default to DD/MM/YYYY (matches our CSV export format)
+                 parsedDate = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
               } else {
-                const parts = date.split(/[-/]/);
-
-                if (parts.length === 3) {
-                  if (parts[0].length === 4) {
-                    parsedDate = date;
-                  } else {
-                    const testDate2 = new Date(
-                      `${parts[2]}-${parts[1]}-${parts[0]}`
-                    );
-
-                    if (!isNaN(testDate2.getTime())) {
-                      parsedDate = testDate2.toISOString().split('T')[0];
-                    }
-                  }
+                const testDate = new Date(date);
+                if (!isNaN(testDate.getTime())) {
+                   const ty = testDate.getFullYear();
+                   const tm = String(testDate.getMonth() + 1).padStart(2, '0');
+                   const td = String(testDate.getDate()).padStart(2, '0');
+                   parsedDate = `${ty}-${tm}-${td}`;
                 }
               }
             }
@@ -166,7 +212,7 @@ const AddHolidayList = ({ onCancel }) => {
         </h3>
 
         <p className="text-sm text-gray-500">
-          Upload an Excel file containing the holiday list. The file should
+          Upload an Excel or CSV file containing the holiday list. The file should
           include columns for date, holiday name, type, and description.
         </p>
       </div>
@@ -189,13 +235,13 @@ const AddHolidayList = ({ onCancel }) => {
             </svg>
 
             <p className="text-sm text-gray-600 mb-2">
-              {file ? file.name : 'Click to browse Excel file'}
+              {file ? file.name : 'Click to browse Excel or CSV file'}
             </p>
 
             <input
               type="file"
               id="holiday-file"
-              accept=".xlsx,.xls"
+              accept=".xlsx,.xls,.csv"
               onChange={handleFileChange}
               className="hidden"
             />
@@ -208,7 +254,7 @@ const AddHolidayList = ({ onCancel }) => {
             </label>
 
             <p className="text-xs text-gray-500 mt-2">
-              Supported formats: Excel (.xlsx, .xls)
+              Supported formats: Excel (.xlsx, .xls) and CSV (.csv)
             </p>
           </div>
         </div>

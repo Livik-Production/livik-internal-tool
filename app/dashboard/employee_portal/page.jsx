@@ -4,7 +4,7 @@
 import Image from 'next/image';
 import { useState, useEffect, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import Loader from './../../components/Loader';
 import LeaveRequestForm from '../../components/EmployeePortal/LeaveRequestForm';
@@ -293,6 +293,25 @@ function EmployeePortalContent() {
   const [activePayrollTab, setActivePayrollTab] = useState('components');
 
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', tabId);
+    params.delete('subtab'); // Reset subtab when switching main tabs
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
+  const handlePayrollTabChange = (subtabId) => {
+    setActivePayrollTab(subtabId);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', 'payroll');
+    params.set('subtab', subtabId);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
   const authUser = useSelector((state) => state.auth.user);
 
   // Determine role for request submission
@@ -1185,13 +1204,10 @@ function EmployeePortalContent() {
               <div className="flex items-center gap-3">
                 {personalData.basic.photo ? (
                   <div className="relative w-16 h-16 rounded-xl overflow-hidden border-2 border-white shrink-0">
-                    <Image
+                    <img
                       src={personalData.basic.photo}
                       alt={`${personalData.basic.firstName}'s profile`}
-                      fill
-                      sizes="64px"
-                      className="object-cover"
-                      priority
+                      className="w-full h-full object-cover"
                     />
                   </div>
                 ) : (
@@ -1235,7 +1251,7 @@ function EmployeePortalContent() {
                 <TabButton
                   key={tab.id}
                   isActive={activeTab === tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => handleTabChange(tab.id)}
                 >
                   {tab.label}
                 </TabButton>
@@ -1331,7 +1347,7 @@ function EmployeePortalContent() {
                     <TabButton
                       key={tab.id}
                       isActive={activePayrollTab === tab.id}
-                      onClick={() => setActivePayrollTab(tab.id)}
+                      onClick={() => handlePayrollTabChange(tab.id)}
                     >
                       {tab.label}
                     </TabButton>

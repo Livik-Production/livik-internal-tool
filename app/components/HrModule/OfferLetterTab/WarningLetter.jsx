@@ -1,12 +1,15 @@
 'use client';
 
 import React from 'react';
+import LetterPadLayout from './LetterPadLayout';
 
 const WarningLetter = ({
   employeeData = {},
   letterPad = 'with', // "with" | "without"
+  letterPadType = 'type1',
 }) => {
   const isWithPad = letterPad === 'with';
+  const companyName = letterPadType === 'type2' ? 'Livik Software Solutions Private Limited' : 'Livik Technologies';
 
   const getCurrentDate = () => {
     const today = new Date();
@@ -20,65 +23,29 @@ const WarningLetter = ({
     <div className="flex justify-center bg-gray-100 p-4 print:bg-white print:p-0 mt-6">
       <div
         id="warning-letter-print"
-        className={`relative w-[794px] h-[1123px] bg-white pdf-safe ${
+        className={`relative w-[794px] h-[1123px] bg-white pdf-safe flex flex-col ${
           isWithPad ? 'letterpad-print' : 'no-letterpad-print'
         }`}
-        style={
-          isWithPad
-            ? {
-                backgroundImage: "url('/asset/Background_letter.jpg')",
-                backgroundSize: '794px 1123px',
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'top center',
-              }
-            : {}
-        }
       >
-        {/* WATERMARK (ONLY WITHOUT IMAGE LETTERPAD) */}
-        {!isWithPad && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <img
-              src="/asset/livik-watermark.png"
-              alt="Livik Watermark"
-              className="w-[420px] opacity-10"
-            />
-          </div>
-        )}
-
-        <div className="relative z-10 h-full flex flex-col">
-          {isWithPad && (
-            <div className="flex justify-center pt-8">
-              <img
-                src="/asset/livik-logo.png"
-                alt="Livik Technologies Logo"
-                className="h-16 w-auto"
-              />
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 items-center px-16 pt-[36px]">
-            <h1 className="text-2xl font-bold text-gray-900">
-              Livik Technologies
-            </h1>
-            <div className="flex justify-start pl-32">
+        <LetterPadLayout isWithPad={isWithPad} letterPadType={letterPadType}>
+          {/* COMPANY NAME AND DATE - USING GRID */}
+          <div className="grid grid-cols-2 items-center px-16 pt-[36px] w-full">
+            <div className="flex justify-end col-span-2">
               <h1 className="text-md font-semibold text-gray-900">
                 Date : {getCurrentDate()}
               </h1>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 items-start px-16 pt-2">
-            <div className="text-sm leading-5 text-gray-700">
-              <p>HIG A-7, 2nd Street, 9th Cross</p>
-              <p>R.M. Colony, Dindigul - 624001</p>
-              <p>Tel: +91 8610470324</p>
-              <p>Email: liviktechnologies@gmail.com</p>
-            </div>
-            <div className="text-sm text-gray-900 flex flex-col items-start pl-32">
-              <p className="font-bold">{employeeData?.name || 'Mr. XXX'}</p>
-              <p>{employeeData?.address || '[Address]'}</p>
-              <p>{employeeData?.email || '[Email]'}</p>
-              <p>{employeeData?.phone || '[Phone]'}</p>
+          {/* COMPANY DETAILS AND EMPLOYEE DETAILS - USING GRID */}
+          <div className="grid grid-cols-2 items-start px-16 pt-2 w-full">
+            <div className="col-start-2 text-sm text-gray-900 flex flex-col items-end">
+              <div className="text-left">
+                <p className="font-bold">{employeeData?.name || 'Mr. XXX'}</p>
+                <p>{employeeData?.address || '[Address]'}</p>
+                <p>{employeeData?.email || '[Email]'}</p>
+                <p>{employeeData?.phone || '[Phone]'}</p>
+              </div>
             </div>
           </div>
 
@@ -98,7 +65,7 @@ const WarningLetter = ({
             <div className="space-y-5 text-justify leading-relaxed">
               <p>
                 This letter serves as a formal warning regarding your conduct /
-                performance at Livik Technologies. It has been brought to our
+                performance at {companyName}. It has been brought to our
                 attention that you have been in violation of company policies
                 and/or have not met the expected performance standards.
               </p>
@@ -129,13 +96,13 @@ const WarningLetter = ({
 
             <div className="mt-16">
               <p className="mb-2">Regards.</p>
-              <p className="font-semibold">For Livik Technologies</p>
+              <p className="font-semibold">For {companyName}</p>
               <div className="mt-10">
                 <p className="font-semibold">Manager – HR</p>
               </div>
             </div>
           </div>
-        </div>
+        </LetterPadLayout>
 
         <style jsx global>{`
           @media print {

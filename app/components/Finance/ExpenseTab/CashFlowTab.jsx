@@ -84,7 +84,7 @@ const CashFlowTab = ({
     const totalSpending = expenses
       .filter(
         (exp) =>
-          exp.paymentMode === 'Petty Cash' || exp.paymentMode === 'petty_cash'
+          exp.paymentMode === 'Petty Cash' || exp.paymentMode === 'petty cash' || exp.paymentMode === 'petty_cash'
       )
       .reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
     const cashInHand = totalTopUp - totalSpending;

@@ -1,16 +1,12 @@
 'use client';
 
 import { useState, useEffect, React } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-import { LogOut, ArrowLeft, Loader2, ShieldAlert } from 'lucide-react';
-import PrimaryButton from '../../../../../app/components/Buttons/PrimaryButton';
-import Loader from '../../../../../app/components/Loader';
+import { Loader2, ShieldAlert } from 'lucide-react';
+import PrimaryButton from '../Buttons/PrimaryButton';
+import Loader from '../Loader';
+import { showSuccessToast, showErrorToast } from '../Toast';
 
-export default function EmployeeExitPage() {
-  const router = useRouter();
-  const params = useParams();
-  const id = params.id;
-
+export default function EmployeeExitForm({ employeeId, onSuccess, onCancel }) {
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -28,11 +24,11 @@ export default function EmployeeExitPage() {
   });
 
   useEffect(() => {
-    if (!id) return;
+    if (!employeeId) return;
     const fetchEmployee = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`/api/employees/${id}`);
+        const res = await fetch(`/api/employees/${employeeId}`);
         if (!res.ok) throw new Error('Failed to fetch employee details');
         const data = await res.json();
         setEmployee(data);
@@ -44,7 +40,23 @@ export default function EmployeeExitPage() {
       }
     };
     fetchEmployee();
-  }, [id]);
+  }, [employeeId]);
+
+  const calculateBondDuration = (start, end) => {
+    if (!start || !end) return null;
+    const s = new Date(start);
+    const e = new Date(end);
+    if (isNaN(s.getTime()) || isNaN(e.getTime())) return null;
+    const diffTime = Math.abs(e - s);
+    const diffYears = diffTime / (1000 * 60 * 60 * 24 * 365.25);
+    const rounded = Math.round(diffYears * 2) / 2;
+    return rounded > 0 ? rounded : null;
+  };
+
+  const submittedDocs = [];
+  if (employee?.docSSLCCollected) submittedDocs.push('SSLC');
+  if (employee?.docHSCCollected) submittedDocs.push('HSC');
+  if (employee?.docDegreeCollected) submittedDocs.push('Degree');
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -58,7 +70,7 @@ export default function EmployeeExitPage() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/employees/${id}/exit`, {
+      const res = await fetch(`/api/employees/${employeeId}/exit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -69,32 +81,36 @@ export default function EmployeeExitPage() {
         throw new Error(errorData.error || 'Failed to submit exit information');
       }
 
-      alert('Employee exit information processed successfully. Status updated to Inactive.');
-      router.push('/dashboard/hr');
+      showSuccessToast('Employee exit information processed successfully.');
+      if (onSuccess) onSuccess();
     } catch (err) {
       console.error(err);
-      alert(err.message || 'Failed to submit exit information');
+      showErrorToast(err.message || 'Failed to submit exit information');
     } finally {
       setSubmitting(false);
     }
   };
 
   if (loading) {
-    return <Loader label="Loading employee details..." fullScreen />;
+    return (
+      <div className="h-64 flex items-center justify-center">
+        <Loader label="Loading employee details..." />
+      </div>
+    );
   }
 
   if (error || !employee) {
     return (
-      <div className="p-6 max-w-xl mx-auto mt-10 bg-white rounded-2xl border border-red-100 shadow-sm text-center">
+      <div className="p-6 max-w-xl mx-auto my-10 bg-white rounded-2xl border border-red-100 shadow-sm text-center">
         <ShieldAlert className="mx-auto text-red-500 mb-4" size={48} />
         <h2 className="text-xl font-bold text-gray-900 mb-2">Error</h2>
         <p className="text-gray-600 mb-4">{error || 'Employee not found'}</p>
         <button
-          onClick={() => router.push('/dashboard/hr?tab=all&status=INACTIVE')}
-          className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50"
+          type="button"
+          onClick={onCancel}
+          className="px-4 py-2 border border-gray-300 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50"
         >
-          <ArrowLeft size={16} />
-          Back to HR Dashboard
+          Close
         </button>
       </div>
     );
@@ -103,29 +119,22 @@ export default function EmployeeExitPage() {
   return (
     <div className="h-full flex flex-col min-h-0 space-y-4">
       {/* Header Block */}
-      <div className="bg-white rounded-2xl shadow-sm p-4 mb-1 border border-gray-200">
+      <div className="bg-white rounded-2xl shadow-sm p-4 m-3.5 border border-gray-200">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-red-50 text-red-500 rounded-xl">
-              <LogOut size={28} />
+              <ShieldAlert size={28} />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
                 Employee Exit Clearance
               </h1>
               <p className="text-sm text-gray-500 mt-0.5">
-                Process exit details and clearances for<span className="text-red-600 font-semibold"> {employee.firstName}{' '}
-                  {employee.lastName}</span>
+                Process exit details and clearances for {employee.firstName}{' '}
+                {employee.lastName}
               </p>
             </div>
           </div>
-          <button
-            onClick={() => router.push('/dashboard/hr?tab=all&status=INACTIVE')}
-            className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
-          >
-            <ArrowLeft size={15} />
-            Back
-          </button>
         </div>
       </div>
 
@@ -251,36 +260,99 @@ export default function EmployeeExitPage() {
 
           <div className="border-t border-gray-100 pt-4">
             <span className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+              Submitted Items (To be returned)
+            </span>
+            <div className="bg-orange-50 border border-orange-100 p-4 rounded-xl mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <span className="block text-xs font-semibold text-orange-800 mb-1">
+                    Original Documents
+                  </span>
+                  {submittedDocs.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {submittedDocs.map(doc => (
+                        <span key={doc} className="px-2 py-1 bg-white border border-orange-200 text-orange-700 text-xs font-medium rounded-md shadow-sm">
+                          {doc}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-sm text-orange-600/70">No original documents submitted</span>
+                  )}
+                </div>
+                <div>
+                  <span className="block text-xs font-semibold text-orange-800 mb-1">
+                    Bond Details
+                  </span>
+                  {calculateBondDuration(employee?.bondStartDate, employee?.bondEndDate) ? (
+                    <div className="text-sm text-orange-700 font-medium bg-white px-3 py-1.5 rounded-md border border-orange-200 inline-block shadow-sm">
+                      {calculateBondDuration(employee.bondStartDate, employee.bondEndDate)} Year{calculateBondDuration(employee.bondStartDate, employee.bondEndDate) > 1 ? 's' : ''} 
+                      <span className="font-normal text-orange-600 ml-1">
+                        ({new Date(employee.bondStartDate).toLocaleDateString('en-GB')} - {new Date(employee.bondEndDate).toLocaleDateString('en-GB')})
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-sm text-orange-600/70">No active bond found</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <span className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
               Clearance Checklist
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <label className="flex items-center gap-2.5 text-sm font-medium text-gray-700 cursor-pointer p-3 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors">
-                <input
-                  type="checkbox"
-                  name="isAssetsReturned"
-                  checked={formData.isAssetsReturned}
-                  onChange={handleChange}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer h-4 w-4"
-                />
-                <span>All Company Assets Returned</span>
-              </label>
-              <label className="flex items-center gap-2.5 text-sm font-medium text-gray-700 cursor-pointer p-3 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors">
-                <input
-                  type="checkbox"
-                  name="isHandoverCompleted"
-                  checked={formData.isHandoverCompleted}
-                  onChange={handleChange}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer h-4 w-4"
-                />
-                <span>Work Handover Completed</span>
-              </label>
+              <div className="flex flex-col gap-2">
+                <label className="flex items-center gap-2.5 text-sm font-medium text-gray-700 cursor-pointer p-3 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors">
+                  <input
+                    type="checkbox"
+                    name="isAssetsReturned"
+                    checked={formData.isAssetsReturned}
+                    onChange={handleChange}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer h-4 w-4"
+                  />
+                  <span>All Company Assets Returned</span>
+                </label>
+                {(employee?.assetAssignments || []).length > 0 ? (
+                  <div className="pl-3 pr-2 py-2 border-l-2 border-blue-200 ml-2 max-h-32 overflow-y-auto space-y-2">
+                    {(employee.assetAssignments || []).map((assignment) => (
+                      <div key={assignment.id} className="text-xs flex justify-between items-center bg-gray-50 p-2 rounded-lg border border-gray-100">
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-gray-800">
+                            {`${assignment.asset?.brand || ''} ${assignment.asset?.modelName || ''}`.trim() || assignment.asset?.deviceType || 'Unknown Asset'}
+                          </span>
+                          <span className="text-gray-500 text-[10px] uppercase">
+                            {assignment.asset?.category?.name || 'Asset'} • {assignment.asset?.assetTag}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="pl-4 ml-2 mt-1 text-xs text-gray-400 font-medium">
+                    No active assets assigned
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="flex items-center gap-2.5 text-sm font-medium text-gray-700 cursor-pointer p-3 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors h-fit">
+                  <input
+                    type="checkbox"
+                    name="isHandoverCompleted"
+                    checked={formData.isHandoverCompleted}
+                    onChange={handleChange}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer h-4 w-4"
+                  />
+                  <span>Work Handover Completed</span>
+                </label>
+              </div>
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4">
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
             <button
               type="button"
-              onClick={() => router.push('/dashboard/hr?tab=all&status=INACTIVE')}
+              onClick={onCancel}
               className="px-5 py-2.5 border border-gray-300 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
             >
               Cancel

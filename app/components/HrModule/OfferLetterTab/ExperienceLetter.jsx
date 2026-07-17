@@ -1,12 +1,15 @@
 'use client';
 
 import React from 'react';
+import LetterPadLayout from './LetterPadLayout';
 
 const ExperienceLetter = ({
   employeeData = {},
   letterPad = 'with',
+  letterPadType = 'type1',
 }) => {
   const isWithPad = letterPad === 'with';
+  const companyName = letterPadType === 'type2' ? 'Livik Software Solutions Private Limited' : 'Livik Technologies';
 
   const getCurrentDate = () => {
     const today = new Date();
@@ -20,131 +23,45 @@ const ExperienceLetter = ({
     <div className="flex justify-center bg-gray-100 p-4 print:bg-white print:p-0 mt-6">
       <div
         id="experience-letter-print"
-        className={`relative w-[794px] h-[1123px] bg-white pdf-safe ${
+        className={`relative w-[794px] h-[1123px] bg-white pdf-safe flex flex-col ${
           isWithPad ? 'letterpad-print' : 'no-letterpad-print'
         }`}
-        style={
-          isWithPad
-            ? {
-                backgroundImage: "url('/asset/Background_letter.jpg')",
-                backgroundSize: '794px 1123px',
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'top center',
-              }
-            : {}
-        }
       >
-        {!isWithPad && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <img
-              src="/asset/livik-watermark.png"
-              alt="Livik Watermark"
-              className="w-[420px] opacity-10"
-            />
-          </div>
-        )}
+        <LetterPadLayout isWithPad={isWithPad} letterPadType={letterPadType}>
 
-        <div className="relative z-10 h-full flex flex-col">
-          {isWithPad && (
-            <div className="flex justify-center pt-8">
-              <img
-                src="/asset/livik-logo.png"
-                alt="Livik Technologies Logo"
-                className="h-16 w-auto"
-              />
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 items-center px-16 pt-[36px]">
-            <h1 className="text-2xl font-bold text-gray-900">
-              Livik Technologies
+          <div className="flex justify-end px-16 pt-[36px]">
+            <h1 className="text-[15px] font-medium text-gray-900">
+              Date:{getCurrentDate()}
             </h1>
-            <div className="flex justify-start pl-32">
-              <h1 className="text-md font-semibold text-gray-900">
-                Date : {getCurrentDate()}
-              </h1>
-            </div>
           </div>
 
-          <div className="grid grid-cols-2 items-start px-16 pt-2">
-            <div className="text-sm leading-5 text-gray-700">
-              <p>HIG A-7, 2nd Street, 9th Cross</p>
-              <p>R.M. Colony, Dindigul - 624001</p>
-              <p>Tel: +91 8610470324</p>
-              <p>Email: liviktechnologies@gmail.com</p>
-            </div>
-            <div className="text-sm text-gray-900 flex flex-col items-start pl-32">
-              <p className="font-bold">{employeeData?.name || 'Mr. XXX'}</p>
-              <p>{employeeData?.address || '[Address]'}</p>
-              <p>{employeeData?.email || '[Email]'}</p>
-              <p>{employeeData?.phone || '[Phone]'}</p>
-            </div>
-          </div>
-
-          <div className="px-16 pt-10 text-sm text-gray-800 flex-grow">
-            <h2 className="text-lg font-bold text-center text-green-800 mb-6 underline">
-              EXPERIENCE CERTIFICATE
+          <div className="px-16 pt-20 text-[15px] text-gray-800 flex-grow">
+            <h2 className="text-xl font-bold text-center text-gray-900 mb-16">
+              Experience cum Relieving Letter
             </h2>
 
-            <p className="mb-6 font-semibold">TO WHOM IT MAY CONCERN</p>
-
-            <div className="space-y-5 text-justify leading-relaxed">
+            <div className="space-y-6 text-justify leading-relaxed">
               <p>
-                This is to certify that{' '}
-                <strong>{employeeData?.name || 'Mr. XXX'}</strong> was employed
-                with <strong>Livik Technologies</strong> as{' '}
-                <strong>
-                  {employeeData?.role || employeeData?.designation || '[Designation]'}
-                </strong>
-                .
+                This is to certify that <strong>{employeeData?.name || 'Mr. XXX'}</strong> (Emp ID: {employeeData?.empId || employeeData?.__raw?.empId || '[Emp ID]'}) was employed
+                with <strong>{companyName}</strong> as an <strong>&quot;{employeeData?.role || employeeData?.designation || employeeData?.__raw?.designation || '[Designation]'}&quot;</strong> from <strong>{employeeData?.dateOfJoining || employeeData?.__raw?.dateOfJoining ? new Date(employeeData?.dateOfJoining || employeeData?.__raw?.dateOfJoining).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Start Date]'}</strong> to <strong>{employeeData?.employeeExit?.lastWorkingDay || employeeData?.__raw?.employeeExit?.lastWorkingDay ? new Date(employeeData?.employeeExit?.lastWorkingDay || employeeData?.__raw?.employeeExit?.lastWorkingDay).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[End Date]'}</strong>.
               </p>
 
               <p>
-                During the tenure with our organization,{' '}
-                {employeeData?.name || 'he/she'} demonstrated excellent
-                professional skills, dedication, and a strong work ethic. The
-                responsibilities handled include:
-              </p>
-
-              <ul className="list-disc pl-6 space-y-2">
-                <li>
-                  Successfully delivering assigned projects and meeting
-                  deadlines consistently.
-                </li>
-                <li>
-                  Collaborating effectively with team members and stakeholders.
-                </li>
-                <li>
-                  Demonstrating strong problem-solving abilities and technical
-                  expertise.
-                </li>
-                <li>
-                  Maintaining high standards of professionalism and work quality.
-                </li>
-              </ul>
-
-              <p>
-                We found {employeeData?.name || 'him/her'} to be sincere,
-                hardworking, and a valuable asset to the team.{' '}
-                {employeeData?.name || 'He/She'} has been relieved from duties
-                on amicable terms.
+                He has been relieved of his duties and responsibilities with effect from the close of business on <strong>{employeeData?.employeeExit?.lastWorkingDay || employeeData?.__raw?.employeeExit?.lastWorkingDay ? new Date(employeeData?.employeeExit?.lastWorkingDay || employeeData?.__raw?.employeeExit?.lastWorkingDay).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '[End Date]'}</strong>.
               </p>
 
               <p>
-                We wish {employeeData?.name || 'him/her'} all the best in future
-                endeavors and professional growth.
+                We thank him for his services and wish him every success in his future endeavors.
               </p>
             </div>
 
-            <div className="mt-16">
-              <p className="mb-2">Regards.</p>
-              <p className="font-semibold">For Livik Technologies</p>
-              <div className="mt-10">
-                <p className="font-semibold">Manager – HR</p>
-              </div>
+            <div className="mt-20">
+              <p className="mb-4">Regards,</p>
+              <p className="font-semibold mb-20">For {companyName}</p>
+              <p className="font-semibold">Authorized Signatory</p>
             </div>
           </div>
-        </div>
+        </LetterPadLayout>
 
         <style jsx global>{`
           @media print {

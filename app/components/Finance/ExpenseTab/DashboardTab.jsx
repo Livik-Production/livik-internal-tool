@@ -456,7 +456,7 @@ const DashboardTab = ({
 
   return (
     <div className=" space-y-3">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 p-3">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 mt-5">
             Expense Dashboard

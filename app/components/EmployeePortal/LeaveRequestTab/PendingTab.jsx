@@ -25,7 +25,7 @@ export default function PendingTab({
     title: '',
     message: '',
     type: 'warning',
-    onConfirm: () => {},
+    onConfirm: () => { },
   });
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -40,6 +40,11 @@ export default function PendingTab({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    const event = new CustomEvent('dropdown-state-change', { detail: { open: isDropdownOpen } });
+    window.dispatchEvent(event);
+  }, [isDropdownOpen]);
 
   const handleDeleteLeave = async (row) => {
     const isPermission = row.isPermission;
@@ -256,22 +261,28 @@ export default function PendingTab({
   return (
     <div className="p-0.5">
       <div className="flex items-center justify-end mb-3">
-        <div className="relative z-30" ref={dropdownRef}>
+        {isDropdownOpen && (
+          <div
+            className="fixed inset-0 z-40 backdrop-blur-sm bg-black/20 transition-all duration-300"
+            onClick={() => setIsDropdownOpen(false)}
+          />
+        )}
+        <div className={`relative ${isDropdownOpen ? 'z-50' : 'z-30'}`} ref={dropdownRef}>
           <Button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="px-4 py-2 bg-[#004475] text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+            className="px-4 py-2 bg-[#004475] text-white font-medium rounded-lg transition-colors flex items-center gap-2 cursor-pointer"
           >
-            Create Request <ChevronDown className="w-4 h-4" />
+            Create Request <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isDropdownOpen ? 'rotate-90' : ''}`} />
           </Button>
 
           {isDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-[0_4px_24px_rgba(0,0,0,0.1)] border border-gray-100 py-2 z-50 animate-in fade-in zoom-in-95 duration-200">
+            <div className="absolute right-full top-0 mr-1 w-48 bg-white rounded-xl shadow-[0_4px_24px_rgba(0,0,0,0.1)] border border-gray-400 py-2 z-50 animate-in fade-in zoom-in-95 duration-200 origin-top-right">
               <button
                 onClick={() => {
                   setIsDropdownOpen(false);
                   onApplyLeave?.();
                 }}
-                className="block w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                className="block w-full text-left px-4 py-2.5 border-b border-gray-300 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors cursor-pointer"
               >
                 Leave Request
               </button>
@@ -280,7 +291,7 @@ export default function PendingTab({
                   setIsDropdownOpen(false);
                   onApplyPermission?.();
                 }}
-                className="block w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                className="block w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors cursor-pointer"
               >
                 Permission Request
               </button>

@@ -267,6 +267,7 @@ const ExpensesTable = ({
           {activeTab === 'all' && (
             <AllExpenseTab
               expenses={filteredData}
+              pettyCashFlows={pettyCashFlows}
               isLoading={isLoading || propIsLoading || loading}
               onEdit={handleEditExpense}
               onDeleteSuccess={handleDeleteSuccess}

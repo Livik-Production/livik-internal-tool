@@ -72,7 +72,7 @@ const CashFlowModal = ({ isOpen, onClose, inflowId }) => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
                 <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">
-                  Opening (Start of Day)
+                  Opening Balance
                 </p>
                 <p className="text-lg font-bold text-gray-700">
                   ₹{data.openingBalance?.toLocaleString()}
@@ -80,7 +80,7 @@ const CashFlowModal = ({ isOpen, onClose, inflowId }) => {
               </div>
               <div className="bg-blue-50 p-3 rounded-xl border border-blue-100">
                 <p className="text-[10px] text-blue-600 font-bold uppercase tracking-wider mb-1">
-                  Today's Top-ups
+                   Top-ups
                 </p>
                 <p className="text-lg font-bold text-blue-900">
                   ₹{Number(data.totalInflowToday || 0).toLocaleString()}
@@ -90,20 +90,20 @@ const CashFlowModal = ({ isOpen, onClose, inflowId }) => {
                   {parseFloat(data.receivedAmount).toLocaleString()}
                 </p>
               </div>
-              <div className="bg-orange-50 p-3 rounded-xl border border-orange-100">
-                <p className="text-[10px] text-orange-600 font-bold uppercase tracking-wider mb-1">
-                  Today's Expenses
+              <div className="bg-purple-50 p-3 rounded-xl border border-purple-100">
+                <p className="text-[10px] text-purple-600 font-bold uppercase tracking-wider mb-1">
+                  Total Amount
                 </p>
-                <p className="text-lg font-bold text-orange-900">
-                  ₹{Number(data.totalOutflowToday || 0).toLocaleString()}
+                <p className="text-lg font-bold text-purple-900">
+                  ₹{((data.openingBalance || 0) + Number(data.totalInflowToday || 0)).toLocaleString()}
                 </p>
               </div>
-              <div className="bg-green-50 p-4 rounded-xl border border-green-100 shadow-sm md:col-span-1 col-span-2">
-                <p className="text-[10px] text-green-600 font-bold uppercase tracking-wider mb-1">
-                  Closing (End of Day)
+              <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100 shadow-sm md:col-span-1 col-span-2">
+                <p className="text-[10px] text-indigo-600 font-bold uppercase tracking-wider mb-1">
+                  Balance in Hand
                 </p>
-                <p className="text-xl font-bold text-green-900">
-                  ₹{data.closingBalance?.toLocaleString()}
+                <p className="text-xl font-bold text-indigo-900">
+                  ₹{(((data.openingBalance || 0) + Number(data.totalInflowToday || 0)) - (data.closingBalance || 0)).toLocaleString()}
                 </p>
               </div>
             </div>
@@ -130,7 +130,7 @@ const CashFlowModal = ({ isOpen, onClose, inflowId }) => {
             <div>
               <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
                 <span className="w-1.5 h-1.5 bg-blue-600 rounded-full"></span>
-                Weekly Activity Breakdown
+                Activity Breakdown
               </h3>
               <div className="overflow-y-auto max-h-[320px] border border-gray-100 rounded-xl shadow-sm custom-scrollbar">
                 <table className="w-full text-xs text-left">
@@ -185,36 +185,76 @@ const CashFlowModal = ({ isOpen, onClose, inflowId }) => {
                               )}
                             </td>
                             <td className="px-4 py-3 text-right">
-                              <span className="font-mono font-bold text-gray-700 italic">
-                                ₹{day.closingBalance.toLocaleString()}
+                              <span
+                                className={`font-mono font-bold italic ${day.closingBalance < 0 ? 'text-red-600' : 'text-gray-700'}`}
+                              >
+                                {day.closingBalance < 0 ? '-' : ''}₹
+                                {Math.abs(day.closingBalance).toLocaleString()}
                               </span>
                             </td>
                           </tr>
+                          {/* Multiple top-up sub-rows for days with more than one inflow */}
+                          {day.inflows.length > 1 && (
+                            <tr>
+                              <td
+                                colSpan="4"
+                                className="px-4 py-2 bg-blue-50/20"
+                              >
+                                <div className="pl-4 border-l-2 border-blue-200 space-y-1.5">
+                                  {day.inflows.map((inf) => (
+                                    <div
+                                      key={inf.id}
+                                      className="flex justify-between items-center text-[11px]"
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-gray-600 font-medium">
+                                          {inf.receiveFrom}
+                                        </span>
+                                        <span className="text-[9px] bg-blue-100 px-1.5 py-0.5 rounded text-blue-500">
+                                          {inf.paymentMethod}
+                                        </span>
+                                      </div>
+                                      <span className="text-green-600 font-semibold">
+                                        +₹
+                                        {Number(
+                                          inf.receivedAmount
+                                        ).toLocaleString()}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                          {/* Expense sub-rows listed under each day */}
                           {day.expenses.length > 0 && (
                             <tr>
                               <td
                                 colSpan="4"
-                                className="px-4 py-2 bg-gray-50/30"
+                                className="px-4 py-2 bg-orange-50/20"
                               >
-                                <div className="pl-4 border-l-2 border-orange-200 space-y-1.5">
+                                <div className="pl-4 border-l-2 border-orange-300 space-y-1.5">
                                   {day.expenses.map((exp) => (
                                     <div
                                       key={exp.id}
                                       className="flex justify-between items-center text-[11px]"
                                     >
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-gray-600 font-medium">
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="text-gray-700 font-medium">
                                           {exp.itemName}
                                         </span>
-                                        <span className="text-[9px] bg-gray-100 px-1 rounded text-gray-400">
+                                        <span className="text-[9px] bg-orange-100 px-1.5 py-0.5 rounded text-orange-500 font-medium">
                                           {exp.category}
                                         </span>
+                                        {exp.remarks && (
+                                          <span className="text-[9px] text-gray-400 italic truncate max-w-[120px]">
+                                            {exp.remarks}
+                                          </span>
+                                        )}
                                       </div>
-                                      <span className="text-orange-600 font-semibold">
+                                      <span className="text-red-500 font-semibold shrink-0">
                                         -₹
-                                        {parseFloat(
-                                          exp.amount
-                                        ).toLocaleString()}
+                                        {Number(exp.amount).toLocaleString()}
                                       </span>
                                     </div>
                                   ))}

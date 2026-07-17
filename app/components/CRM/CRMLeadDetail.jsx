@@ -89,7 +89,7 @@ export default function CRMLeadDetail({
                   
                   <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
                       {/* <span className="w-1 h-1 bg-gray-400 rounded-full mx-1"></span> */}
-                      <span>{selectedLeadDetail.companyEmail || 'No Company Email'}</span>
+                      <span>{selectedLeadDetail.email || 'No Company Email'}</span>
                    
                   
                     {selectedLeadDetail.companyWebsite ? (

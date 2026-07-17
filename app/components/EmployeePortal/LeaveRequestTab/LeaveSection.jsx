@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -16,6 +17,18 @@ export default function LeaveSection({ initialTab = 'pending' }) {
   const authUser = useSelector((s) => s.auth.user);
 
   const [activeLeaveTab, setActiveLeaveTab] = useState(initialTab);
+
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const handleTabChange = (t) => {
+    setActiveLeaveTab(t);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', 'leave');
+    params.set('subtab', t);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
   useEffect(() => {
     setActiveLeaveTab(initialTab);
@@ -146,7 +159,7 @@ export default function LeaveSection({ initialTab = 'pending' }) {
           <TabButton
             key={t}
             isActive={activeLeaveTab === t}
-            onClick={() => setActiveLeaveTab(t)}
+            onClick={() => handleTabChange(t)}
           >
             {t === 'pending'
               ? 'Pendings'
