@@ -1,0 +1,833 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+  engineType    = "library"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Employee {
+  id                       String                    @id @default(cuid())
+  empId                    String                    @unique
+  firstName                String
+  lastName                 String
+  dateOfBirth              DateTime?
+  gender                   String?
+  aadhaarNumber            String?
+  panNumber                String?
+  email                    String?                   @unique
+  phoneNumber              String?                   @unique
+  emergencyContact         String?
+  photo                    String?
+  aadhaarCard              String?
+  panCard                  String?
+  proofs                   Json?                     @default("[]")
+  bloodGroup               String?
+  presentAddress           String?
+  permanentAddress         String?
+  designation              String?
+  department               String?
+  dateOfJoining            DateTime?
+  workLocation             String?
+  /// *
+  /// * Payroll / Banking
+  bankName                 String?
+  accountNumber            String?
+  ifscCode                 String?
+  password                 String?
+  createdAt                DateTime                  @default(now()) @map("created_at")
+  updatedAt                DateTime                  @updatedAt @map("updated_at")
+  bondDuration             String?                   @map("bond_duration")
+  bondEndDate              DateTime?                 @map("bond_end_date")
+  bondRemarks              String?                   @map("bond_remarks")
+  bondStartDate            DateTime?                 @map("bond_start_date")
+  bondNotRequired          Boolean                   @default(false) @map("bond_not_required")
+  docDegreeCollected       Boolean                   @default(false) @map("doc_degree_collected")
+  docHSCCollected          Boolean                   @default(false) @map("doc_hsc_collected")
+  docRemarks               String?                   @map("doc_remarks")
+  /// *
+  /// * Document Collection (checkbox style)
+  docSSLCCollected         Boolean                   @default(false) @map("doc_sslc_collected")
+  /// *
+  // new fields — add these into the existing Employee model
+  workMode                 String?
+  workType                 String?
+  contractEmpId            String?
+  /// * Work Bond
+  isOnBond                 Boolean                   @default(false) @map("is_on_bond")
+  roleId                   String?
+  status                   String                    @default("PENDING")
+  createdByRole            String?                   @map("created_by_role")
+  assetAssignments         AssetAssignment[]
+  attendances              Attendance[]
+  educationDetails         Education[]
+  role                     Role?                     @relation(fields: [roleId], references: [id])
+  leaveBalances            LeaveBalance[]
+  leaveBalanceHistories    LeaveBalanceHistory[]
+  leaveApprovals           LeaveRequest[]            @relation("LeaveApprover")
+  leaveRequests            LeaveRequest[]            @relation("LeaveRequester")
+  otps                     Otp[]
+  payrolls                 Payroll[]
+  permissionRequests       PermissionRequest[]       @relation("PermissionRequester")
+  permissionApprovals      PermissionRequest[]       @relation("PermissionApprover")
+  DocumentRequests         DocumentRequest[]
+  projectMembers           ProjectMember[]
+  skills                   Skill[]
+  totalExperience          String?
+  projectsDone             String?
+  level                    String?
+  benchDetail              BenchDetail?
+  notifications            Notification[]
+  isActive                 Boolean                   @default(true)
+  birthdayEmailLogs        BirthdayEmailLog[]
+  workAnniversaryEmailLogs WorkAnniversaryEmailLog[]
+  crmLeads                 CrmLead[]
+  employeeExit             EmployeeExit?             @relation("ExitEmployee")
+}
+
+model BenchDetail {
+  id             String   @id @default(cuid())
+  employeeId     String   @unique @map("employee_id")
+  benchStartDate DateTime @default(now()) @map("bench_start_date")
+  updatedDate    DateTime @default(now()) @updatedAt @map("updated_date")
+  createdAt      DateTime @default(now()) @map("created_at")
+  employee       Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@map("bench_details")
+}
+
+model Otp {
+  id         String   @id @default(cuid())
+  empId      String   @map("emp_id")
+  otp        String
+  expiryTime DateTime @map("expiry_time")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  employee   Employee @relation(fields: [empId], references: [id], onDelete: Cascade)
+}
+
+model Education {
+  id            String   @id @default(cuid())
+  university    String?
+  institution   String
+  qualification String
+  yearCompleted String
+  employeeId    String   @map("employee_id")
+  employee      Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+model Rights {
+  id          String       @id @default(cuid())
+  module      String
+  displayName String       @map("display_name")
+  rightName   String       @unique @map("right_name")
+  description String?      @map("description")
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt   DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  createdBy   String?
+  updatedBy   String?
+  roles       RoleRights[]
+}
+
+model Role {
+  id          String       @id @default(cuid())
+  displayName String       @map("display_name")
+  roleName    String       @unique @map("role_name")
+  description String?      @map("description")
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt   DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  createdBy   String?
+  updatedBy   String?
+  employees   Employee[]
+  rights      RoleRights[]
+}
+
+model RoleRights {
+  id      String @id @default(cuid())
+  roleId  String @map("role_id")
+  rightId String @map("right_id")
+  right   Rights @relation(fields: [rightId], references: [id], onDelete: Cascade)
+  role    Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+}
+
+model AssetCategory {
+  id     String  @id @default(cuid())
+  name   String  @unique
+  assets Asset[]
+}
+
+model Asset {
+  id            String            @id @default(cuid())
+  assetTag      String            @unique @map("asset_tag")
+  categoryId    String            @map("category_id")
+  deviceType    String?           @map("device_type")
+  brand         String?
+  branch        String?
+  modelName     String?           @map("model_name")
+  serialNumber  String?           @map("serial_number")
+  vendor        String?
+  purchaseDate  DateTime?         @map("purchase_date")
+  purchaseCost  Float?            @map("purchase_cost")
+  warrantyUntil DateTime?         @map("warranty_until")
+  invoiceFile   String?           @map("invoice_file")
+  warrantyFile  String?           @map("warranty_file")
+  notes         String?
+  specs         Json?
+  createdBy     String?           @map("created_by")
+  updatedBy     String?           @map("updated_by")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+  category      AssetCategory     @relation(fields: [categoryId], references: [id])
+  assignments   AssetAssignment[]
+  repairs       AssetRepair[]
+}
+
+model AssetAssignment {
+  id             String    @id @default(cuid())
+  assetId        String    @map("asset_id")
+  assignmentType String    @default("EMPLOYEE") @map("assignment_type")
+  employeeId     String?   @map("employee_id")
+  locationId     String?   @map("location_id")
+  assignedDate   DateTime  @default(now())
+  returnDate     DateTime?
+  status         String    @default("ASSIGNED")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  createdBy      String?
+  updatedBy      String?
+  notes          String?
+  remarks        String?   @map("remarks") // Renamed/Mapped for consistency with requirements
+
+  asset    Asset     @relation(fields: [assetId], references: [id])
+  employee Employee? @relation(fields: [employeeId], references: [id])
+
+  @@index([assetId])
+  @@index([employeeId])
+  @@index([locationId])
+}
+
+model LeaveBalance {
+  id         String   @id @default(cuid())
+  employeeId String
+  leaveType  String
+  allocated  Float    @default(0)
+  used       Float    @default(0)
+  updatedAt  DateTime @updatedAt
+  updatedBy  String?
+  remarks    String?
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+model LeaveRequest {
+  id            String    @id @default(cuid())
+  employeeId    String    @map("employee_id")
+  leaveType     String
+  startDate     DateTime
+  endDate       DateTime
+  totalDays     Float
+  isHalfDay     Boolean   @default(false)
+  halfDayPeriod String?
+  reason        String?
+  attachment    String?
+  approverId    String?   @map("approver_id")
+  status        String    @default("PENDING")
+  remarks       String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  approver      Employee? @relation("LeaveApprover", fields: [approverId], references: [id])
+  employee      Employee  @relation("LeaveRequester", fields: [employeeId], references: [id])
+}
+
+model Expense {
+  id          String   @id @default(cuid())
+  category    String
+  itemName    String   @map("item_name")
+  paymentMode String   @map("payment_mode")
+  amount      Decimal  @db.Decimal(10, 2)
+  expenseDate DateTime @map("expense_date")
+  remarks     String?
+  attachment  String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdBy   String?
+  updatedBy   String?
+
+  @@index([category])
+  @@index([expenseDate])
+}
+
+model Customer {
+  id                     String  @id @default(cuid())
+  name                   String
+  address1               String
+  address2               String?
+  city                   String
+  state                  String
+  mobile                 String
+  preferredPaymentMethod String?
+  email                  String?
+  pincode                String
+  paymentTerms           String
+  website                String?
+  cinNumber              String? @map("cin_number")
+  gstnNumber             String? @map("gstn_number")
+  remarks                String?
+  status                 String? @default("active")
+  invoiceFromDay         Int?    @map("invoice_from_day")
+  invoiceToDay           Int?    @map("invoice_to_day")
+
+  reminderDaysBefore Int?     @default(1)
+  reminderEnabled    Boolean? @default(true)
+
+  uploads String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([gstnNumber])
+  @@index([mobile])
+  @@index([name])
+}
+
+model Invoice {
+  id              String                  @id @default(cuid())
+  invoiceNumber   String                  @unique @map("invoice_number")
+  invoiceDate     DateTime                @map("invoice_date")
+  dueDate         DateTime                @map("due_date")
+  subTotal        Decimal                 @db.Decimal(12, 2)
+  taxPercent      Decimal                 @db.Decimal(5, 2)
+  discountPercent Decimal                 @db.Decimal(5, 2)
+  total           Decimal                 @db.Decimal(12, 2)
+  status          String                  @default("PENDING")
+  createdAt       DateTime                @default(now()) @map("created_at")
+  updatedAt       DateTime                @updatedAt @map("updated_at")
+  invoiceType     String
+  notes           String?
+  items           InvoiceItem[]
+  payments        InvoicePayment[]
+  partialPayments InvoicePartialPayment[]
+  followUps       InvoiceFollowUp[]
+
+  @@index([dueDate])
+  @@index([invoiceDate])
+  @@index([invoiceNumber])
+  @@index([status])
+}
+
+model InvoiceItem {
+  id            String  @id @default(cuid())
+  invoiceNumber String  @map("invoice_number")
+  serialNumber  Int     @map("serial_number")
+  particular    String
+  hsnSacCode    String  @map("hsn_sac_code")
+  amount        Decimal @db.Decimal(12, 2)
+  description   String
+  invoice       Invoice @relation(fields: [invoiceNumber], references: [invoiceNumber])
+
+  @@index([invoiceNumber])
+}
+
+model InvoicePayment {
+  id             String   @id @default(cuid())
+  invoiceId      String   @map("invoice_id")
+  receivedAmount Decimal  @db.Decimal(12, 2)
+  paymentMethod  String
+  paymentDate    DateTime @map("payment_date")
+  remarks        String?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  invoice        Invoice  @relation(fields: [invoiceId], references: [id])
+
+  @@index([invoiceId])
+  @@index([paymentDate])
+}
+
+model InvoicePartialPayment {
+  id                  String    @id @default(cuid())
+  invoiceId           String    @map("invoice_id")
+  receivedAmount      Decimal   @db.Decimal(12, 2)
+  paymentMethod       String
+  paymentDate         DateTime  @map("payment_date")
+  remarks             String?
+  nextInstallmentDate DateTime? @map("next_installment_date")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+  invoice             Invoice   @relation(fields: [invoiceId], references: [id])
+
+  @@index([invoiceId])
+  @@index([paymentDate])
+}
+
+model InvoiceFollowUp {
+  id        String   @id @default(cuid())
+  invoiceId String   @map("invoice_id")
+  date      DateTime
+  time      String
+  notes     String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  invoice   Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@index([date])
+  @@map("invoice_follow_ups")
+}
+
+model PettyCashFlow {
+  id             String   @id @default(cuid())
+  receiveDate    DateTime
+  receiveFrom    String
+  paymentMethod  String
+  receivedAmount Decimal  @db.Decimal(12, 2)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model AssetRepair {
+  id                   String    @id @default(cuid())
+  requestId            String?   @unique
+  assetId              String
+  asset                Asset     @relation(fields: [assetId], references: [id])
+  dateOfGivingtoRepair DateTime
+  vendorName           String
+  issueType            String
+  estimatedCost        Float
+  description          String
+  status               String    @default("In_Progress")
+  completedOn          DateTime?
+  actualCost           Float?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+}
+
+model CompanyHoliday {
+  id          String   @id @default(cuid())
+  year        Int
+  holidayDate DateTime
+  dayOfWeek   String
+  holidayName String
+  description String
+  holidayType String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Attendance {
+  id         String   @id @default(cuid())
+  employeeId String   @map("employee_id")
+  date       DateTime
+  status     String   @default("PRESENT")
+  remarks    String?
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  createBy   String?
+  UpdatedBy  String?
+  employee   Employee @relation(fields: [employeeId], references: [id])
+}
+
+model SalarySetup {
+  id                 String   @id @default(cuid())
+  employeeId         String   @map("employee_id")
+  effectivedate      DateTime
+  basicPay           Decimal  @db.Decimal(10, 2)
+  houseRentAllowance Decimal  @db.Decimal(10, 2)
+  otherAllowance     Decimal  @db.Decimal(10, 2)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  createdBy          String?
+  updatedBy          String?
+}
+
+model LeaveBalanceHistory {
+  id         String   @id @default(cuid())
+  employeeId String
+  month      Int
+  year       Int
+  cl         Float    @default(0)
+  sl         Float    @default(0)
+  lop        Float    @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  createdBy  String?
+  updatedBy  String?
+  remarks    String?
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, month, year])
+}
+
+model PayrollSettings {
+  id              String   @id @default(cuid())
+  companyHoliday  Boolean  @default(true) @map("company_holiday")
+  sunday          String   @default("Leave")
+  saturday        String   @default("Leave")
+  effectiveDate   DateTime @map("effective_date")
+  basicPayPercent Float    @default(40.0) @map("basic_pay_percent")
+  hraPercent      Float    @default(50.0) @map("hra_percent")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([effectiveDate])
+}
+
+model PayrollCycle {
+  id              String    @id @default(cuid())
+  cycleId         String    @unique @map("cycle_id")
+  month           String
+  period          String
+  startDate       DateTime  @map("start_date")
+  endDate         DateTime  @map("end_date")
+  processingDate  DateTime  @map("processing_date")
+  paymentDate     DateTime  @map("payment_date")
+  employeeCount   Int       @default(0) @map("employee_count")
+  totalGross      Decimal   @default(0) @map("total_gross") @db.Decimal(15, 2)
+  totalTax        Decimal   @default(0) @map("total_tax") @db.Decimal(15, 2)
+  totalDeductions Decimal   @default(0) @map("total_deductions") @db.Decimal(15, 2)
+  totalNet        Decimal   @default(0) @map("total_net") @db.Decimal(15, 2)
+  status          String    @default("DRAFT")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  createdBy       String?
+  updatedBy       String?
+  payrolls        Payroll[]
+
+  @@index([cycleId])
+  @@index([status])
+  @@map("payroll_cycles")
+}
+
+model Payroll {
+  id              String        @id @default(cuid())
+  employeeId      String        @map("employee_id")
+  payrollCycleId  String?       @map("payroll_cycle_id")
+  month           Int
+  year            Int
+  basicPay        Decimal       @map("basic_pay") @db.Decimal(10, 2)
+  hra             Decimal       @map("hra") @db.Decimal(10, 2)
+  otherAllowance  Decimal       @map("other_allowance") @db.Decimal(10, 2)
+  totalDays       Int           @default(0) @map("total_days")
+  workingDays     Float         @default(0) @map("working_days")
+  presentDays     Float         @default(0) @map("present_days")
+  absentDays      Float         @default(0) @map("absent_days")
+  leaveDays       Float         @default(0) @map("leave_days")
+  holidayDays     Float         @default(0) @map("holiday_days")
+  grossPay        Decimal       @map("gross_pay") @db.Decimal(12, 2)
+  lopDeduction    Decimal       @default(0) @map("lop_deduction") @db.Decimal(12, 2)
+  otherDeductions Decimal       @default(0) @map("other_deductions") @db.Decimal(12, 2)
+  totalDeductions Decimal       @default(0) @map("total_deductions") @db.Decimal(12, 2)
+  netPay          Decimal       @map("net_pay") @db.Decimal(12, 2)
+  status          String        @default("PROCESSED")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  employee        Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  payrollCycle    PayrollCycle? @relation(fields: [payrollCycleId], references: [id])
+
+  @@unique([employeeId, month, year])
+  @@map("payrolls")
+}
+
+model PermissionRequest {
+  id            String    @id @default(cuid())
+  employeeId    String    @map("employee_id")
+  date          DateTime
+  startTime     String    @map("start_time")
+  endTime       String    @map("end_time")
+  durationHours Float     @default(2) @map("duration_hours")
+  reason        String
+  remarks       String?
+  approverId    String?   @map("approver_id")
+  status        String    @default("PENDING")
+  actualHours   Float?    @map("actual_hours")
+  isConfirmed   Boolean   @default(false) @map("is_confirmed")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  employee      Employee  @relation("PermissionRequester", fields: [employeeId], references: [id], onDelete: Cascade)
+  approver      Employee? @relation("PermissionApprover", fields: [approverId], references: [id])
+
+  @@index([employeeId])
+  @@index([date])
+  @@index([status])
+}
+
+model DocumentRequest {
+  id              String    @id @default(cuid())
+  employeeId      String
+  documentType    String
+  documentUrl     String
+  proofLabel      String?
+  status          String    @default("PENDING")
+  requestedByRole String
+  requestedById   String
+  createdAt       DateTime  @default(now())
+  processedAt     DateTime?
+  processedBy     String?
+  remarks         String?
+  employee        Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+model LoginAdmin {
+  id       Int    @id @default(autoincrement())
+  mobile   String
+  password String
+}
+
+model Project {
+  id              String          @id @default(cuid())
+  projectId       String          @unique @map("project_id")
+  name            String
+  description     String?
+  client          String
+  manager         String?
+  projectCategory String?         @map("project_category")
+  startDate       DateTime?       @map("start_date")
+  endDate         DateTime?       @map("end_date")
+  status          String          @default("ACTIVE")
+  progress        Int             @default(0)
+  tags            String          @default("[]")
+  techStack       String?         @map("tech_stack")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+  members         ProjectMember[]
+
+  @@map("projects")
+}
+
+model ProjectMember {
+  id         String   @id @default(cuid())
+  projectId  String   @map("project_id")
+  employeeId String   @map("employee_id")
+  role       String?  @default("MEMBER")
+  assignedAt DateTime @default(now()) @map("assigned_at")
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, employeeId])
+  @@map("project_members")
+}
+
+model Skill {
+  id            String   @id @default(cuid())
+  employeeId    String   @map("employee_id")
+  name          String
+  category      String
+  proficiency   String
+  effectiveDate DateTime @map("effective_date")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  employee      Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId])
+  @@map("skills")
+}
+
+model companyDetails {
+  id                String    @id @default(cuid())
+  companyName       String
+  companyEmail      String
+  companyPhone      String
+  city              String
+  cinNumber         String?
+  state             String
+  country           String
+  address           String
+  startedDate       DateTime
+  bankName          String?
+  gstnNumber        String?
+  panNumber         String?
+  accountHolderName String?
+  branchName        String?
+  accountNumber     String?
+  ifscCode          String?
+  swiftCode         String?
+  exportCountry     String?
+  lutBondNo         String?
+  lutValidFrom      DateTime?
+  lutValidTo        DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model dropdown {
+  id        String   @id @default(cuid())
+  type      String
+  label     String
+  value     String
+  status    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([type])
+}
+
+model ContactSubmission {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  whatsapp  String?
+  service   String
+  message   String
+  feedback  String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("contact_submissions")
+}
+
+model JobOpening {
+  id             String   @id @default(cuid())
+  jobId          String   @unique // LK-2026-008
+  jobTitle       String
+  experience     String // e.g. 3-5 Years
+  location       String
+  employmentType String
+  jobDescription String
+  status         String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model JobApplication {
+  id              String   @id @default(cuid())
+  fullName        String
+  email           String   @unique
+  phoneNumber     String
+  skillset        String
+  location        String
+  experience      String
+  resume          String
+  appliedPosition String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model TalentCommunity {
+  id              String   @id @default(cuid())
+  fullName        String
+  email           String   @unique
+  phoneNumber     String
+  location        String
+  qualification   String
+  roleApplyingFor String?
+  experienceLevel String
+  skillset        String
+  portfolioUrl    String?
+  resume          String
+  shortMessage    String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model NumberFormatSetting {
+  id         String   @id @default(cuid())
+  module     String   @unique // e.g. "invoice", "employee"
+  prefix     String   @default("")
+  nextNumber String?  @default("1")
+  padding    Int?     @default(3)
+  suffix     String?  @default("")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  title       String
+  message     String
+  type        String // e.g., 'INVOICE_CYCLE'
+  recipientId String   @map("recipient_id")
+  recipient   Employee @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  customerId  String?  @map("customer_id")
+  isRead      Boolean  @default(false) @map("is_read")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([recipientId])
+  @@index([isRead])
+  @@map("notifications")
+}
+
+model InvoiceReminderLog {
+  id           String   @id @default(cuid())
+  customerId   String   @map("customer_id")
+  reminderDate DateTime @map("reminder_date")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@unique([customerId, reminderDate])
+  @@map("invoice_reminder_logs")
+}
+
+model BirthdayEmailLog {
+  id         String   @id @default(cuid())
+  employeeId String
+  sentYear   Int
+  isSuccess  Boolean
+  sentAt     DateTime @default(now())
+  error      String?
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, sentYear])
+}
+
+model WorkAnniversaryEmailLog {
+  id         String   @id @default(cuid())
+  employeeId String
+  sentYear   Int
+  isSuccess  Boolean
+  sentAt     DateTime @default(now())
+  error      String?
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, sentYear])
+}
+
+model CrmLead {
+  id String @id @default(cuid())
+
+  companyName    String  @map("company_name")
+  companyAddress String? @map("company_address")
+  companyEmail   String? @map("company_email")
+  companyWebsite String? @map("company_website")
+
+  pocName       String  @map("poc_name")
+  pocDepartment String? @map("poc_department")
+  pocMobile     String? @map("poc_mobile")
+  pocEmail      String? @map("poc_email")
+
+  assigneeType String    @map("assignee_type") // "EMPLOYEE" | "CONTRACT_EMPLOYEE"
+  assigneeId   String?   @map("assignee_id")
+  assignee     Employee? @relation(fields: [assigneeId], references: [id])
+
+  date      DateTime? @map("date")
+  time      String?   @map("time")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  createdBy String?   @map("created_by")
+  updatedBy String?   @map("updated_by")
+  notes     String?   @map("notes")
+
+  reminderName String?   @map("reminder_name")
+  reminderDate DateTime? @map("reminder_date")
+
+  status String @default("New")
+
+  @@map("crm_leads")
+}
+
+model EmployeeExit {
+  id                  String    @id @default(cuid())
+  employeeId          String    @unique @map("employee_id")
+  exitType            String    @map("exit_type")
+  resignationDate     DateTime? @map("resignation_date")
+  lastWorkingDay      DateTime  @map("last_working_day")
+  reason              String
+  employeeFeedback    String?   @map("employee_feedback")
+  hrRemarks           String?   @map("hr_remarks")
+  isAssetsReturned    Boolean   @default(false) @map("is_assets_returned")
+  isHandoverCompleted Boolean   @default(false) @map("is_handover_completed")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+  employee            Employee  @relation("ExitEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
+}
