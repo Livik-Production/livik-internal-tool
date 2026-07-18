@@ -495,7 +495,7 @@ const AllExpenseTab = ({
                 Balance in Hand
               </p>
               <p className="text-sm font-extrabold text-indigo-900">
-                ₹{(((latestPettyCashDetail.openingBalance || 0) + Number(latestPettyCashDetail.totalInflowToday || 0)) - (latestPettyCashDetail.closingBalance || 0)).toLocaleString()}
+                ₹{Number(latestPettyCashDetail.closingBalance || 0).toLocaleString()}
               </p>
             </div>
           </div>

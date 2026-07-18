@@ -103,7 +103,7 @@ const CashFlowModal = ({ isOpen, onClose, inflowId }) => {
                   Balance in Hand
                 </p>
                 <p className="text-xl font-bold text-indigo-900">
-                  ₹{(((data.openingBalance || 0) + Number(data.totalInflowToday || 0)) - (data.closingBalance || 0)).toLocaleString()}
+                  ₹{Number(data.closingBalance || 0).toLocaleString()}
                 </p>
               </div>
             </div>
