@@ -2,12 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
-import { Printer, Download, Mail, SquareX, ChevronDown, User, FileText } from 'lucide-react';
-import Button from '../../Buttons/Button';
+import { Printer, Download, Mail, ChevronDown, User, FileText } from 'lucide-react';
 import PrimaryButton from '../../Buttons/PrimaryButton';
-import TabButton from '../../Buttons/TabButton';
 import IconButton from '../../Buttons/IconButton';
-import CloseButton from '../../Buttons/CloseButton';
 import CustomModalForm from '../../CustomModalForm';
 import CustomAlertForm from '../../CustomAlertForm';
 import Loader from '../../Loader'; // Add this import
@@ -127,6 +124,7 @@ const OfferLetterTab = ({ isViewOnly = false }) => {
     fetchLetterTypes();
   }, []);
   const [letterPadOption, setLetterPadOption] = useState('with');
+  const [letterPadType, setLetterPadType] = useState('type1');
   const [showLetterModal, setShowLetterModal] = useState(false);
   const [showPayslipModal, setShowPayslipModal] = useState(false);
   const [payslipMonth, setPayslipMonth] = useState(currentMonth);
@@ -155,12 +153,15 @@ const OfferLetterTab = ({ isViewOnly = false }) => {
         .filter((emp) => emp.status?.toUpperCase() === 'ACTIVE')
         .map((emp) => ({
           id: emp.id || '',
+          empId: emp.empId || emp.__raw?.empId || '',
           name: emp.name || '',
           role: emp.designation || emp.role || '', // Map designation to role
           email: emp.email || '',
           phone: emp.mobile || '',
           address: emp.address || emp.__raw?.presentAddress || '', // fallback to present address
-          // Add any other fields you need
+          dateOfJoining: emp.dateOfJoining || emp.__raw?.dateOfJoining || null,
+          employeeExit: emp.employeeExit || emp.__raw?.employeeExit || null,
+          __raw: emp.__raw || emp,
         }))
       : [];
 
@@ -262,6 +263,38 @@ const OfferLetterTab = ({ isViewOnly = false }) => {
       setSuggestions(filtered);
     }
   };
+
+  // Handle click outside suggestions to close them
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(event.target)
+      ) {
+        setSuggestions([]);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Handle click outside letter type dropdown to close it
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        letterTypeRef.current &&
+        !letterTypeRef.current.contains(event.target)
+      ) {
+        setIsLetterTypeOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  
 
   // Handle input change and suggestions - FIXED VERSION
   const handleInputChange = (value) => {
@@ -430,6 +463,7 @@ const OfferLetterTab = ({ isViewOnly = false }) => {
             letterContent={letterContent}
             employeeData={selectedEmployee}
             letterPad={letterPadOption}
+            letterPadType={letterPadType}
           />
         );
       case 'warningLetter':
@@ -437,6 +471,7 @@ const OfferLetterTab = ({ isViewOnly = false }) => {
           <WarningLetter
             employeeData={selectedEmployee}
             letterPad={letterPadOption}
+            letterPadType={letterPadType}
           />
         );
       case 'terminationLetter':
@@ -444,6 +479,7 @@ const OfferLetterTab = ({ isViewOnly = false }) => {
           <TerminationLetter
             employeeData={selectedEmployee}
             letterPad={letterPadOption}
+            letterPadType={letterPadType}
           />
         );
       case 'appointmentLetter':
@@ -451,6 +487,7 @@ const OfferLetterTab = ({ isViewOnly = false }) => {
           <AppointmentLetter
             employeeData={selectedEmployee}
             letterPad={letterPadOption}
+            letterPadType={letterPadType}
           />
         );
       case 'experienceLetter':
@@ -458,6 +495,7 @@ const OfferLetterTab = ({ isViewOnly = false }) => {
           <ExperienceLetter
             employeeData={selectedEmployee}
             letterPad={letterPadOption}
+            letterPadType={letterPadType}
           />
         );
       case 'relievingLetter':
@@ -465,6 +503,7 @@ const OfferLetterTab = ({ isViewOnly = false }) => {
           <RelievingLetter
             employeeData={selectedEmployee}
             letterPad={letterPadOption}
+            letterPadType={letterPadType}
           />
         );
       default:
@@ -534,6 +573,7 @@ const OfferLetterTab = ({ isViewOnly = false }) => {
             <div className="space-y-6 sticky top-2 self-start">
               {/* 1. Employee Selection with Suggestions */}
              
+             
 
               {/* 3. Letter Type Selection Dropdown */}
               <div>
@@ -545,6 +585,49 @@ const OfferLetterTab = ({ isViewOnly = false }) => {
                     onClick={() => setIsLetterTypeOpen(!isLetterTypeOpen)}
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex justify-between items-center cursor-pointer shadow-sm"
                   >
+                    <span className={selectedLetterType ? "text-gray-900" : "text-gray-500"}>
+                      {selectedLetterType ? getSelectedLetterLabel() : "-- Select a letter type --"}
+                    </span>
+                    <ChevronDown
+                      size={18}
+                      className={`text-gray-500 transition-transform ${isLetterTypeOpen ? "rotate-180" : ""}`}
+                    />
+                  </div>
+
+                  {isLetterTypeOpen && (
+                    <div className="absolute top-full left-0 z-20 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto no-scroll">
+                      {dynamicLetterTypes.map((lt) => {
+                        const canonicalId = mapToCanonicalId(lt.value || lt.label);
+                        const isSelected = selectedLetterType === canonicalId;
+                        return (
+                          <div
+                            key={lt.id || canonicalId}
+                            onClick={() => {
+                              setSelectedLetterType(canonicalId);
+                              setIsLetterTypeOpen(false);
+                            }}
+                            className={`px-4 py-3 cursor-pointer border-b border-gray-100 last:border-b-0 flex items-center gap-3 transition-colors ${
+                              isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'
+                            }`}
+                          >
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                              isSelected ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'
+                            }`}>
+                              <FileText size={20} />
+                            </div>
+                            <div>
+                              <div className={`text-sm font-semibold ${isSelected ? 'text-blue-900' : 'text-gray-900'}`}>
+                                {lt.label}
+                              </div>
+                              <div className="text-xs text-gray-500 font-medium mt-0.5">
+                                Letter Template
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                     <span className={selectedLetterType ? "text-gray-900" : "text-gray-500"}>
                       {selectedLetterType ? getSelectedLetterLabel() : "-- Select a letter type --"}
                     </span>
@@ -680,8 +763,34 @@ const OfferLetterTab = ({ isViewOnly = false }) => {
                   </p>
                 )}
               </div>
-              {/* 4. Radio Buttons for Letter Pad */}
+              {/* 4. Letter Pad Type & Options */}
               <div>
+                <h3 className="font-medium text-gray-700 mb-3">
+                  Letter Pad Type
+                </h3>
+                <div className="flex space-x-6 mb-4">
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="radio"
+                      value="type1"
+                      checked={letterPadType === 'type1'}
+                      onChange={(e) => setLetterPadType(e.target.value)}
+                      className="mr-2"
+                    />
+                    <span>Type 1</span>
+                  </label>
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="radio"
+                      value="type2"
+                      checked={letterPadType === 'type2'}
+                      onChange={(e) => setLetterPadType(e.target.value)}
+                      className="mr-2"
+                    />
+                    <span>Type 2</span>
+                  </label>
+                </div>
+
                 <h3 className="font-medium text-gray-700 mb-3">
                   Letter Pad Options
                 </h3>
@@ -744,7 +853,6 @@ const OfferLetterTab = ({ isViewOnly = false }) => {
                 </div>
               )}
             </div>
-          </div>
           <CustomModalForm
             open={showPreview}
             onCancel={() => setShowPreview(false)}

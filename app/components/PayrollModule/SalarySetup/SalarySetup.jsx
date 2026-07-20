@@ -7,6 +7,7 @@ import { SquarePen, Eye, Plus } from 'lucide-react';
 import CustomTable from '../../CustomTable';
 import SalarySetupModal from './SalarySetupModal';
 import CustomAlertForm from '../../CustomAlertForm';
+import { showSuccessToast, showErrorToast } from '../../Toast';
 import PrimaryButton from '../../Buttons/PrimaryButton';
 import IconButton from '../../Buttons/IconButton';
 import HyperlinkButton from '../../Buttons/HyperlinkButton';
@@ -133,10 +134,8 @@ const SalarySetupTab = ({ isViewOnly = false }) => {
       }
 
       await response.json();
-      showAlert(
-        'Success',
-        `Salary details ${isUpdate ? 'updated' : 'saved'} successfully!`,
-        'success'
+      showSuccessToast(
+        `Salary details ${isUpdate ? 'updated' : 'saved'} successfully!`
       );
 
       // Refresh data
@@ -147,10 +146,8 @@ const SalarySetupTab = ({ isViewOnly = false }) => {
       }
     } catch (error) {
       console.error('Error saving salary:', error);
-      showAlert(
-        'Save Failed',
-        'Failed to save salary details. Please try again.',
-        'danger'
+      showErrorToast(
+        'Failed to save salary details. Please try again.'
       );
     } finally {
       setIsLoading(false);

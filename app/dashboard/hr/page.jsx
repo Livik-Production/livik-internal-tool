@@ -28,6 +28,7 @@ import {
   Loader2,
   Monitor,
   IndianRupee,
+  FileCheck,
 } from 'lucide-react';
 import { showSuccessToast, showErrorToast } from '../../components/Toast';
 import '../../globals.css';
@@ -164,6 +165,7 @@ function HRPageContent() {
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredEmployees, setFilteredEmployees] = useState([]);
+  const [statusFilter, setStatusFilter] = useState('ACTIVE');
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -369,7 +371,7 @@ function HRPageContent() {
       });
       setFilteredEmployees(filtered);
     }
-  }, [searchQuery, employees, activeMainTab]);
+  }, [searchQuery, employees, activeMainTab, statusFilter]);
 
   const handleSearch = (e) => {
     setSearchQuery(e.target.value);
@@ -378,7 +380,7 @@ function HRPageContent() {
   // Reset pagination when search query or tab changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, activeMainTab]);
+  }, [searchQuery, activeMainTab, statusFilter]);
 
   const handleItemsPerPageChange = (newItemsPerPage) => {
     setItemsPerPage(newItemsPerPage);
@@ -425,6 +427,11 @@ function HRPageContent() {
   useEffect(() => {
     const tabParam = searchParams?.get('tab');
     const subTabParam = searchParams?.get('subtab');
+    const statusParam = searchParams?.get('status');
+
+    if (statusParam && (statusParam === 'ACTIVE' || statusParam === 'INACTIVE')) {
+      setStatusFilter(statusParam);
+    }
 
     if (tabParam && visibleTabs.find((t) => t.id === tabParam)) {
       if (activeMainTab !== tabParam) {
@@ -1069,16 +1076,26 @@ function HRPageContent() {
         >
           <SquarePen size={16} />
         </IconButton>
-        <IconButton
-          onClick={() => handleDeleteEmployee(row.id)}
-          // className={`transition-transform hover:scale-110 ${
-          //   !canDelete ? "text-gray-400 cursor-not-allowed" : "text-[#002e5b]"
-          // }`}
-          disabled={!canDelete}
-          title={!canDelete ? 'Delete access restricted' : 'Delete Employee'}
-        >
-          <Trash size={16} />
-        </IconButton>
+        {statusFilter === 'INACTIVE' ? (
+          <IconButton
+            onClick={() => router.push(`/dashboard/hr/exit/${row.id}`)}
+            title="Exit Employee Clearance"
+            disabled={!canEdit}
+          >
+            <FileCheck size={18} className="text-[#004475]" />
+          </IconButton>
+        ) : (
+          <IconButton
+            onClick={() => handleDeleteEmployee(row.id)}
+            // className={`transition-transform hover:scale-110 ${
+            //   !canDelete ? "text-gray-400 cursor-not-allowed" : "text-[#002e5b]"
+            // }`}
+            disabled={!canDelete}
+            title={!canDelete ? 'Delete access restricted' : 'Delete Employee'}
+          >
+            <Trash size={16} />
+          </IconButton>
+        )}
       </div>
     );
   };
@@ -1145,6 +1162,11 @@ function HRPageContent() {
                       ...viewingEmployee,
                     }}
                     onEdit={() => openEdit(viewingEmployee)}
+                    onStatusChange={(newStatus) => {
+                      dispatch(fetchEmployees());
+                      // Close the modal and let the UI refresh so the user sees the updated list
+                      setViewingEmployee(null);
+                    }}
                   />
                 </div>
               )}
@@ -1339,6 +1361,31 @@ function HRPageContent() {
                                         Add Employee
                                       </PrimaryButton>
                                     )}
+                                  </div>
+                                  <div className="relative flex bg-gray-100 p-1 rounded-lg w-48 mx-2 border border-gray-300">
+                                    {/* Sliding Background */}
+                                    <div 
+                                      className="absolute top-1 bottom-1 left-1 w-[calc(50%-4px)] bg-[#004475] rounded-md transition-transform duration-300 ease-in-out shadow-sm"
+                                      style={{ transform: statusFilter === 'ACTIVE' ? 'translateX(0)' : 'translateX(100%)' }}
+                                    />
+                                    <button
+                                      onClick={() => setStatusFilter('ACTIVE')}
+                                      className={`relative z-10 flex-1 py-1.5 text-sm font-medium cursor-pointer transition-colors duration-300 text-center ${statusFilter === 'ACTIVE'
+                                        ? 'text-white'
+                                        : 'text-gray-500 hover:text-gray-700'
+                                        }`}
+                                    >
+                                      Active
+                                    </button>
+                                    <button
+                                      onClick={() => setStatusFilter('INACTIVE')}
+                                      className={`relative z-10 flex-1 py-1.5 text-sm font-medium cursor-pointer transition-colors duration-300 text-center ${statusFilter === 'INACTIVE'
+                                        ? 'text-white'
+                                        : 'text-gray-500 hover:text-gray-700'
+                                        }`}
+                                    >
+                                      Inactive
+                                    </button>
                                   </div>
                                 </div>
 

@@ -173,6 +173,7 @@ function TrendBarChart({ data }) {
 
 const AllExpenseTab = ({
   expenses = [],
+  pettyCashFlows = [],
   isLoading = false,
   onEdit,
   onView,
@@ -198,6 +199,22 @@ const AllExpenseTab = ({
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(15);
+
+  const latestPettyCash = React.useMemo(() => {
+    if (!pettyCashFlows || pettyCashFlows.length === 0) return null;
+    return [...pettyCashFlows].sort((a, b) => new Date(b.receiveDate) - new Date(a.receiveDate))[0];
+  }, [pettyCashFlows]);
+
+  const [latestPettyCashDetail, setLatestPettyCashDetail] = useState(null);
+
+  React.useEffect(() => {
+    if (latestPettyCash?.id) {
+      fetch(`/api/expense/petty-cash?id=${latestPettyCash.id}`)
+        .then(res => res.json())
+        .then(data => setLatestPettyCashDetail(data))
+        .catch(err => console.error(err));
+    }
+  }, [latestPettyCash?.id]);
 
   const chartCategories = React.useMemo(() => {
     const categoriesMap = {};
@@ -471,6 +488,19 @@ const AllExpenseTab = ({
     <div className="space-y-2">
       {/* Search and Filters Bar - All unified in one flex container with consistent gaps */}
       <div className="flex flex-wrap items-center justify-end mt-2 w-full gap-2">
+        {latestPettyCashDetail && (
+          <div className="mr-auto animate-dashboard-reveal">
+            <div className="bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100 shadow-sm flex items-center gap-3">
+              <p className="text-[10px] text-indigo-600 font-bold uppercase tracking-wider mb-0">
+                Balance in Hand
+              </p>
+              <p className="text-sm font-extrabold text-indigo-900">
+                ₹{Number(latestPettyCashDetail.closingBalance || 0).toLocaleString()}
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Search */}
         <div className="relative w-full md:w-56 group">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 group-focus-within:text-blue-500 transition-colors">

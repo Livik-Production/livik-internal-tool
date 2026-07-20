@@ -10,6 +10,7 @@ import ReviewSection from './sections/ReviewSection';
 import BondDetails from '../../components/EmployeeForm/sections/BondDetails';
 import PhotoSection from '../../components/EmployeeForm/sections/PhotoSection';
 import PrimaryButton from '../Buttons/PrimaryButton';
+import { showSuccessToast, showErrorToast } from '../Toast';
 
 function calculateBondDuration(start, end) {
   if (!start || !end) return '';
@@ -46,11 +47,12 @@ export default function EmployeeView({
   });
 
   const router = useRouter();
+  const initialStatusUpper = (initialData.status || '').toUpperCase();
   const [status, setStatus] = useState(
-    initialData.status === 'Inactive'
+    initialStatusUpper === 'INACTIVE'
       ? 'Inactive'
-      : initialData.status === 'PENDING' ||
-          initialData.status === 'PENDING_ADMIN'
+      : initialStatusUpper === 'PENDING' ||
+          initialStatusUpper === 'PENDING_ADMIN'
         ? 'Pending'
         : 'Active'
   );
@@ -59,20 +61,21 @@ export default function EmployeeView({
     const newStatus = e.target.value;
     setStatus(newStatus);
 
-    if (newStatus !== 'Inactive') {
-      try {
-        const dbStatus = newStatus === 'Pending' ? 'PENDING' : 'Active';
-        const res = await fetch(`/api/employees/${initialData.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: dbStatus }),
-        });
-        if (!res.ok) throw new Error('Failed to update status');
-        alert(`Employee status updated to ${newStatus}`);
-      } catch (err) {
-        console.error(err);
-        alert('Failed to update employee status');
-      }
+    try {
+      const dbStatus =
+        newStatus === 'Pending' ? 'PENDING' :
+        newStatus === 'Inactive' ? 'INACTIVE' : 'ACTIVE';
+      const res = await fetch(`/api/employees/${initialData.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: dbStatus }),
+      });
+      if (!res.ok) throw new Error('Failed to update status');
+      showSuccessToast(`Employee status updated to ${newStatus}`);
+      if (onStatusChange) onStatusChange(dbStatus);
+    } catch (err) {
+      console.error(err);
+      showErrorToast('Failed to update employee status');
     }
   };
 

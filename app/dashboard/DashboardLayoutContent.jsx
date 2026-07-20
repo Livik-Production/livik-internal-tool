@@ -11,18 +11,22 @@ import ProfileSetupWizardContract from '../components/EmployeePortal/ProfileSetu
 
 export default function DashboardLayoutContent({ children }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isBellOpen, setIsBellOpen] = useState(false);
+  const [isOverlayOpen, setIsOverlayOpen] = useState(false);
   const pathname = usePathname();
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
   const closeSidebar = () => setIsSidebarOpen(false);
 
   useEffect(() => {
-    const handleBellChange = (e) => {
-      setIsBellOpen(e.detail.open);
+    const handleOverlayChange = (e) => {
+      setIsOverlayOpen(e.detail.open);
     };
-    window.addEventListener('bell-state-change', handleBellChange);
-    return () => window.removeEventListener('bell-state-change', handleBellChange);
+    window.addEventListener('bell-state-change', handleOverlayChange);
+    window.addEventListener('dropdown-state-change', handleOverlayChange);
+    return () => {
+      window.removeEventListener('bell-state-change', handleOverlayChange);
+      window.removeEventListener('dropdown-state-change', handleOverlayChange);
+    };
   }, []);
 
   const authUser = useSelector(selectAuthUser);
@@ -75,13 +79,13 @@ export default function DashboardLayoutContent({ children }) {
       <aside
         className={`fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-gray-200 transform transition-all duration-300 ease-in-out md:translate-x-0 md:bg-white md:static md:h-screen md:sticky md:top-0 ${
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        } ${isBellOpen ? 'blur-[6px] pointer-events-none' : ''}`}
+        } ${isOverlayOpen ? 'blur-[6px] pointer-events-none' : ''}`}
       >
         <div className="h-full overflow-y-auto relative">
           <Suspense fallback={null}>
             <Sidebar onLinkClick={closeSidebar} />
           </Suspense>
-          {isBellOpen && (
+          {isOverlayOpen && (
             <div className="absolute inset-0 bg-black/20 z-50 pointer-events-none" />
           )}
         </div>

@@ -908,11 +908,10 @@ const LeaveRequestForm = ({
                 type="button"
                 disabled={actionLoading !== null}
                 onClick={() => setConfirmAction('reject')}
-                className={`px-5 py-1.5 rounded-lg text-xs font-bold transition-all border flex items-center gap-1.5 ${
-                  actionLoading !== null
-                    ? 'bg-white text-gray-300 border-gray-200 cursor-not-allowed'
-                    : 'bg-white text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300'
-                }`}
+                className={`px-5 py-1.5 rounded-lg text-xs font-bold transition-all border flex items-center gap-1.5 ${actionLoading !== null
+                  ? 'bg-white text-gray-300 border-gray-200 cursor-not-allowed'
+                  : 'bg-white text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300'
+                  }`}
               >
                 {actionLoading === 'reject' && (
                   <Loader2 size={12} className="animate-spin" />
@@ -925,11 +924,10 @@ const LeaveRequestForm = ({
                 type="button"
                 disabled={actionLoading !== null}
                 onClick={() => setConfirmAction('approve')}
-                className={`px-5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 ${
-                  actionLoading !== null
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
-                    : 'bg-[#003273] text-white hover:bg-[#002657] hover:shadow'
-                }`}
+                className={`px-5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 ${actionLoading !== null
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
+                  : 'bg-[#003273] text-white hover:bg-[#002657] hover:shadow'
+                  }`}
               >
                 {actionLoading === 'approve' && (
                   <Loader2 size={12} className="animate-spin" />
@@ -986,11 +984,10 @@ const LeaveRequestForm = ({
             {/* Half Day Checkbox */}
             {!(mode === 'view' && !isHalfDayType) && (
               <label
-                className={`flex items-center gap-2 px-4 py-2.5 border-2 rounded-lg cursor-pointer transition-all select-none ${
-                  isHalfDayType
-                    ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm'
-                    : 'border-gray-400 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50'
-                } ${mode === 'view' ? 'pointer-events-none' : ''}`}
+                className={`flex items-center gap-2 px-4 py-2.5 border-2 rounded-lg cursor-pointer transition-all select-none ${isHalfDayType
+                  ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm'
+                  : 'border-gray-400 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                  } ${mode === 'view' ? 'pointer-events-none' : ''}`}
               >
                 <input
                   type="checkbox"
@@ -1057,11 +1054,9 @@ const LeaveRequestForm = ({
                   min={joiningDate || undefined}
                   onChange={(e) => handleDateChange('from', e.target.value)}
                   disabled={mode === 'view'}
-                  className={`w-full px-4 py-2.5 border rounded-lg transition-colors ${
-                    errors.from ? 'border-red-300' : 'border-gray-300'
-                  } ${
-                    mode === 'view' ? 'bg-gray-50 text-gray-600' : 'bg-white'
-                  }`}
+                  className={`w-full px-4 py-2.5 border rounded-lg transition-colors ${errors.from ? 'border-red-300' : 'border-gray-300'
+                    } ${mode === 'view' ? 'bg-gray-50 text-gray-600' : 'bg-white'
+                    }`}
                 />
               </div>
               {errors.from && (
@@ -1082,13 +1077,11 @@ const LeaveRequestForm = ({
                   min={joiningDate || undefined}
                   onChange={(e) => handleDateChange('to', e.target.value)}
                   disabled={mode === 'view' || isHalfDayType}
-                  className={`w-full px-4 py-2.5 border rounded-lg transition-colors ${
-                    errors.to ? 'border-red-300' : 'border-gray-300'
-                  } ${
-                    mode === 'view' || isHalfDayType
+                  className={`w-full px-4 py-2.5 border rounded-lg transition-colors ${errors.to ? 'border-red-300' : 'border-gray-300'
+                    } ${mode === 'view' || isHalfDayType
                       ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                       : 'bg-white'
-                  }`}
+                    }`}
                 />
               </div>
               {errors.to && (
@@ -1117,13 +1110,13 @@ const LeaveRequestForm = ({
           {/* Selected Dates Display */}
           {formData.from && formData.to && (
             <div className="mt-3">
-              <div className="text-sm text-gray-600">
-                Selected: {formatDate(formData.from)} to{' '}
+              <div className="text-sm text-[#004475]">
+                Selected : {formatDate(formData.from)} to{' '}
                 {formatDate(formData.to)}
                 {calculatedDays > 0 && (
-                  <span className="ml-2 font-medium">
-                    ({calculatedDays} working day
-                    {calculatedDays !== 1 ? 's' : ''})
+                  <span className="ml-2 font-semibold">
+                    <span className='font-bold'>({calculatedDays} working day{calculatedDays !== 1 ? 's' : ''})</span>
+
                   </span>
                 )}
               </div>
@@ -1150,9 +1143,8 @@ const LeaveRequestForm = ({
             disabled={mode === 'view'}
             rows="4"
             placeholder="Please provide a detailed reason for your leave request..."
-            className={`w-full px-4 py-3 border rounded-lg transition-colors resize-none text-sm ${
-              errors.reason ? 'border-red-300' : 'border-gray-300'
-            } ${mode === 'view' ? 'bg-gray-50 text-gray-600' : 'bg-white'}`}
+            className={`w-full px-4 py-3 border rounded-lg transition-colors resize-none text-sm ${errors.reason ? 'border-red-300' : 'border-gray-300'
+              } ${mode === 'view' ? 'bg-gray-50 text-gray-600' : 'bg-white'}`}
           />
           <div className="flex justify-between mt-1">
             {errors.reason ? (
@@ -1272,13 +1264,13 @@ const LeaveRequestForm = ({
               </svg>
               <span className="text-sm text-gray-700 truncate max-w-[200px]">
                 {typeof formData.document === 'string' &&
-                formData.document.includes('blob.vercel-storage.com')
+                  formData.document.includes('blob.vercel-storage.com')
                   ? formData.document
-                      .split('/')
-                      .pop()
-                      .split('-')
-                      .slice(1)
-                      .join('-')
+                    .split('/')
+                    .pop()
+                    .split('-')
+                    .slice(1)
+                    .join('-')
                   : 'leave_document.pdf'}
               </span>
               <a

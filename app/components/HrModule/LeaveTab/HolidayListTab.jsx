@@ -12,6 +12,7 @@ import {
   Eye,
   Search,
   X,
+  Download,
 } from 'lucide-react';
 import CustomTable from '../../CustomTable';
 import Loader from '../../Loader';
@@ -95,6 +96,101 @@ export const HOLIDAYS = [
   },
 ];
 
+const FullYearCalendar = ({ year, holidays, onHolidayClick }) => {
+  const months = [
+    "JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE",
+    "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"
+  ];
+
+  const today = new Date();
+  const currentMonth = today.getMonth();
+  const currentYear = today.getFullYear();
+  const currentDay = today.getDate();
+
+  const titleColors = [
+    "text-orange-400", "text-red-500", "text-blue-500", "text-green-500",
+    "text-green-400", "text-blue-400", "text-yellow-500", "text-red-500",
+    "text-red-400", "text-orange-400", "text-teal-500", "text-blue-500"
+  ];
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
+      {months.map((monthName, monthIndex) => {
+        const isCurrentMonth = year === currentYear && monthIndex === currentMonth;
+
+        // Calculate days
+        const firstDay = new Date(year, monthIndex, 1).getDay();
+        const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+
+        const blanks = Array.from({ length: firstDay }).map((_, i) => <div key={`blank-${i}`} className="h-7" />);
+
+        const days = Array.from({ length: daysInMonth }).map((_, i) => {
+          const dateNum = i + 1;
+
+          const isToday = isCurrentMonth && dateNum === currentDay;
+
+          // Find if this date is a holiday (parsing YYYY-MM-DD directly to avoid timezone shifts)
+          const holiday = holidays.find(h => {
+            if (!h.date) return false;
+            // Extract 'YYYY-MM-DD' from 'YYYY-MM-DD' or 'YYYY-MM-DDTHH:MM...'
+            const dateStr = h.date.substring(0, 10);
+            const parts = dateStr.split('-');
+            if (parts.length === 3) {
+              return parseInt(parts[0], 10) === year &&
+                parseInt(parts[1], 10) - 1 === monthIndex &&
+                parseInt(parts[2], 10) === dateNum;
+            }
+            return false;
+          });
+
+          let dayClass = "h-6 w-6 flex items-center justify-center text-[11px] mx-auto ";
+
+          if (isToday) {
+            dayClass += " bg-[#004475] text-white rounded-full font-bold shadow-sm";
+          } else if (holiday) {
+            dayClass += " text-red-500 font-bold cursor-pointer hover:bg-red-50 rounded-full hover:scale-110 transition-transform";
+          } else {
+            dayClass += " text-gray-700 font-medium";
+          }
+
+          return (
+            <div
+              key={`day-${dateNum}`}
+              className={dayClass}
+              onClick={() => holiday && onHolidayClick(holiday)}
+              title={holiday ? holiday.holiday : ''}
+            >
+              {dateNum}
+            </div>
+          );
+        });
+
+        return (
+          <div
+            key={monthName}
+            className={`bg-white rounded-2xl p-4 shadow-sm border-2 ${isCurrentMonth ? 'border-[#004475]' : 'border-gray-200'} transition-all`}
+          >
+            <h4 className={`text-center font-extrabold text-xs mb-3 tracking-wider ${titleColors[monthIndex]}`}>
+              {monthName}
+            </h4>
+            <div className="grid grid-cols-7 gap-1 text-center mb-2 border-b border-gray-200 pb-2">
+              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, idx) => (
+                <div key={idx} className={`text-[10px] font-bold ${idx === 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                  {day}
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-7 gap-1 gap-y-2 text-center">
+              {blanks}
+              {days}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 const HolidayListTab = ({
   onAddHoliday, // ✅ Receive handler for modal
   canControlAllEmployees,
@@ -109,10 +205,20 @@ const HolidayListTab = ({
   const now = new Date();
   const [selectedYear, setSelectedYear] = useState(now.getFullYear().toString());
 
-  const yearOptions = [{ value: 'All', label: 'All Years' }];
+  const yearOptions = [];
   const startYear = 2025;
   const currentYear = now.getFullYear();
-  for (let y = currentYear + 1; y >= startYear; y--) {
+  let maxYear = currentYear;
+  holidayData.forEach(h => {
+    if (h.date) {
+      const y = new Date(h.date).getFullYear();
+      if (!isNaN(y) && y > maxYear) {
+        maxYear = y;
+      }
+    }
+  });
+
+  for (let y = maxYear; y >= startYear; y--) {
     yearOptions.push({ value: y.toString(), label: y.toString() });
   }
 
@@ -163,21 +269,21 @@ const HolidayListTab = ({
   // Filter data based on search query, selected year, and selected month
   useEffect(() => {
     let filtered = holidayData.filter((item) => {
-      if (selectedYear === 'All') return true;
-      const itemYear = new Date(item.date).getFullYear().toString();
+      if (!selectedYear || selectedYear === 'All') return true;
+      if (!item.date) return false;
+      const itemYear = item.date.substring(0, 4);
       return itemYear === selectedYear;
     });
 
-    if (selectedMonthIndex !== null && selectedYear !== 'All') {
-      filtered = filtered.filter((item) => {
-        return new Date(item.date).getMonth() === selectedMonthIndex;
-      });
-    }
+    // Month filter is only applied to the banner now, so we don't filter the table data by month.
 
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
         (item) =>
+          (item.holiday || '').toLowerCase().includes(query) ||
+          (item.type || '').toLowerCase().includes(query) ||
+          (item.description || '').toLowerCase().includes(query) ||
           (item.holiday || '').toLowerCase().includes(query) ||
           (item.type || '').toLowerCase().includes(query) ||
           (item.description || '').toLowerCase().includes(query) ||
@@ -216,6 +322,17 @@ const HolidayListTab = ({
   // Get the next upcoming holiday
   const nextHoliday = upcomingHolidays.length > 0 ? upcomingHolidays[0] : null;
 
+  // Helper to strictly parse YYYY-MM-DD as local date to prevent timezone shifts
+  const getLocalDate = (dateString) => {
+    if (!dateString) return new Date();
+    const dateStr = dateString.substring(0, 10);
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    }
+    return new Date(dateString);
+  };
+
   const columns = [
     {
       key: 'date',
@@ -223,10 +340,10 @@ const HolidayListTab = ({
       render: (row) => (
         <div>
           <div className="font-medium text-left">
-            {new Date(row.date).toLocaleDateString('en-IN')}
+            {getLocalDate(row.date).toLocaleDateString('en-IN')}
           </div>
           <div className="text-xs text-gray-500 text-left">
-            {new Date(row.date).toLocaleDateString('en-US', {
+            {getLocalDate(row.date).toLocaleDateString('en-US', {
               weekday: 'long',
             })}
           </div>
@@ -298,19 +415,112 @@ const HolidayListTab = ({
       fullYear: date.getFullYear(),
     };
   });
+  const handleExportCSV = () => {
+    const csvData = [['Date', 'Holiday', 'Type', 'Description']];
+    filteredData.forEach(h => {
+      csvData.push([
+        new Date(h.date).toLocaleDateString('en-IN'),
+        `"${(h.holiday || '').replace(/"/g, '""')}"`,
+        `"${(h.type || '').replace(/"/g, '""')}"`,
+        `"${(h.description || '').replace(/"/g, '""')}"`
+      ]);
+    });
+    const csvContent = csvData.map(e => e.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `holidays_${selectedYear}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
-  const renderHeaderLayout = () => {
+  const renderHeaderLayout = (bannerNode = null) => {
 
     return (
-      <div>
+      <div className="space-y-4">
         <h2 className="text-4xl font-extrabold text-[#004475] mb-3 flex justify-center py-2">
           Holiday Calendar {yearToUse}
         </h2>
-        <div className="flex flex-col md:flex-row items-center justify-between mb-4 gap-4">
-          {/* Left Side: Month Selector */}
-          <div className="flex flex-col w-full md:w-auto overflow-hidden">
 
-            <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 w-full md:max-w-[50vw]">
+        {/* Controls Row */}
+        <div className="flex justify-end w-full">
+          {/* Right Side: Filters & Actions */}
+          <div className="flex items-center gap-3 flex-wrap md:flex-nowrap">
+            {/* Year Dropdown */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                Year :
+              </span>
+              <FilterDropdown
+                options={yearOptions}
+                value={selectedYear}
+                onChange={(val) => {
+                  setSelectedYear(val);
+                  if (val === 'All') setSelectedMonthIndex(null);
+                }}
+                placeholder="Year"
+                className="min-w-[110px]"
+              />
+            </div>
+
+            <div className="relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search holidays..."
+                className="px-3 py-2 pl-10 pr-9 border border-gray-300 rounded-xl text-sm w-48 lg:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+              />
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+              {searchQuery && (
+                <IconButton
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2 top-0.5 shadow-none bg-transparent hover:bg-transparent"
+                  title="Clear search"
+                >
+                  <X size={14} className="text-gray-400 hover:text-red-500" />
+                </IconButton>
+              )}
+            </div>
+
+            {/* Export CSV Button */}
+            <button
+              onClick={handleExportCSV}
+              className="px-4 py-2.5 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-[#004475] rounded-xl text-sm font-bold shadow-sm transition-all flex items-center gap-2 shrink-0"
+              title="Export holidays as CSV"
+            >
+              <Download size={16} />
+              Export CSV
+            </button>
+
+            {/* Add Holiday Button */}
+            {!hideAddButton && (
+              <PrimaryButton
+                onClick={onAddHoliday}
+                className={`px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all shrink-0 ${canControlAllEmployees
+                  ? 'bg-[#004475] text-white hover:bg-[#003358] hover:shadow-md'
+                  : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
+                  }`}
+                disabled={!canControlAllEmployees}
+                title={
+                  !canControlAllEmployees ? 'Permission required' : 'Add Holiday List'
+                }
+              >
+                + Add Holiday List
+              </PrimaryButton>
+            )}
+          </div>
+        </div>
+
+        {/* Line 2: Month Selector and Banner */}
+        <div className="flex flex-col xl:flex-row gap-4 mb-4 items-stretch justify-between">
+          {/* Left Side: Month Selector */}
+          <div className="flex flex-col w-full overflow-hidden xl:w-auto shrink-0 self-center">
+            <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 w-full xl:max-w-[400px]">
               {generatedMonths.map((m, idx) => {
                 const isFilterActive = selectedMonthIndex !== null && m.index === selectedMonthIndex && (selectedYear === 'All' || m.actualYear.toString() === selectedYear);
                 const isDefaultActive = selectedMonthIndex === null && m.index === now.getMonth() && m.actualYear === currentYear;
@@ -341,71 +551,18 @@ const HolidayListTab = ({
                     <span className={`text-xl font-bold mt-0.5 ${isActive ? 'text-white' : 'text-gray-800'}`}>
                       {isActive ? m.fullYear : m.yearStr}
                     </span>
-                    {isActive && <div className="w-1.5 h-1.5 bg-white rounded-full mt-1.5 shadow-sm"></div>}
                   </div>
                 );
               })}
             </div>
           </div>
 
-          {/* Right Side: Filters & Actions */}
-          <div className="flex-1 flex items-center justify-end gap-3 w-full md:w-auto flex-wrap md:flex-nowrap">
-            {/* Year Dropdown */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-700 whitespace-nowrap">
-                Year :
-              </span>
-              <FilterDropdown
-                options={yearOptions}
-                value={selectedYear}
-                onChange={(val) => {
-                  setSelectedYear(val);
-                  if (val === 'All') setSelectedMonthIndex(null);
-                }}
-                placeholder="Year"
-                className="min-w-[110px]"
-              />
+          {/* Right Side: Banner Node */}
+          {bannerNode && (
+            <div className="w-full xl:max-w-xl shrink-0">
+              {bannerNode}
             </div>
-
-            <div className="relative">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search holidays..."
-                className="px-3 py-2 pl-10 pr-9 border border-gray-300 rounded-xl text-sm w-48 lg:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
-              />
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-              {searchQuery && (
-                 <IconButton
-              type="button"
-              onClick={() => setSearchQuery('')}
-              className="absolute right-2 top-0.5 shadow-none bg-transparent hover:bg-transparent"
-              title="Clear search"
-            >
-              <X size={14} className="text-gray-400 hover:text-red-500" />
-            </IconButton>
-
-              )}
-            </div>
-
-            {/* Add Holiday Button */}
-            {!hideAddButton && (
-              <PrimaryButton
-                onClick={onAddHoliday}
-                className={`px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all shrink-0 ${canControlAllEmployees
-                  ? 'bg-[#004475] text-white hover:bg-[#003358] hover:shadow-md'
-                  : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
-                  }`}
-                disabled={!canControlAllEmployees}
-                title={
-                  !canControlAllEmployees ? 'Permission required' : 'Add Holiday List'
-                }
-              >
-                + Add Holiday List
-              </PrimaryButton>
-            )}
-          </div>
+          )}
         </div>
       </div>
     );
@@ -472,6 +629,7 @@ const HolidayListTab = ({
     const isDefaultActive = selectedMonthIndex === null && m.index === now.getMonth() && m.actualYear === currentYear;
     const isActive = isFilterActive || isDefaultActive;
 
+
     if (isActive) {
       showBanner = true;
       activeMonthForBanner = m;
@@ -510,14 +668,10 @@ const HolidayListTab = ({
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
-  return (
-    <div className="space-y-4">
-      {renderHeaderLayout()}
-
-      {showBanner && (() => {
+  const bannerNode = showBanner ? (() => {
         if (!featuredHoliday) {
           return (
-            <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl p-6 md:p-8 flex flex-col items-center justify-center shadow-sm border border-blue-100 md:min-h-[160px] text-center">
+            <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl p-6 md:p-8 flex flex-col items-center justify-center shadow-sm border border-blue-100 min-h-[120px] h-full text-center">
               <div className="bg-blue-100/50 p-3 rounded-full mb-3">
                 <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -532,7 +686,7 @@ const HolidayListTab = ({
         const daysLeft = calculateDaysLeft(featuredHoliday.date);
         return (
           <div
-            className="relative rounded-xl overflow-hidden shadow-md border border-blue-900/20 min-h-[160px] md:min-h-[200px] flex items-end p-5 md:p-6"
+            className="relative rounded-xl overflow-hidden shadow-md border border-blue-900/20 min-h-[120px] h-full flex items-end p-5 md:p-6"
             style={{
               backgroundColor: '#154b9a',
               backgroundImage: featuredHoliday.imageUrl ? `url(${featuredHoliday.imageUrl})` : 'none',
@@ -552,7 +706,7 @@ const HolidayListTab = ({
                 <div className="flex items-center gap-1.5 text-xs md:text-sm font-medium text-blue-100 mt-1 drop-shadow-md">
                   <Calendar size={14} />
                   <span>
-                    {new Date(featuredHoliday.date).toLocaleDateString('en-GB', {
+                    {getLocalDate(featuredHoliday.date).toLocaleDateString('en-GB', {
                       weekday: 'long',
                       day: 'numeric',
                       month: 'long',
@@ -568,6 +722,7 @@ const HolidayListTab = ({
                     {daysLeft === 0 ? "TODAY" : (daysLeft < 0 ? "DAYS AGO" : "DAYS LEFT")}
                   </span>
                 </div>
+                
                 <button
                   onClick={() => handleViewHoliday(featuredHoliday)}
                   className="text-[11px] font-bold text-white hover:text-blue-200 flex items-center gap-1 transition-colors mt-1 drop-shadow-md"
@@ -578,7 +733,14 @@ const HolidayListTab = ({
             </div>
           </div>
         );
-      })()}
+      })() : null;
+
+  return (
+    <div className="space-y-4">
+      {renderHeaderLayout(bannerNode)}
+
+      {/* 12-Month Calendar Grid */}
+      <FullYearCalendar year={yearToUse} holidays={holidayData} onHolidayClick={handleViewHoliday} />
 
       <section className="overflow-hidden rounded-xl border border-gray-300 shadow-inner">
         {/* <div className="p-4 bg-gray-50 border-b border-gray-300">
@@ -674,7 +836,7 @@ const HolidayListTab = ({
                       {nextHoliday.holiday}
                     </span>
                     <span className="text-gray-500 ml-1">
-                      ({new Date(nextHoliday.date).toLocaleDateString('en-IN')})
+                      ({getLocalDate(nextHoliday.date).toLocaleDateString('en-IN')})
                     </span>
                   </>
                 ) : (

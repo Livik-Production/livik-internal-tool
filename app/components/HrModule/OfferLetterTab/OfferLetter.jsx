@@ -1,10 +1,12 @@
 'use client';
 
 import React from 'react';
+import LetterPadLayout from './LetterPadLayout';
 
 const OfferLetterSimple = ({
   employeeData = {},
   letterPad = 'with', // "with" | "without"
+  letterPadType = 'type1',
 }) => {
   const data = {
     employeeName: 'Mr. XXX',
@@ -17,6 +19,7 @@ const OfferLetterSimple = ({
 
   const employee = { ...data, ...employeeData };
   const isWithPad = letterPad === 'with';
+  const companyName = letterPadType === 'type2' ? 'Livik Software Solutions Private Limited' : 'Livik Technologies';
 
   // Date function to format current date
   const getCurrentDate = () => {
@@ -32,133 +35,74 @@ const OfferLetterSimple = ({
       {/* A4 PAGE - SAME DIMENSIONS FOR BOTH MODES */}
       <div
         id="offer-letter-print"
-        className={`relative w-[794px] h-[1123px] bg-white pdf-safe ${isWithPad ? 'letterpad-print' : 'no-letterpad-print'
-          }`}
-        style={
-          isWithPad
-            ? {
-              backgroundImage: "url('/asset/Background_letter.jpg')",
-              backgroundSize: '794px 1123px',
-              backgroundRepeat: 'no-repeat',
-              backgroundPosition: 'top center',
-            }
-            : {}
-        }
+        className={`relative w-[794px] h-[1123px] bg-white pdf-safe flex flex-col ${isWithPad ? 'letterpad-print' : 'no-letterpad-print'}`}
       >
-        {/* WATERMARK (ONLY WITHOUT IMAGE LETTERPAD) */}
-        {!isWithPad && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <img
-              src="/asset/livik-watermark.png"
-              alt="Livik Watermark"
-              className="w-[420px] opacity-10 p"
-            />
-          </div>
-        )}
-
-        {/* CONTENT LAYER - IDENTICAL FOR BOTH MODES */}
-        <div className="relative z-10 h-full flex flex-col">
-          {/* LOGO (ONLY WHEN WITH LETTERPAD) */}
-          {isWithPad && (
-            <div className="flex justify-center pt-8">
-              <img
-                src="/asset/livik-logo.png"
-                alt="Livik Technologies Logo"
-                className="h-16 w-auto"
-              />
-            </div>
-          )}
-          {/* COMPANY NAME AND DATE - USING GRID */}
-          <div className="grid grid-cols-2 items-center px-16 pt-[36px]">
-            <h1 className="text-2xl font-bold text-gray-900">
-              Livik Technologies
-            </h1>
-            <div className="flex justify-start pl-32">
-              <h1 className="text-md font-semibold text-gray-900">
-                Date : {getCurrentDate()}
-              </h1>
-            </div>
-          </div>
-
-          {/* COMPANY DETAILS AND EMPLOYEE DETAILS - USING GRID */}
-          <div className="grid grid-cols-2 items-start px-16 pt-2">
-            {/* LEFT: COMPANY ADDRESS */}
-            <div className="text-sm leading-5 text-gray-700">
-              <p>HIG A-7, 2nd Street, 9th Cross</p>
-              <p>R.M. Colony, Dindigul - 624001</p>
-              <p>Tel: +91 8610470324</p>
-              <p>Email: liviktechnologies@gmail.com</p>
+        <LetterPadLayout isWithPad={isWithPad} letterPadType={letterPadType}>
+          <div className="px-16 w-full flex-grow flex flex-col">
+            {/* TITLE */}
+            <div className="w-full text-center mt-8 mb-6">
+              <h2 className="text-[17px] font-bold text-gray-900">Offer Letter</h2>
             </div>
 
-            {/* RIGHT: EMPLOYEE DETAILS */}
-            <div className="text-sm text-gray-900 flex flex-col items-start pl-32">
-              <p className="font-bold">{employeeData?.name || 'Mr. XXX'}</p>
-              <p>{employeeData?.address || '[Address]'}</p>
-              <p>{employeeData?.email || '[Email]'}</p>
-              <p>{employeeData?.phone || '[Phone]'}</p>
-            </div>
+          {/* DATE */}
+          <div className="w-full text-right mb-10">
+            <p className="text-[15px] font-medium text-gray-900">Date:{getCurrentDate()}</p>
           </div>
-          {/* LETTER CONTENT - IDENTICAL POSITIONING */}
-          <div className="px-16 pt-16 text-sm text-gray-800 flex-grow">
+
+          {/* TO ADDRESS */}
+          <div className="w-full text-left mb-10 text-[15px] text-gray-900 leading-snug">
+            <p className="font-bold mb-2">To:</p>
+            <p className="font-bold">{employeeData?.name || 'Mr. XXX'}</p>
+            <p>{employeeData?.address || '[Address]'}</p>
+          </div>
+          {/* LETTER CONTENT */}
+          <div className="text-[15px] text-gray-900 flex-grow w-full">
             {/* SALUTATION */}
-            <p className="mb-8">
-              Dear
-              <span className="font-semibold px-1">
-                {employeeData?.name || 'Mr. XXX'}
-              </span>
-              ,
+            <p className="mb-6">
+              Dear <span className="font-bold">Mr. {employeeData?.name || 'XXX'}</span>,
             </p>
 
             {/* BODY */}
-            <div className="space-y-5 text-justify leading-relaxed">
-              <p className="text-justify">
-                Thank you for exploring career opportunities with Livik
-                Technologies. You have successfully completed our initial
-                selection process and we are pleased to offer you a full-time
-                position with our company as{' '}
-                <strong>{employee.position}</strong>. Please report to HIG A-7,
+            <div className="space-y-6 text-justify leading-relaxed">
+              <p>
+                Thank you for exploring career opportunities with <span className="font-bold">{companyName}</span>. You have successfully completed our
+                initial selection process and we are pleased to offer you a full-time position with our company as <span className="font-bold">{employee.position}</span>. Please report to HIG A-7,
                 2nd Street, 9th Cross, R.M. Colony, Dindigul - 624001 for duty
-                on <strong>{employee.startDate}</strong> at{' '}
-                <strong>{employee.startTime}</strong>, along with all your
+                on <span className="font-bold">{employee.startDate}</span> at{' '}
+                <span className="font-bold">{employee.startTime}</span>, along with all your
                 testimonials for verification and return.
               </p>
 
-              <p className="text-justify">
+              <p>
                 You will undergo a probationary period of three (3) months,
-                commencing from <strong>{employee.startDate}</strong>. During
-                this probationary period, your salary will be Rs.{' '}
-                <strong>{employee.probationSalary}</strong> per month. Upon
+                commencing from <span className="font-bold">{employee.startDate}</span>. During
+                this probationary period, your salary will be <span className="font-bold">Rs. {employee.probationSalary} per month</span>. Upon
                 successful completion of the probation and satisfactory
-                performance evaluation, your salary will be revised to Rs.{' '}
-                <strong>{employee.permanentSalary}</strong> per month.
+                performance evaluation, your salary will be revised to <span className="font-bold">Rs. {employee.permanentSalary} per month.</span>
               </p>
 
-              <p className="text-justify">
+              <p>
                 All other terms and employment benefits shall be in accordance
                 with the company's policies and procedures.
               </p>
 
-              <p className="text-justify">
-                Please sign and return a copy of this letter as confirmation of
-                your acceptance of the above terms.
-              </p>
-
-              <p className="text-justify">
+              <p className="pt-2">
                 We look forward to a long-term and mutually beneficial
                 relationship with you.
               </p>
             </div>
 
-            {/* CLOSING - IDENTICAL POSITIONING */}
-            <div className="mt-20">
-              <p className="mb-2">Regards.</p>
-              <p className="font-semibold">For Livik Technologies</p>
-              <div className="mt-10">
-                <p className="font-semibold">Manager – HR</p>
+            {/* CLOSING */}
+            <div className="mt-16">
+              <p className="mb-6">Regards,</p>
+              <p className="font-bold">For {companyName}</p>
+              <div className="mt-20">
+                <p className="font-bold">Authorized Signatory</p>
               </div>
             </div>
           </div>
-        </div>
+          </div>
+        </LetterPadLayout>
 
         <style jsx global>{`
           @media print {
