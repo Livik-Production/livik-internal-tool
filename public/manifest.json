@@ -1,0 +1,24 @@
+{
+  "name": "Livik Internal Tool",
+  "short_name": "Livik",
+  "description": "Livik Employee Management System",
+  "id": "/",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#004475",
+  "icons": [
+    {
+      "src": "/livik-logo-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/livik-logo-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
