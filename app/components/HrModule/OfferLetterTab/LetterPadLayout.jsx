@@ -78,7 +78,7 @@ const LetterPadLayout = ({ isWithPad, letterPadType, children }) => {
       </div>
 
       {/* FOOTER SECTION (ONLY FOR WITH-PAD) */}
-      {isWithPad && (
+      {/* {isWithPad && (
         <div className="relative z-10 w-full h-10 mt-auto bg-[#004275] text-white flex items-center justify-center text-sm font-medium print:bg-[#004275] print:text-white" style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
           {letterPadType === 'type1' ? (
             <div className="flex items-center justify-center gap-2">
@@ -98,7 +98,7 @@ const LetterPadLayout = ({ isWithPad, letterPadType, children }) => {
             </div>
           )}
         </div>
-      )}
+      )} */}
     </>
   );
 };

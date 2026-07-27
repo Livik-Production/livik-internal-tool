@@ -81,6 +81,7 @@ export default function RightsTable({
             onChange={onModuleChange}
             placeholder="Select Module"
             className="w-full sm:w-48"
+            showScrollbar={true}
           />
         </div>
 

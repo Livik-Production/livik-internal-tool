@@ -285,7 +285,7 @@ export default function PermissionRequestForm({
       <Button
         type="button"
         onClick={onClose}
-        className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors"
+        className="px-5 py-2.5 bg-white border border-gray-800 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors"
         disabled={isSubmitting || actionLoading !== null}
       >
         {mode === 'view' ? 'Close' : 'Cancel'}

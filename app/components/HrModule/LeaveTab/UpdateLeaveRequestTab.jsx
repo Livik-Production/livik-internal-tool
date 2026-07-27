@@ -7,7 +7,7 @@ import { useSelector } from 'react-redux';
 import Loader from '../../Loader';
 import Pagination from '../../Pagination';
 import { showSuccessToast, showErrorToast } from '../../Toast';
-import { Search, SquarePen, Trash, CalendarCheck, Loader2, X } from 'lucide-react';
+import { Search, SquarePen, Trash, CalendarCheck, Loader2, X, ChevronDown } from 'lucide-react';
 import BalanceDetailModal from './BalanceDetailModal';
 import FilterDropdown from '../../Buttons/FilterDropdown';
 import IconButton from '../../Buttons/IconButton';
@@ -41,6 +41,7 @@ const UpdateLeaveRequestTab = ({
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [companyHolidays, setCompanyHolidays] = useState([]);
+  const [isMonthDropdownOpen, setIsMonthDropdownOpen] = useState(false);
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -428,31 +429,64 @@ const UpdateLeaveRequestTab = ({
             )}
           </div>
           {/* Month Selector */}
-          <div className="w-40 ">
-            <FilterDropdown
-              options={Array.from({ length: 12 }, (_, i) => {
-                const monthIndex = i + 1;
-                const now = new Date();
-                const currentMonth = now.getMonth() + 1;
-                const currentYear = now.getFullYear();
-
-                // Disable if year is 2025 and month < 9 (Sept)
-                const isDisabled = selectedYear === 2025 && monthIndex < 9;
-
-                const date = new Date(2000, i, 1);
-                const monthName = date.toLocaleString('default', {
-                  month: 'long',
-                });
-                return {
-                  value: monthIndex.toString(),
-                  label: monthName,
-                  disabled: isDisabled,
-                };
-              })}
-              value={selectedMonth.toString()}
-              onChange={(val) => setSelectedMonth(parseInt(val))}
-              placeholder="Month"
-            />
+          <div className="relative min-w-[160px]">
+            <div
+              className={`w-full border rounded-lg px-4 py-2.5 text-sm font-medium transition-colors cursor-pointer flex justify-between items-center gap-2 ${
+                isMonthDropdownOpen
+                  ? 'border-blue-500 ring-2 ring-blue-500 bg-white'
+                  : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+              onClick={() => setIsMonthDropdownOpen(!isMonthDropdownOpen)}
+            >
+              <span>
+                {(() => {
+                  const date = new Date(2000, selectedMonth - 1, 1);
+                  return date.toLocaleString('default', { month: 'long' });
+                })()}
+              </span>
+              <ChevronDown
+                className={`h-4 w-4 text-gray-500 flex-shrink-0 transition-transform ${isMonthDropdownOpen ? 'rotate-180' : ''}`}
+              />
+            </div>
+            {isMonthDropdownOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-[998]"
+                  onClick={() => setIsMonthDropdownOpen(false)}
+                />
+                <div className="absolute z-[999] mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-xl max-h-[200px] overflow-y-auto no-scrollbar">
+                  {Array.from({ length: 12 }, (_, i) => {
+                    const monthIndex = i + 1;
+                    const isDisabled = selectedYear === 2025 && monthIndex < 9;
+                    const date = new Date(2000, i, 1);
+                    const monthName = date.toLocaleString('default', { month: 'long' });
+                    
+                    return (
+                      <div
+                        key={monthIndex}
+                        className={`px-4 py-2.5 text-sm font-medium transition-colors ${
+                          isDisabled
+                            ? 'text-gray-300 cursor-not-allowed'
+                            : `cursor-pointer hover:bg-blue-50 ${
+                                selectedMonth === monthIndex
+                                  ? 'bg-blue-50 text-blue-600 font-semibold'
+                                  : 'text-gray-700'
+                              }`
+                        }`}
+                        onClick={() => {
+                          if (!isDisabled) {
+                            setSelectedMonth(monthIndex);
+                            setIsMonthDropdownOpen(false);
+                          }
+                        }}
+                      >
+                        {monthName}
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </div>
 
           {/* Year Selector */}

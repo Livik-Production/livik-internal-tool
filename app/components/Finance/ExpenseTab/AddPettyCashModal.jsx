@@ -190,7 +190,7 @@ const AddPettyCashModal = ({
 
   const footer = (
     <>
-      <Button type="button" onClick={onClose} className="h-[45px] px-6">
+      <Button type="button" onClick={onClose} className="h-11 mt-1 px-6 border border-gray-800 rounded-xl">
         Cancel
       </Button>
 

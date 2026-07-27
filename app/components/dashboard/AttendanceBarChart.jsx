@@ -42,6 +42,7 @@ function AttendanceStatBox({ label, value, color = 'blue' }) {
 export default function AttendanceBarChart() {
   const authUser = useSelector(selectAuthUser);
   const [chartData, setChartData] = useState([]);
+  const [monthlyAttendance, setMonthlyAttendance] = useState({});
   const [stats, setStats] = useState({
     totalWorkingDays: 0,
     presentCount: 0,
@@ -98,6 +99,7 @@ export default function AttendanceBarChart() {
             : detailedData;
 
           if (empDetailed?.dailyAttendance) {
+            setMonthlyAttendance(empDetailed.dailyAttendance);
             const today = new Date();
             const dayOfWeek = today.getDay();
             const monday = new Date(today);
@@ -152,84 +154,128 @@ export default function AttendanceBarChart() {
       }));
 
   return (
-    <div className="bg-white rounded-[2.5rem] border border-gray-300 p-5 shadow-sm hover:shadow-xl transition-all duration-500 min-h-[340px]">
+    <div className="bg-white rounded-[2.5rem] border border-gray-300 p-5 mx-3 shadow-sm hover:shadow-xl transition-all duration-500 min-h-[340px]">
       <div className="flex flex-col gap-6">
         {/* Header */}
-        <div className="flex items-center justify-between pl-1">
-          <h3 className="text-xl font-bold text-[#004475] uppercase tracking-widest flex items-center gap-3 underline decoration-[#004475]/30">
-            Weekly Attendance
+        <div className="flex justify-center w-full mb-2">
+          <h3 className="text-2xl font-bold text-[#004475] uppercase tracking-widest flex items-center justify-center underline decoration-[#004475]/30">
+            Monthly Attendance
           </h3>
-          <div className="px-3 py-1 bg-blue-50 text-[#004475] text-[10px] font-bold rounded-lg uppercase tracking-widest">
-            {isLoading ? 'Loading...' : 'Current Week'}
-          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
-          {/* Nivo Bar Chart */}
-          <div className="lg:col-span-7">
-            {isLoading ? (
-              <div className="h-[220px] flex items-center justify-center">
-                <div className="w-8 h-8 border-4 border-blue-500/20 border-t-[#004475] rounded-full animate-spin" />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-16 items-center">
+          {/* Monthly Calendar */}
+          <div className="lg:col-span-6 flex justify-end">
+            <div className="w-full max-w-sm p-4 border border-[#004475] rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300">
+              <h3 className="text-center text-red-500 font-bold uppercase tracking-wider mb-4 text-[13px]">
+                {new Date().toLocaleString('default', { month: 'long' })}
+              </h3>
+
+              <div className="grid grid-cols-7 gap-2 mb-4 text-center border-b border-gray-100 pb-2">
+                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, idx) => (
+                  <span key={idx} className={`text-xs font-bold ${idx === 0 ? 'text-red-500' : 'text-slate-400'}`}>
+                    {day}
+                  </span>
+                ))}
               </div>
-            ) : (
-              <div className="h-[220px] w-full">
-                <ResponsiveBar
-                  data={data}
-                  keys={['hours']}
-                  indexBy="day"
-                  margin={{ top: 20, right: 0, bottom: 40, left: 0 }}
-                  padding={0.5}
-                  borderRadius={6}
-                  colors={({ data: d }) => getBarColor(d.code)}
-                  axisTop={null}
-                  axisRight={null}
-                  axisLeft={null}
-                  axisBottom={{
-                    tickSize: 0,
-                    tickPadding: 16,
-                    tickRotation: 0,
-                  }}
-                  enableGridY={true}
-                  gridYValues={4}
-                  enableLabel={false}
-                  tooltip={({ id, value, color, data: d }) => (
-                    <div className="px-3 py-2 bg-white border border-gray-100 rounded-xl shadow-lg flex items-center gap-2">
-                      <span className="w-3 h-3 rounded-full" style={{ backgroundColor: color }}></span>
-                      <span className="text-[13px] font-bold text-gray-700">{d.day}:</span>
-                      <span className="text-[13px] font-black" style={{ color }}>{d.status} ({value} hrs)</span>
-                    </div>
-                  )}
-                  theme={{
-                    grid: {
-                      line: {
-                        stroke: '#f1f5f9',
-                        strokeWidth: 1,
-                        strokeDasharray: '4 4',
-                      },
-                    },
-                    axis: {
-                      ticks: {
-                        text: {
-                          fontSize: 11,
-                          fontWeight: 700,
-                          fill: '#94a3b8',
-                        },
-                      },
-                    },
-                  }}
-                  role="application"
-                  ariaLabel="Weekly Attendance Bar Chart"
-                />
+
+              <div className="grid grid-cols-7 gap-y-4 gap-x-2 text-center relative">
+                <style>{`
+                  @keyframes strike-out-diagonal {
+                    0% { transform: rotate(15deg) scaleX(0); opacity: 0; }
+                    100% { transform: rotate(15deg) scaleX(1); opacity: 1; }
+                  }
+                `}</style>
+                {(() => {
+                  const today = new Date();
+                  const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).getDay();
+                  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+                  const todayDate = today.getDate();
+                  const todayIdx = firstDayOfMonth + todayDate - 1;
+                  const todayWeekIndex = Math.floor(todayIdx / 7);
+
+                  return Array.from({ length: firstDayOfMonth }, () => null)
+                    .concat(Array.from({ length: daysInMonth }, (_, i) => i + 1))
+                    .map((date, idx) => {
+                      const isSunday = idx % 7 === 0;
+                      const isToday = date === todayDate;
+                      const isPast = date && date < todayDate;
+                      const isCurrentWeek = Math.floor(idx / 7) === todayWeekIndex;
+
+                      let status = null;
+                      let className = 'relative flex items-center justify-center w-8 h-8 mx-auto text-[14px] font-semibold rounded-full ';
+                      if (date) {
+                        const dateKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
+                        status = monthlyAttendance[dateKey];
+
+                        if (status === 'CH') {
+                          className += 'bg-red-500 text-white shadow-sm';
+                        } else if (status === 'A' || status === 'LOP') {
+                          className += 'bg-yellow-500 text-white shadow-sm';
+                        } else if (status === 'L') {
+                          className += 'bg-green-500 text-white shadow-sm';
+                        } else if (isToday) {
+                          className += 'bg-[#004475] text-white shadow-md';
+                        } else if (isCurrentWeek) {
+                          className += 'border border-blue-300 text-[#004475]';
+                          if (isSunday) className = className.replace('text-[#004475]', 'text-red-500');
+                        } else {
+                          className += isSunday ? 'text-red-500' : 'text-[#004475]';
+                        }
+
+                        if (isPast && !['CH', 'A', 'LOP', 'L'].includes(status)) {
+                          className += ' opacity-60';
+                        }
+                      }
+
+                      return (
+                        <div key={idx} className={className}>
+                          {date ? (
+                            <>
+                              <span>{date}</span>
+                              {(isPast && !['CH', 'A', 'LOP', 'L'].includes(status)) && (
+                                <span
+                                  className="absolute left-[15%] right-[15%] top-1/2 h-[1.5px] bg-slate-500 origin-right"
+                                  style={{ animation: 'strike-out-diagonal 0.5s ease-out forwards', animationDelay: `${date * 0.03}s`, transform: 'rotate(15deg) scaleX(0)' }}
+                                />
+                              )}
+                            </>
+                          ) : ''}
+                        </div>
+                      );
+                    });
+                })()}
               </div>
-            )}
+            </div>
           </div>
 
-          {/* Stats Panel — 2×2 grid */}
-          <div className="lg:col-span-5 grid grid-cols-2 gap-7 self-center">
-            <AttendanceStatBox label="Working Days" value={stats.totalWorkingDays} color="blue" />
-            <AttendanceStatBox label="Present" value={stats.presentCount} color="blue" />
-            <AttendanceStatBox label="Absent" value={stats.absentCount} color="blue" />
-            <AttendanceStatBox label="On Leave" value={stats.onLeave} color="blue" />
+          {/* Stats Panel & Legend */}
+          <div className="lg:col-span-6 flex flex-col gap-8 self-center">
+            <div className="grid grid-cols-2 gap-7">
+              <AttendanceStatBox label="Working Days" value={stats.totalWorkingDays} color="blue" />
+              <AttendanceStatBox label="Present" value={stats.presentCount} color="blue" />
+              <AttendanceStatBox label="Absent" value={stats.absentCount} color="blue" />
+              <AttendanceStatBox label="On Leave" value={stats.onLeave} color="blue" />
+            </div>
+
+            {/* Legend below stats */}
+            <div className="pt-4 border-t border-gray-100 flex flex-col items-center gap-2">
+              <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Monthly Activities Indicator</span>
+              <div className="flex items-center justify-end gap-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                  <span>Holiday</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+                  <span>LOP</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                  <span>Leave</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -275,7 +275,7 @@ export default function MarkAttendanceModal({
     <div className="flex justify-end gap-3 w-full">
       <Button
         onClick={onClose}
-        className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium bg-white hover:bg-gray-50"
+        className="px-4 py-2 border border-gray-800 rounded-lg text-gray-800 font-medium bg-white hover:bg-gray-50"
       >
         Cancel
       </Button>

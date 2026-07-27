@@ -1062,7 +1062,7 @@ const InvoiceTable = ({ onRefresh }) => {
         onSelectClient={handleClientSelect}
         clients={clients}
         invoices={invoicesData}
-        initialData={editingInvoice || duplicateSource} // Pass editing data
+        initialData={editingInvoice || (duplicateSource ? { ...duplicateSource, invoiceNumber: null, id: null } : null)} // Pass editing data
         nextInvoiceNumber={getNextInvoiceNumber()}
       />
 

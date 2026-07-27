@@ -143,12 +143,16 @@ const FullYearCalendar = ({ year, holidays, onHolidayClick }) => {
             return false;
           });
 
+          const isSunday = new Date(year, monthIndex, dateNum).getDay() === 0;
+
           let dayClass = "h-6 w-6 flex items-center justify-center text-[11px] mx-auto ";
 
           if (isToday) {
             dayClass += " bg-[#004475] text-white rounded-full font-bold shadow-sm";
           } else if (holiday) {
             dayClass += " text-red-500 font-bold cursor-pointer hover:bg-red-50 rounded-full hover:scale-110 transition-transform";
+          } else if (isSunday) {
+            dayClass += " text-red-500 font-bold";
           } else {
             dayClass += " text-gray-700 font-medium";
           }
@@ -158,7 +162,7 @@ const FullYearCalendar = ({ year, holidays, onHolidayClick }) => {
               key={`day-${dateNum}`}
               className={dayClass}
               onClick={() => holiday && onHolidayClick(holiday)}
-              title={holiday ? holiday.holiday : ''}
+              title={holiday ? holiday.holiday : (isSunday ? 'Sunday' : '')}
             >
               {dateNum}
             </div>
@@ -449,22 +453,7 @@ const HolidayListTab = ({
         <div className="flex justify-end w-full">
           {/* Right Side: Filters & Actions */}
           <div className="flex items-center gap-3 flex-wrap md:flex-nowrap">
-            {/* Year Dropdown */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-700 whitespace-nowrap">
-                Year :
-              </span>
-              <FilterDropdown
-                options={yearOptions}
-                value={selectedYear}
-                onChange={(val) => {
-                  setSelectedYear(val);
-                  if (val === 'All') setSelectedMonthIndex(null);
-                }}
-                placeholder="Year"
-                className="min-w-[110px]"
-              />
-            </div>
+
 
             <div className="relative">
               <input
@@ -485,6 +474,22 @@ const HolidayListTab = ({
                   <X size={14} className="text-gray-400 hover:text-red-500" />
                 </IconButton>
               )}
+            </div>
+            {/* Year Dropdown */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                Year :
+              </span>
+              <FilterDropdown
+                options={yearOptions}
+                value={selectedYear}
+                onChange={(val) => {
+                  setSelectedYear(val);
+                  if (val === 'All') setSelectedMonthIndex(null);
+                }}
+                placeholder="Year"
+                className="min-w-[110px]"
+              />
             </div>
 
             {/* Export CSV Button */}
@@ -517,9 +522,9 @@ const HolidayListTab = ({
         </div>
 
         {/* Line 2: Month Selector and Banner */}
-        <div className="flex flex-col xl:flex-row gap-4 mb-4 items-stretch justify-between">
-          {/* Left Side: Month Selector */}
-          <div className="flex flex-col w-full overflow-hidden xl:w-auto shrink-0 self-center">
+        {/* <div className="flex flex-col xl:flex-row gap-4 mb-4 items-stretch justify-between"> */}
+        {/* Left Side: Month Selector */}
+        {/* <div className="flex flex-col w-full overflow-hidden xl:w-auto shrink-0 self-center">
             <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 w-full xl:max-w-[400px]">
               {generatedMonths.map((m, idx) => {
                 const isFilterActive = selectedMonthIndex !== null && m.index === selectedMonthIndex && (selectedYear === 'All' || m.actualYear.toString() === selectedYear);
@@ -555,16 +560,16 @@ const HolidayListTab = ({
                 );
               })}
             </div>
-          </div>
+          </div> */}
 
-          {/* Right Side: Banner Node */}
-          {bannerNode && (
+        {/* Right Side: Banner Node */}
+        {/* {bannerNode && (
             <div className="w-full xl:max-w-xl shrink-0">
               {bannerNode}
             </div>
-          )}
-        </div>
+          )} */}
       </div>
+
     );
   };
 
@@ -669,71 +674,71 @@ const HolidayListTab = ({
   };
 
   const bannerNode = showBanner ? (() => {
-        if (!featuredHoliday) {
-          return (
-            <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl p-6 md:p-8 flex flex-col items-center justify-center shadow-sm border border-blue-100 min-h-[120px] h-full text-center">
-              <div className="bg-blue-100/50 p-3 rounded-full mb-3">
-                <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-blue-900">No Holidays This Month</h3>
-              <p className="text-sm text-blue-600/70 mt-1">There are no upcoming holidays scheduled for the current month.</p>
-            </div>
-          );
-        }
+    if (!featuredHoliday) {
+      return (
+        <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl p-6 md:p-8 flex flex-col items-center justify-center shadow-sm border border-blue-100 min-h-[120px] h-full text-center">
+          <div className="bg-blue-100/50 p-3 rounded-full mb-3">
+            <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold text-blue-900">No Holidays This Month</h3>
+          <p className="text-sm text-blue-600/70 mt-1">There are no upcoming holidays scheduled for the current month.</p>
+        </div>
+      );
+    }
 
-        const daysLeft = calculateDaysLeft(featuredHoliday.date);
-        return (
-          <div
-            className="relative rounded-xl overflow-hidden shadow-md border border-blue-900/20 min-h-[120px] h-full flex items-end p-5 md:p-6"
-            style={{
-              backgroundColor: '#154b9a',
-              backgroundImage: featuredHoliday.imageUrl ? `url(${featuredHoliday.imageUrl})` : 'none',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center'
-            }}
-          >
-            {/* Gradient Overlay for text readability */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0a254c] via-[#0a254c]/60 to-transparent"></div>
+    const daysLeft = calculateDaysLeft(featuredHoliday.date);
+    return (
+      <div
+        className="relative rounded-xl overflow-hidden shadow-md border border-blue-900/20 min-h-[120px] h-full flex items-end p-5 md:p-6"
+        style={{
+          backgroundColor: '#154b9a',
+          backgroundImage: featuredHoliday.imageUrl ? `url(${featuredHoliday.imageUrl})` : 'none',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        }}
+      >
+        {/* Gradient Overlay for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0a254c] via-[#0a254c]/60 to-transparent"></div>
 
-            <div className="relative z-10 w-full flex flex-col md:flex-row items-start md:items-end justify-between gap-4 text-white">
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-blue-200/90 mb-0.5">
-                  {bannerTitle}
-                </span>
-                <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight drop-shadow-md">{featuredHoliday.holiday}</h2>
-                <div className="flex items-center gap-1.5 text-xs md:text-sm font-medium text-blue-100 mt-1 drop-shadow-md">
-                  <Calendar size={14} />
-                  <span>
-                    {getLocalDate(featuredHoliday.date).toLocaleDateString('en-GB', {
-                      weekday: 'long',
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric'
-                    })}
-                  </span>
-                </div>
-              </div>
-              <div className="flex flex-col items-start md:items-end gap-2 self-start md:self-end">
-                <div className="px-5 py-2.5 bg-black/30 border border-white/10 rounded-xl flex flex-col items-center justify-center min-w-[100px] backdrop-blur-md shadow-lg">
-                  <span className="text-2xl font-bold leading-none mb-1 drop-shadow-md">{Math.abs(daysLeft)}</span>
-                  <span className="text-[9px] font-bold uppercase tracking-widest text-blue-200/90 drop-shadow-md">
-                    {daysLeft === 0 ? "TODAY" : (daysLeft < 0 ? "DAYS AGO" : "DAYS LEFT")}
-                  </span>
-                </div>
-                
-                <button
-                  onClick={() => handleViewHoliday(featuredHoliday)}
-                  className="text-[11px] font-bold text-white hover:text-blue-200 flex items-center gap-1 transition-colors mt-1 drop-shadow-md"
-                >
-                  View Details <span className="text-[14px]">→</span>
-                </button>
-              </div>
+        <div className="relative z-10 w-full flex flex-col md:flex-row items-start md:items-end justify-between gap-4 text-white">
+          <div className="flex flex-col gap-1">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-blue-200/90 mb-0.5">
+              {bannerTitle}
+            </span>
+            <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight drop-shadow-md">{featuredHoliday.holiday}</h2>
+            <div className="flex items-center gap-1.5 text-xs md:text-sm font-medium text-blue-100 mt-1 drop-shadow-md">
+              <Calendar size={14} />
+              <span>
+                {getLocalDate(featuredHoliday.date).toLocaleDateString('en-GB', {
+                  weekday: 'long',
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric'
+                })}
+              </span>
             </div>
           </div>
-        );
-      })() : null;
+          <div className="flex flex-col items-start md:items-end gap-2 self-start md:self-end">
+            <div className="px-5 py-2.5 bg-black/30 border border-white/10 rounded-xl flex flex-col items-center justify-center min-w-[100px] backdrop-blur-md shadow-lg">
+              <span className="text-2xl font-bold leading-none mb-1 drop-shadow-md">{Math.abs(daysLeft)}</span>
+              <span className="text-[9px] font-bold uppercase tracking-widest text-blue-200/90 drop-shadow-md">
+                {daysLeft === 0 ? "TODAY" : (daysLeft < 0 ? "DAYS AGO" : "DAYS LEFT")}
+              </span>
+            </div>
+
+            <button
+              onClick={() => handleViewHoliday(featuredHoliday)}
+              className="text-[11px] font-bold text-white hover:text-blue-200 flex items-center gap-1 transition-colors mt-1 drop-shadow-md"
+            >
+              View Details <span className="text-[14px]">→</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  })() : null;
 
   return (
     <div className="space-y-4">
@@ -784,7 +789,9 @@ const HolidayListTab = ({
             </div>
           </div>
         </div> */}
-        <div className="overflow-y-auto">
+
+        {/* // custom table for holiday list */}
+        {/* <div className="overflow-y-auto">
           <CustomTable
             maxHeight="60vh"
             columns={columns}
@@ -804,7 +811,9 @@ const HolidayListTab = ({
               actions: 'right',
             }}
           />
-        </div>
+        </div> */}
+
+        {/* --------------------------- */}
         <div className="p-4 bg-gray-50 border-t border-gray-300 text-xs text-gray-500">
           <div className="flex justify-between items-center">
             <div>
@@ -825,7 +834,7 @@ const HolidayListTab = ({
                 official holidays
               </p>
               <p className="mt-1 text-xs">
-                Click "Details" to see more information about each holiday.
+                Click "Date" to see more information about each holiday.
               </p>
             </div>
             <div className="text-right">

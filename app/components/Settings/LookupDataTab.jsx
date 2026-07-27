@@ -574,6 +574,14 @@ export default function LookupDataTab() {
                 placeholder="Filter lookup categories..."
                 className="w-full pl-8 pr-3 py-1.5 border border-gray-300 rounded-lg text-sm text-slate-800 bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-gray-400"
               />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-2 top-2 text-gray-400 hover:text-gray-600 p-0.5 rounded-md focus:outline-none focus:ring-1 focus:ring-[#004475]/20"
+                >
+                  <X size={16} />
+                </button>
+              )}
             </div>
             <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-bold border border-blue-100 flex-shrink-0">
               {categories.length} Categories
@@ -1030,7 +1038,7 @@ export default function LookupDataTab() {
                   setNewCategoryDesc('');
                 }}
                 disabled={isCreatingCategory}
-                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 rounded-xl transition-all disabled:opacity-50"
+                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 rounded-xl transition-all disabled:opacity-50 border border-gray-600"
               >
                 Cancel
               </button>

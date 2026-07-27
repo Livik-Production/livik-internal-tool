@@ -443,7 +443,7 @@ export default function CRMLeadModal(props) {
               type="button"
               disabled={isSubmitting}
               onClick={() => setShowAddLeadModal(false)}
-              className="px-5 py-2 border border-slate-300 hover:bg-slate-50 text-slate-705 font-bold text-sm rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-5 py-2 border border-gray-800 hover:bg-slate-50 text-slate-705 font-bold text-sm rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {modalMode === 'view' ? 'Close' : 'Cancel'}
             </button>

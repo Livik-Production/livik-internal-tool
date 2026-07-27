@@ -453,6 +453,7 @@ const AssetForm = ({
   onEdit,
   onBack,
   isViewMode = false,
+  isEmployeePortal = false,
   initialData = null,
   existingAssets = [],
   isSubmitting = false,
@@ -708,11 +709,13 @@ const AssetForm = ({
               </label>
             </div>
 
-            <div className="md:col-span-2 mt-2">
-              <h3 className="text-sm font-semibold text-gray-700 mb-2 border-b pb-1">
-                Purchase Information
-              </h3>
-            </div>
+            {!isEmployeePortal && (
+              <>
+                <div className="md:col-span-2 mt-2">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-2 border-b pb-1">
+                    Purchase Information
+                  </h3>
+                </div>
 
             <div className="space-y-1">
               <label className="text-xs text-gray-600 block">
@@ -883,6 +886,8 @@ const AssetForm = ({
                 />
               </label>
             </div>
+              </>
+            )}
           </div>
         </form>
       </div>
@@ -918,12 +923,12 @@ const AssetForm = ({
           <div className="flex items-center gap-4">
             {!isViewMode ? (
               <>
-                <Button onClick={onCancel} className="min-w-[100px]">
+                <Button onClick={onCancel} className="min-w-[100px] h-[38px] border border-gray-800 rounded-xl">
                   Cancel
                 </Button>
                 <PrimaryButton
                   onClick={handleSubmit}
-                  className="min-w-[120px] flex items-center justify-center gap-2"
+                  className="min-w-[120px] h-[40px] flex items-center justify-center gap-2"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? (

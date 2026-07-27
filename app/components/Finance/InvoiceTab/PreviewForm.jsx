@@ -2,16 +2,23 @@
 
 import React, { useState, useEffect } from 'react';
 
+import Loader from '../../Loader';
+
 const PreviewForm = ({
   invoiceData = {},
   initialCompanyDetails = null,
   letterPad = 'with', // "with" | "without"
 }) => {
   const [companyDetails, setCompanyDetails] = useState(initialCompanyDetails);
+  const [isLoading, setIsLoading] = useState(!initialCompanyDetails);
 
   useEffect(() => {
-    if (initialCompanyDetails) return;
+    if (initialCompanyDetails) {
+      setIsLoading(false);
+      return;
+    }
 
+    let isMounted = true;
     const fetchCompanyDetails = async () => {
       try {
         const response = await fetch('/api/companyDetails');
@@ -19,15 +26,29 @@ const PreviewForm = ({
         if (response.ok) {
           const data = await response.json();
 
-          setCompanyDetails(data);
+          if (isMounted) setCompanyDetails(data);
         }
       } catch (error) {
         console.error('Error fetching company details:', error);
+      } finally {
+        if (isMounted) setIsLoading(false);
       }
     };
 
     fetchCompanyDetails();
-  }, []);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [initialCompanyDetails]);
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-full min-h-[400px]">
+        <Loader label="Loading preview..." />
+      </div>
+    );
+  }
 
   const {
     client,
@@ -359,11 +380,23 @@ const PreviewForm = ({
                 </p>
 
                 <h2 className="text-[14px] font-bold text-[#111827] leading-tight">
-                  {client?.name || 'Buyers Company Name'}
+                  {client?.name ||
+                    client?.clientName ||
+                    client?.client_name ||
+                    client?.customerName ||
+                    client?.customer_name ||
+                    client?.companyName ||
+                    client?.company_name ||
+                    client?.fullName ||
+                    client?.full_name ||
+                    (client?.firstName && client?.lastName
+                      ? `${client.firstName} ${client.lastName}`
+                      : client?.firstName) ||
+                    'Buyers Company Name'}
                 </h2>
 
                 <p className="w-[65%] text-[12px] text-[#374151] leading-tight mt-1 break-words">
-                  {client?.address || 'No. 8, Round Road'}
+                  {client?.address || client?.address1 || client?.billingAddress || 'No. 8, Round Road'}
                 </p>
 
                 {client?.address2 && (
@@ -372,11 +405,17 @@ const PreviewForm = ({
                   </p>
                 )}
 
+                {(client?.city || client?.state || client?.pincode) && (
+                  <p className="w-[65%] text-[12px] text-[#374151] leading-tight break-words">
+                    {[client?.city, client?.state, client?.pincode].filter(Boolean).join(', ')}
+                  </p>
+                )}
+
                 <div className="mt-1">
                   <p className="text-[12px] text-[#374151] leading-tight flex">
                     <span className="w-20">GSTIN/UIN</span>
 
-                    <span>: {client?.gstin || client?.gst || '123456'}</span>
+                    <span>: {client?.gstnNumber || client?.gstin || client?.gst || '123456'}</span>
                   </p>
 
                   <p className="text-[12px] text-[#374151] leading-tight flex py-1">

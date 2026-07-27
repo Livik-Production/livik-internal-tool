@@ -332,8 +332,8 @@ export default function RightsSelectionModal({
       <div className="flex justify-end gap-3">
         {!isViewMode ? (
           <>
-            <Button onClick={handleCancel} disabled={saving}>
-              CANCEL
+            <Button onClick={handleCancel} disabled={saving} className='rounded-lg px-2 py-1 border border-gray-800'>
+              Cancel
             </Button>
             <PrimaryButton
               onClick={handleSave}

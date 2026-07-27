@@ -9,7 +9,7 @@ import {
 import { showSuccessToast, showErrorToast } from '../Toast';
 
 export default function NumberFormatsTab() {
-  const [isSaving, setIsSaving] = useState(false);
+  const [isSaving, setIsSaving] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // State for Invoice formats
@@ -124,19 +124,20 @@ export default function NumberFormatsTab() {
     }));
   };
 
-  const handleSave = async (e) => {
-    e.preventDefault();
-    setIsSaving(true);
+  const handleSaveSection = async (section) => {
+    setIsSaving(section);
 
     try {
-      const payload = {
-        invoice: invoiceConfig,
-        employee: employeeConfig,
-        contract_employee: contractEmployeeConfig,
-      };
-      Object.keys(assetConfigs).forEach(type => {
-        payload[`asset_${type}`] = assetConfigs[type];
-      });
+      let payload = {};
+      if (section === 'invoice') {
+        payload.invoice = invoiceConfig;
+      } else if (section === 'employee') {
+        payload.employee = employeeConfig;
+      } else if (section === 'contract') {
+        payload.contract_employee = contractEmployeeConfig;
+      } else if (section === 'asset') {
+        payload[`asset_${selectedAssetType}`] = assetConfigs[selectedAssetType] || getAssetDefaultConfig(selectedAssetType);
+      }
 
       const res = await fetch('/api/number-formats', {
         method: 'PUT',
@@ -150,12 +151,13 @@ export default function NumberFormatsTab() {
         throw new Error('Failed to update number formats');
       }
 
-      showSuccessToast('Number formats updated successfully!');
+      const sectionName = section === 'contract' ? 'Contract Employee' : section === 'asset' ? 'Asset Tag' : section.charAt(0).toUpperCase() + section.slice(1);
+      showSuccessToast(`${sectionName} format updated successfully!`);
     } catch (error) {
       console.error(error);
       showErrorToast('Failed to save number formats.');
     } finally {
-      setIsSaving(false);
+      setIsSaving(null);
     }
   };
 
@@ -197,7 +199,7 @@ export default function NumberFormatsTab() {
     <div className="space-y-6 max-w-5xl mx-2 p-1">
       {/* Tab Header Description */}
 
-      <form onSubmit={handleSave} className="space-y-6">
+      <div className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* ================= INVOICE FORMAT CARD ================= */}
           <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
@@ -303,6 +305,40 @@ export default function NumberFormatsTab() {
                   {getFormattedNumber(invoiceConfig)}
                 </span>
               </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setInvoiceConfig({
+                    prefix: 'INV-',
+                    nextNumber: '1001',
+                    padding: 4,
+                    suffix: '-2026',
+                  });
+                  showSuccessToast('Reset to default.');
+                }}
+                className="px-3 py-1.5 border border-gray-600 text-gray-600 font-semibold text-xs rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors"
+              >
+                Reset
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSaveSection('invoice')}
+                disabled={isSaving === 'invoice'}
+                className="px-4 py-1.5 bg-[#004475] text-white font-semibold text-xs rounded-xl hover:bg-[#003358] active:bg-[#00223a] transition-all flex items-center gap-2 shadow-sm"
+              >
+                {isSaving === 'invoice' ? (
+                  <>
+                    <div className="h-3 w-3 border-[1.5px] border-white border-t-transparent rounded-full animate-spin"></div>
+                    Saving...
+                  </>
+                ) : (
+                  'Save'
+                )}
+              </button>
             </div>
           </div>
 
@@ -411,6 +447,40 @@ export default function NumberFormatsTab() {
                 </span>
               </div>
             </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setEmployeeConfig({
+                    prefix: 'LK',
+                    nextNumber: '101',
+                    padding: 3,
+                    suffix: '',
+                  });
+                  showSuccessToast('Reset to default.');
+                }}
+                className="px-3 py-1.5 border border-gray-600 text-gray-600 font-semibold text-xs rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors"
+              >
+                Reset
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSaveSection('employee')}
+                disabled={isSaving === 'employee'}
+                className="px-4 py-1.5 bg-[#004475] text-white font-semibold text-xs rounded-xl hover:bg-[#003358] active:bg-[#00223a] transition-all flex items-center gap-2 shadow-sm"
+              >
+                {isSaving === 'employee' ? (
+                  <>
+                    <div className="h-3 w-3 border-[1.5px] border-white border-t-transparent rounded-full animate-spin"></div>
+                    Saving...
+                  </>
+                ) : (
+                  'Save'
+                )}
+              </button>
+            </div>
           </div>
 
           {/* ================= CONTRACT EMPLOYEE ID FORMAT CARD ================= */}
@@ -517,6 +587,40 @@ export default function NumberFormatsTab() {
                   {getFormattedNumber(contractEmployeeConfig)}
                 </span>
               </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setContractEmployeeConfig({
+                    prefix: 'LKC',
+                    nextNumber: '101',
+                    padding: 3,
+                    suffix: '',
+                  });
+                  showSuccessToast('Reset to default.');
+                }}
+                className="px-3 py-1.5 border border-gray-600 text-gray-600 font-semibold text-xs rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors"
+              >
+                Reset
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSaveSection('contract')}
+                disabled={isSaving === 'contract'}
+                className="px-4 py-1.5 bg-[#004475] text-white font-semibold text-xs rounded-xl hover:bg-[#003358] active:bg-[#00223a] transition-all flex items-center gap-2 shadow-sm"
+              >
+                {isSaving === 'contract' ? (
+                  <>
+                    <div className="h-3 w-3 border-[1.5px] border-white border-t-transparent rounded-full animate-spin"></div>
+                    Saving...
+                  </>
+                ) : (
+                  'Save'
+                )}
+              </button>
             </div>
           </div>
 
@@ -643,55 +747,41 @@ export default function NumberFormatsTab() {
                 </span>
               </div>
             </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setAssetConfigs(prev => ({
+                    ...prev,
+                    [selectedAssetType]: getAssetDefaultConfig(selectedAssetType)
+                  }));
+                  showSuccessToast('Reset to default.');
+                }}
+                className="px-3 py-1.5 border border-gray-600 text-gray-600 font-semibold text-xs rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors"
+              >
+                Reset
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSaveSection('asset')}
+                disabled={isSaving === 'asset'}
+                className="px-4 py-1.5 bg-[#004475] text-white font-semibold text-xs rounded-xl hover:bg-[#003358] active:bg-[#00223a] transition-all flex items-center gap-2 shadow-sm"
+              >
+                {isSaving === 'asset' ? (
+                  <>
+                    <div className="h-3 w-3 border-[1.5px] border-white border-t-transparent rounded-full animate-spin"></div>
+                    Saving...
+                  </>
+                ) : (
+                  'Save'
+                )}
+              </button>
+            </div>
           </div>
         </div>
-
-        {/* Action Buttons */}
-        <div className="flex justify-end gap-3 pt-2">
-          <button
-            type="button"
-            onClick={() => {
-              setInvoiceConfig({
-                prefix: 'INV-',
-                nextNumber: '1001',
-                padding: 4,
-                suffix: '-2026',
-              });
-              setEmployeeConfig({
-                prefix: 'LK',
-                nextNumber: '101',
-                padding: 3,
-                suffix: '',
-              });
-              setContractEmployeeConfig({
-                prefix: 'LKC',
-                nextNumber: '101',
-                padding: 3,
-                suffix: '',
-              });
-              setAssetConfigs({});
-              showSuccessToast('Reset configurations to default.');
-            }}
-            className="px-4 py-2 border border-gray-200 text-gray-600 font-semibold text-sm rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors"
-          >
-            Reset Form
-          </button>
-          <button
-            type="submit"
-            disabled={isSaving}
-            className="px-6 py-2 bg-[#004475] text-white font-semibold text-sm rounded-xl hover:bg-[#003358] active:bg-[#00223a] transition-all flex items-center gap-2 shadow-sm"
-          >
-            {isSaving ? (
-              <>
-                <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                Saving...
-              </>
-            ) : (
-              'Save Formats'
-            )}
-          </button>
-        </div>
-      </form>
+      </div>
     </div>
   );
 }

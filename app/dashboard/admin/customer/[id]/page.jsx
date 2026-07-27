@@ -131,7 +131,7 @@ function CustomerDetailsContent() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center py-20 min-h-[400px]">
+      <div className="flex justify-center items-center mt-20 min-h-[400px]">
         <Loader label="Loading customer details..." size="md" />
       </div>
     );

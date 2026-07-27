@@ -377,8 +377,8 @@ const BalanceDetailModal = ({
             </div>
           ) : (
             <div
-              className="border border-gray-100 rounded-xl overflow-hidden shadow-sm"
-              style={{ maxHeight: '300px', overflowY: 'auto' }}
+              className="border border-gray-100 rounded-xl overflow-auto shadow-sm"
+              style={{ maxHeight: '300px' }}
             >
               <table className="w-full text-left text-sm border-collapse">
                 <thead className="bg-gray-50 text-gray-600 font-bold uppercase text-[10px] tracking-widest sticky top-0">

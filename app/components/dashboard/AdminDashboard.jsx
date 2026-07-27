@@ -22,6 +22,7 @@ import {
   ChartNoAxesCombined,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
+// import GreetingWeatherBanner from './GreetingWeatherBanner';
 
 const ExpensesChart = dynamic(() => import('./ExpensesChartClient'), {
   ssr: false,
@@ -31,7 +32,7 @@ const ExpensesChart = dynamic(() => import('./ExpensesChartClient'), {
 
 function AdminKpiCard({ label, value, subLabel, change }) {
   return (
-    <div className="relative overflow-hidden rounded-[2rem] p-4 mt-3 bg-white border border-gray-300 shadow-sm hover:shadow-2xl hover:shadow-[#004475]/10 hover:-translate-y-1.5 transition-all duration-500 group border-t-3 border-t-[#2daadf] hover:border-t-4 cursor-pointer">
+    <div className="relative overflow-hidden rounded-[2rem] p-4 mt-1 bg-white border border-gray-300 shadow-sm hover:shadow-2xl hover:shadow-[#004475]/10 hover:-translate-y-1.5 transition-all duration-500 group border-t-3 border-t-[#2daadf] hover:border-t-4 cursor-pointer">
       {/* Premium Shine Effect */}
       <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-blue-400/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none" />
 
@@ -410,6 +411,9 @@ export default function AdminDashboard({
         Control Center
       </div> */}
       <div className="animate-dashboard-reveal-delayed space-y-3">
+        {/* 0. Greeting, Weather & Quote */}
+        {/* <GreetingWeatherBanner designation={roleName} /> */}
+
         {/* 1. System Pulse (KPI Strip) */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 ">
           <AdminKpiCard

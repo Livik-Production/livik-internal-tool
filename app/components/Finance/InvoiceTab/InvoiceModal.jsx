@@ -394,13 +394,25 @@ const ClientSelectionModal = ({
 
         {/* Search */}
         <div className="w-full max-w-sm ml-4">
-          <input
-            type="text"
-            placeholder="Search clients by name, city, GST, mobile, or email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:border-blue-500 outline-none"
-          />
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search clients by name, city, GST, mobile, or email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:border-blue-500 outline-none pr-8"
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm('')}
+                className="absolute right-2 top-2 text-gray-400 hover:text-red-500 hover:scale-110 transition-transform"
+                title="Clear search"
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
           {searchTerm && (
             <div className="mt-1 text-xs text-blue-600 font-medium ml-1">
               Found {displayClients.length} client

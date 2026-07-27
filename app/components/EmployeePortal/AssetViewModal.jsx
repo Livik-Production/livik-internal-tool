@@ -53,6 +53,7 @@ export default function AssetViewModal({ asset, onClose }) {
           onCancel={onClose}
           onBack={null}
           isViewMode={true}
+          isEmployeePortal={true}
           initialData={formatDataForAssetForm(asset)}
         />
       </div>

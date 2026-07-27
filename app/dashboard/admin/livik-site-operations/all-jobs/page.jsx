@@ -10,6 +10,7 @@ import {
   MapPin,
   Calendar,
   XCircle,
+  X,
   ExternalLink,
   Globe,
   Check,
@@ -205,8 +206,16 @@ export default function AllJobsPage() {
               placeholder="Search jobs..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004475]/20 focus:border-[#004475]"
+              className="w-full pl-9 pr-10 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004475]/20 focus:border-[#004475]"
             />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2 top-2 text-gray-400 hover:text-gray-600 p-0.5 rounded-md focus:outline-none focus:ring-1 focus:ring-[#004475]/20"
+              >
+                <X size={16} />
+              </button>
+            )}
           </div>
 
           <select

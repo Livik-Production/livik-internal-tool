@@ -55,7 +55,7 @@ const ExperienceLetter = ({
               </p>
             </div>
 
-            <div className="mt-20">
+            <div className="mt-16">
               <p className="mb-4">Regards,</p>
               <p className="font-semibold mb-20">For {companyName}</p>
               <p className="font-semibold">Authorized Signatory</p>
@@ -72,7 +72,7 @@ const ExperienceLetter = ({
             }
             @page {
               size: A4;
-              margin: 20mm;
+              margin: 0;
             }
             .no-print {
               display: none !important;

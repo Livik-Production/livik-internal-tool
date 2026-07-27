@@ -484,24 +484,39 @@ export default function DashboardIndex() {
       }
 
       try {
+        const now = new Date();
+        const curM = now.getMonth();
+        const curY = now.getFullYear();
+        const curMStr = `${curY}-${(curM + 1).toString().padStart(2, '0')}`;
+        
+        const prevDate = new Date(curY, curM, 0); // Last day of prev month
+        const prevMStr = `${prevDate.getFullYear()}-${(prevDate.getMonth() + 1).toString().padStart(2, '0')}`;
+
         const [
           empRes,
           leaveRes,
+          permissionRes,
           holidayRes,
           assetRes,
           payslipRes,
           attendanceRes,
+          curAttendanceRes,
+          prevAttendanceRes,
         ] = await Promise.all([
           fetch(`/api/employees/${authUser.id}`),
-          fetch(`/api/hr/leave-requests?employeeId=${authUser.id}`),
+          fetch(`/api/leave?employeeId=${authUser.id}`),
+          fetch(`/api/permission?employeeId=${authUser.id}`),
           fetch('/api/hr/holidays'),
           fetch('/api/assets'),
           fetch(`/api/payroll/salary-setup?employeeId=${authUser.id}`),
-          fetch(`/api/attendance?employeeId=${authUser.id}`),
+          fetch(`/api/attendance?employeeId=${authUser.id}`), // raw logs for recent activities
+          fetch(`/api/hr/attendance?month=${curMStr}&employeeId=${authUser.id}`),
+          fetch(`/api/hr/attendance?month=${prevMStr}&employeeId=${authUser.id}`),
         ]);
 
         const empData = empRes.ok ? await empRes.json() : {};
         const leaveData = leaveRes.ok ? await leaveRes.json() : [];
+        const permissionData = permissionRes.ok ? await permissionRes.json() : [];
         const holidayData = holidayRes.ok ? await holidayRes.json() : [];
         const assetData = assetRes.ok ? await assetRes.json() : [];
         const salaryHistory = payslipRes.ok ? await payslipRes.json() : [];
@@ -509,8 +524,13 @@ export default function DashboardIndex() {
           await Promise.all([attendanceRes.ok ? attendanceRes.json() : []])
         )[0];
 
-        const pendingLeaves = leaveData.filter(
-          (l) => l.status === 'Pending'
+        const combinedLeaves = [
+          ...(Array.isArray(leaveData) ? leaveData : []),
+          ...(Array.isArray(permissionData) ? permissionData : []),
+        ];
+
+        const pendingLeaves = combinedLeaves.filter(
+          (l) => l.status?.toUpperCase() === 'PENDING'
         ).length;
 
         const assignedAssetsCount = assetData.filter((a) =>
@@ -585,61 +605,23 @@ export default function DashboardIndex() {
           .sort((a, b) => new Date(b.date) - new Date(a.date))
           .slice(0, 4);
 
-        // CALCULATE MONTHLY ATTENDANCE RATE
-        const now = new Date();
-        const curM = now.getMonth();
-        const curY = now.getFullYear();
+        const curAttendanceData = curAttendanceRes.ok ? await curAttendanceRes.json() : [];
+        const prevAttendanceData = prevAttendanceRes.ok ? await prevAttendanceRes.json() : [];
+        
+        const curAtt = Array.isArray(curAttendanceData) ? curAttendanceData[0] : curAttendanceData;
+        const prevAtt = Array.isArray(prevAttendanceData) ? prevAttendanceData[0] : prevAttendanceData;
 
-        const getWorkingDays = (y, m, stopD, hols = []) => {
-          let count = 0;
-          for (let d = 1; d <= stopD; d++) {
-            const dt = new Date(y, m, d);
-            const day = dt.getDay();
-            if (day !== 0 && day !== 6) {
-              const isH = hols.some((h) => {
-                const hd = new Date(h.holidayDate);
-                return (
-                  hd.getFullYear() === y &&
-                  hd.getMonth() === m &&
-                  hd.getDate() === d
-                );
-              });
-              if (!isH) count++;
-            }
-          }
-          return count;
-        };
-
-        // Current Month Stats
-        const workingNow = getWorkingDays(
-          curY,
-          curM,
-          now.getDate(),
-          holidayData
-        );
-        const presentNow = attendanceData.filter((a) => {
-          const ad = new Date(a.date);
-          return ad.getMonth() === curM && ad.getFullYear() === curY;
-        }).length;
-        const currentRate =
-          workingNow > 0 ? (presentNow / workingNow) * 100 : 0;
+        // Current Month Stats from HR Module API
+        const workingNow = curAtt?.workingDays || 0;
+        const presentNow = curAtt?.presentDays || 0;
+        const absentNow = curAtt?.absentDays || 0;
+        const currentRate = workingNow > 0 ? (presentNow / workingNow) * 100 : 0;
 
         // Previous Month Stats (for trend)
-        const prevDate = new Date(curY, curM, 0); // Last day of prev month
-        const prevM = prevDate.getMonth();
-        const prevY = prevDate.getFullYear();
-        const workingPrev = getWorkingDays(
-          prevY,
-          prevM,
-          prevDate.getDate(),
-          holidayData
-        );
-        const presentPrev = attendanceData.filter((a) => {
-          const ad = new Date(a.date);
-          return ad.getMonth() === prevM && ad.getFullYear() === prevY;
-        }).length;
-        const prevRate =
-          workingPrev > 0 ? (presentPrev / workingPrev) * 100 : 0;
+        const workingPrev = prevAtt?.workingDays || 0;
+        const presentPrev = prevAtt?.presentDays || 0;
+        const prevRate = workingPrev > 0 ? (presentPrev / workingPrev) * 100 : 0;
+
 
         const rateChange =
           prevRate > 0 ? `${(currentRate - prevRate).toFixed(1)}%` : '0%';
@@ -681,6 +663,12 @@ export default function DashboardIndex() {
           lastPayslip: salaryHistory[0] || null,
           attendanceRate: `${currentRate.toFixed(1)}%`,
           attendanceChange: (currentRate >= prevRate ? '+' : '') + rateChange,
+          workingDays: workingNow,
+          presentDays: presentNow,
+          absentDays: absentNow,
+          dailyAttendance: curAtt?.dailyAttendance || {},
+          calendarHolidays: holidayData,
+          calendarLeaves: combinedLeaves,
           recentActivities,
           announcements,
         });
@@ -741,7 +729,7 @@ export default function DashboardIndex() {
 
       <div className="flex-1 flex flex-col min-h-0 relative z-10 px-0.5 sm:px-1 md:px-0">
         <div className="shrink-0">
-          <DashboardModuleHeader />
+          <DashboardModuleHeader moduleName="Dashboard" hideGreeting={isEmployeeDashboard} />
         </div>
 
         <div className="flex-1 overflow-y-auto no-scrollbar min-h-0 pr-1 pb-6">

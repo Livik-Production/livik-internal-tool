@@ -386,7 +386,7 @@ export default function JobOpeningsTab({ navigationState, clearNavigationState }
                   <button
                     onClick={handleCancelEdit}
                     disabled={saving}
-                    className="px-5 py-2.5 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                    className="px-5 py-2.5 border border-gray-500 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
                   >
                     Cancel
                   </button>

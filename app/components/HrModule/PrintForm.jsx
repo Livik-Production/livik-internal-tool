@@ -79,7 +79,7 @@ export const handlePrint = (type = 'offerLetter') => {
         <style>
           @page {
             size: A4;
-            margin: 20mm;
+            margin: 0;
           }
           body {
             margin: 0;

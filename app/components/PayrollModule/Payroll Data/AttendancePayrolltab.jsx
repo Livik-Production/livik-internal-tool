@@ -8,6 +8,7 @@ import {
   CalendarPlus,
   Search,
   ChevronDown,
+  X,
 } from 'lucide-react';
 import Loader from '../../Loader';
 import { FileText } from 'lucide-react';
@@ -328,6 +329,14 @@ export default function AttendanceTabContent({
                 onChange={(e) => setLocalSearch(e.target.value)}
                 className="pl-9 pr-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-1 focus:ring-blue-500 outline-none text-sm"
               />
+              {localSearch && (
+                <button
+                  onClick={() => setLocalSearch('')}
+                  className="absolute right-2 top-2 text-gray-400 hover:text-gray-600 p-0.5 rounded-md focus:outline-none focus:ring-1 focus:ring-[#004475]/20"
+                >
+                  <X size={16} />
+                </button>
+              )}
             </div>
           </div>
 
