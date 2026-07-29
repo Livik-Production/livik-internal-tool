@@ -116,7 +116,7 @@ const RelievingLetter = ({
             }
             @page {
               size: A4;
-              margin: 20mm;
+              margin: 0;
             }
             .no-print {
               display: none !important;

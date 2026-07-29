@@ -160,7 +160,7 @@ const RightsModal = ({
 
   const renderFooter = (
     <div className="flex justify-end gap-3 w-full">
-      <Button onClick={handleClose} disabled={isSubmitting}>
+      <Button onClick={handleClose} disabled={isSubmitting} className='rounded-lg px-2 py-1 border border-gray-800'>
         Cancel
       </Button>
       <PrimaryButton

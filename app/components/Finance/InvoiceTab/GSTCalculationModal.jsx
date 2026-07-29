@@ -161,8 +161,20 @@ const GSTCalculationModal = ({
       invoiceNumber: invoiceNumber,
       date: currentDate,
       client: {
-        name: selectedClient?.name || 'Client Name',
-        address: selectedClient?.address || 'No. 8 , Round Road',
+        name: selectedClient?.name ||
+          selectedClient?.clientName ||
+          selectedClient?.client_name ||
+          selectedClient?.customerName ||
+          selectedClient?.customer_name ||
+          selectedClient?.companyName ||
+          selectedClient?.company_name ||
+          selectedClient?.fullName ||
+          selectedClient?.full_name ||
+          (selectedClient?.firstName && selectedClient?.lastName
+            ? `${selectedClient.firstName} ${selectedClient.lastName}`
+            : selectedClient?.firstName) ||
+          'Client Name',
+        address: selectedClient?.address || selectedClient?.address1 || selectedClient?.billingAddress || selectedClient?.billing_address || selectedClient?.street || 'No. 8 , Round Road',
         city: selectedClient?.city || 'Dindigul',
         gst: selectedClient?.gstnNumber || selectedClient?.gst || selectedClient?.gstin || '',
         cin: selectedClient?.cinNumber || selectedClient?.cin || '',
@@ -493,7 +505,23 @@ const GSTCalculationModal = ({
             <div className="bg-white w-full p-0 printable">
               <PreviewForm
                 invoiceData={{
-                  client: selectedClient,
+                  client: {
+                    ...selectedClient,
+                    name: selectedClient?.name ||
+                      selectedClient?.clientName ||
+                      selectedClient?.client_name ||
+                      selectedClient?.customerName ||
+                      selectedClient?.customer_name ||
+                      selectedClient?.companyName ||
+                      selectedClient?.company_name ||
+                      selectedClient?.fullName ||
+                      selectedClient?.full_name ||
+                      (selectedClient?.firstName && selectedClient?.lastName
+                        ? `${selectedClient.firstName} ${selectedClient.lastName}`
+                        : selectedClient?.firstName) ||
+                      'Buyers Company Name',
+                    address: selectedClient?.address || selectedClient?.address1 || selectedClient?.billingAddress || selectedClient?.billing_address || selectedClient?.street || 'No. 8 , Round Road',
+                  },
                   products: selectedProducts.map((p, index) => ({
                     name: p.productName || p.name || `Product ${index + 1}`,
                     description: p.description || '',

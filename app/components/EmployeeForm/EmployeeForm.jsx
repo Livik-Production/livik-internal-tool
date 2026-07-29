@@ -789,7 +789,7 @@ export default function EmployeeForm({
             <button
               type="button"
               onClick={onCancel}
-              className="px-4 py-2 rounded-md border hover:bg-gray-50"
+              className="px-4 py-2 rounded-lg border hover:bg-gray-50"
             >
               Cancel
             </button>

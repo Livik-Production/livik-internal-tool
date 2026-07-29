@@ -1,5 +1,5 @@
 'use client';
-
+ 
 import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
@@ -19,25 +19,25 @@ import Pagination from '../../../../components/Pagination';
 import Loader from '../../../../components/Loader';
 import PrimaryButton from '../../../../components/Buttons/PrimaryButton';
 import { toast } from 'react-toastify';
-
+ 
 function CustomerDetailsContent() {
   const params = useParams();
   const router = useRouter();
   const customerId = params?.id;
-
+ 
   const [customer, setCustomer] = useState(null);
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [loadingDoc, setLoadingDoc] = useState(false);
-
+ 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-
+ 
   useEffect(() => {
     if (!customerId) return;
-
+ 
     const fetchData = async () => {
       setLoading(true);
       setError(null);
@@ -47,7 +47,7 @@ function CustomerDetailsContent() {
         if (!customerRes.ok) throw new Error('Customer not found');
         const customerData = await customerRes.json();
         setCustomer(customerData);
-
+ 
         // Fetch all invoices
         const invoicesRes = await fetch('/api/invoices');
         if (invoicesRes.ok) {
@@ -65,15 +65,15 @@ function CustomerDetailsContent() {
         setLoading(false);
       }
     };
-
+ 
     fetchData();
   }, [customerId]);
-
+ 
   const handleItemsPerPageChange = (newVal) => {
     setItemsPerPage(newVal);
     setCurrentPage(1);
   };
-
+ 
   const handleViewDocument = async () => {
     try {
       setLoadingDoc(true);
@@ -90,12 +90,12 @@ function CustomerDetailsContent() {
       setLoadingDoc(false);
     }
   };
-
+ 
   const paginatedInvoices = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
     return invoices.slice(start, start + itemsPerPage);
   }, [invoices, currentPage, itemsPerPage]);
-
+ 
   // Financial Metrics
   const metrics = useMemo(() => {
     const totalCount = invoices.length;
@@ -111,7 +111,7 @@ function CustomerDetailsContent() {
       (sum, inv) => sum + Number(inv.remainingAmount || 0),
       0
     );
-
+ 
     return {
       totalCount,
       totalAmount: totalAmount.toLocaleString('en-IN', {
@@ -128,7 +128,7 @@ function CustomerDetailsContent() {
       }),
     };
   }, [invoices]);
-
+ 
   if (loading) {
     return (
       <div className="flex justify-center items-center py-20 min-h-[400px]">
@@ -136,7 +136,7 @@ function CustomerDetailsContent() {
       </div>
     );
   }
-
+ 
   if (error || !customer) {
     return (
       <div className="flex flex-col justify-center items-center py-20 bg-white rounded-2xl shadow-sm m-0.5 min-h-[400px] gap-4">
@@ -153,7 +153,7 @@ function CustomerDetailsContent() {
       </div>
     );
   }
-
+ 
   // Invoices table columns
   const columns = [
     {
@@ -219,7 +219,7 @@ function CustomerDetailsContent() {
       },
     },
   ];
-
+ 
   return (
     <div className="h-full flex flex-col space-y-1.5 min-h-0 animate-dashboard-reveal text-left">
       {/* ===== HEADER & BACK BUTTON ===== */}
@@ -240,7 +240,7 @@ function CustomerDetailsContent() {
           </div>
         </div>
       </div>
-
+ 
       {/* ===== MAIN CONTAINER ===== */}
       <div className="flex-1 flex flex-col lg:flex-row gap-3 min-h-0">
         {/* Left panel - Customer Details Card */}
@@ -249,7 +249,7 @@ function CustomerDetailsContent() {
             <Award className="text-[#33a8d9]" size={20} />
             Customer Profile
           </h2>
-
+ 
           <div className="space-y-4">
             <div>
               <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
@@ -259,7 +259,7 @@ function CustomerDetailsContent() {
                 {customer.id}
               </span>
             </div>
-
+ 
             <div>
               <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
                 Company Name
@@ -268,7 +268,7 @@ function CustomerDetailsContent() {
                 {customer.name}
               </span>
             </div>
-
+ 
             {customer.email && (
               <div>
                 <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
@@ -276,13 +276,13 @@ function CustomerDetailsContent() {
                 </span>
                 <a
                   href={`mailto:${customer.email}`}
-                  className="text-sm font-medium text-blue-600 hover:underline flex items-center gap-1.5"
+                  className="text-sm font-medium text-blue-600 hover:underline inline-flex items-center gap-1.5 w-fit"
                 >
                   <Mail size={14} /> {customer.email}
                 </a>
               </div>
             )}
-
+ 
             {customer.mobile && (
               <div>
                 <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
@@ -290,13 +290,13 @@ function CustomerDetailsContent() {
                 </span>
                 <a
                   href={`tel:${customer.mobile}`}
-                  className="text-sm font-medium text-gray-900 flex items-center gap-1.5"
+                  className="text-sm font-medium text-gray-900 inline-flex items-center gap-1.5 w-fit"
                 >
                   <Phone size={14} /> {customer.mobile}
                 </a>
               </div>
             )}
-
+ 
             {customer.website && (
               <div>
                 <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
@@ -310,13 +310,13 @@ function CustomerDetailsContent() {
                   }
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm font-medium text-blue-600 hover:underline flex items-center gap-1.5"
+                  className="text-sm font-medium text-blue-600 hover:underline inline-flex items-center gap-1.5 w-fit"
                 >
                   <Globe size={14} /> {customer.website}
                 </a>
               </div>
             )}
-
+ 
             <div>
               <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
                 Address
@@ -331,7 +331,7 @@ function CustomerDetailsContent() {
                 </span>
               </span>
             </div>
-
+ 
             <div className="grid grid-cols-2 gap-4 border-t border-gray-100 pt-3">
               <div>
                 <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
@@ -350,7 +350,7 @@ function CustomerDetailsContent() {
                 </span>
               </div>
             </div>
-
+ 
             <div className="grid grid-cols-2 gap-4 border-t border-gray-100 pt-3">
               <div>
                 <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
@@ -370,7 +370,7 @@ function CustomerDetailsContent() {
                 </span>
               </div>
             </div>
-
+ 
             <div className="grid grid-cols-2 gap-4 border-t border-gray-100 pt-3">
               <div>
                 <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
@@ -391,13 +391,13 @@ function CustomerDetailsContent() {
                 </span>
               </div>
             </div>
-
+ 
             {customer.uploads && (
               <div className="border-t border-gray-100 pt-3">
                 <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-2">
                   Uploads
                 </span>
-                <PrimaryButton 
+                <PrimaryButton
                   onClick={handleViewDocument}
                   disabled={loadingDoc}
                   className="!bg-blue-50 !text-blue-700 hover:!bg-blue-100 border border-blue-200 text-sm px-3 py-1.5 shadow-none w-full flex justify-center gap-2"
@@ -407,7 +407,7 @@ function CustomerDetailsContent() {
                 </PrimaryButton>
               </div>
             )}
-
+ 
             {customer.remarks && (
               <div className="border-t border-gray-100 pt-3">
                 <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
@@ -418,7 +418,7 @@ function CustomerDetailsContent() {
                 </p>
               </div>
             )}
-
+ 
             <div className="grid grid-cols-2 gap-4 border-t border-gray-100 pt-3 mt-4">
               <div>
                 <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
@@ -445,7 +445,7 @@ function CustomerDetailsContent() {
             </div>
           </div>
         </div>
-
+ 
         {/* Right panel - Financial Summary & Invoices Table */}
         <div className="flex-1 bg-white shadow-sm rounded-2xl p-4 m-0.5 flex flex-col min-h-0 overflow-y-auto no-scrollbar">
           {/* Financial Metrics Summary */}
@@ -453,7 +453,7 @@ function CustomerDetailsContent() {
             <FileCode className="text-[#33a8d9]" size={20} />
             Billing Summary
           </h2>
-
+ 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 shrink-0">
             <div className="bg-blue-50/50 p-3 rounded-2xl border border-blue-100/50 text-center">
               <span className="text-xs font-bold text-blue-900/60 uppercase block">
@@ -488,13 +488,13 @@ function CustomerDetailsContent() {
               </span>
             </div>
           </div>
-
+ 
           {/* Invoices List */}
           <h3 className="text-base font-bold text-gray-800 mb-3 flex items-center gap-2 shrink-0">
             <FileText size={18} className="text-gray-500" />
             Invoices History
           </h3>
-
+ 
           <div className="flex-1 min-h-0 flex flex-col">
             {invoices.length === 0 ? (
               <div className="text-center py-10 border border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
@@ -532,7 +532,7 @@ function CustomerDetailsContent() {
     </div>
   );
 }
-
+ 
 export default function CustomerDetailsPage() {
   return (
     <Suspense
@@ -546,3 +546,5 @@ export default function CustomerDetailsPage() {
     </Suspense>
   );
 }
+ 
+ 

@@ -229,7 +229,7 @@ export default function AssignRoleModal({
 
   const renderFooter = (
     <div className="flex justify-end gap-3 w-full">
-      <Button onClick={handleCloseModal} disabled={isLoading}>
+      <Button onClick={handleCloseModal} disabled={isLoading} className='rounded-lg px-2 py-1 border border-gray-800'>
         Cancel
       </Button>
       <PrimaryButton

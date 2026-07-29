@@ -15,6 +15,7 @@ import {
   Trash2,
   SquarePen,
   Loader2,
+  X,
 } from 'lucide-react';
 import { showSuccessToast, showErrorToast } from '../Toast';
 import CustomModalForm from '../CustomModalForm';
@@ -271,6 +272,14 @@ export default function TimesheetTab({ authUser }) {
             }}
             className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#004475]"
           />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2 top-2 text-gray-400 hover:text-gray-600 p-0.5 rounded-md focus:outline-none focus:ring-1 focus:ring-[#004475]/20"
+            >
+              <X size={16} />
+            </button>
+          )}
         </div>
 
         <div className="flex gap-2.5 w-full sm:w-auto">
@@ -464,7 +473,7 @@ export default function TimesheetTab({ authUser }) {
             <button
               onClick={handleCloseModal}
               disabled={isSubmitting}
-              className="px-5 py-2.5 border border-gray-200 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50"
+              className="px-5 py-2.5 border border-gray-800 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50"
             >
               Cancel
             </button>

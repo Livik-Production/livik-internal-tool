@@ -16,6 +16,7 @@ const FilterDropdown = ({
   className = '',
   disabled = false,
   error = false,
+  showScrollbar = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -107,10 +108,10 @@ const FilterDropdown = ({
             }}
           >
             <div
-              className="max-h-[160px] overflow-y-auto"
+              className={`max-h-[130px] overflow-y-auto ${showScrollbar ? '' : 'no-scrollbar'}`}
               style={{
-                scrollbarWidth: 'none',
-                msOverflowStyle: 'none',
+                scrollbarWidth: showScrollbar ? 'thin' : 'none',
+                msOverflowStyle: showScrollbar ? 'auto' : 'none',
                 WebkitOverflowScrolling: 'touch',
               }}
             >

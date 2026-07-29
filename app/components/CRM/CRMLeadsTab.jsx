@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Plus, Building2, User, Mail, Phone, MapPin, Globe, Trash, SquarePen } from 'lucide-react';
+import { Search, Plus, Building2, User, Mail, Phone, MapPin, Globe, Trash, SquarePen, X } from 'lucide-react';
 import PrimaryButton from '../Buttons/PrimaryButton';
 import IconButton from '../Buttons/IconButton';
 
@@ -46,6 +46,14 @@ export default function CRMLeadsTab({
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-72 bg-slate-50 hover:bg-slate-100/80 focus:bg-white text-sm font-semibold text-gray-700 placeholder-gray-400 pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:border-blue-300 focus:outline-hidden transition-all"
             />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2 top-2 text-gray-400 hover:text-gray-600 p-0.5 rounded-md focus:outline-none focus:ring-1 focus:ring-[#004475]/20"
+              >
+                <X size={16} />
+              </button>
+            )}
           </div>
 
           {canControlCrm && (

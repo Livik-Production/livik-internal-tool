@@ -115,7 +115,7 @@ export default function HrDashboard({
         dept: emp.department || 'No Department',
         status: isOnLeave
           ? 'On Leave'
-          : emp.status === 'ACTIVE'
+          : (emp.status || '').toUpperCase() === 'ACTIVE' || (emp.status || '').toUpperCase() === 'APPROVED'
             ? 'Active'
             : emp.status,
         avatar: emp.firstName ? emp.firstName.charAt(0).toUpperCase() : 'U',
@@ -191,9 +191,7 @@ export default function HrDashboard({
 
     const nextHoliday = sortedHolidays.find((h) => h.holidayDate >= todayStr);
 
-    const holidaysLeft = sortedHolidays.filter(
-      (h) => h.holidayDate >= todayStr
-    ).length;
+    const totalHolidays = sortedHolidays.length;
 
     const currentQuarter = Math.floor(now.getMonth() / 3) + 1;
     const thisQuarterHolidays = sortedHolidays.filter((h) => {
@@ -219,7 +217,7 @@ export default function HrDashboard({
 
     return {
       nextHoliday,
-      holidaysLeft,
+      totalHolidays,
       thisQuarterHolidays,
       daysAway,
       formattedDate,
@@ -553,10 +551,10 @@ export default function HrDashboard({
                 <div className="grid grid-cols-2 gap-3 mt-4">
                   <div className="flex items-center justify-between py-2 px-3 bg-white/10 rounded-xl border border-white/10 backdrop-blur-sm">
                     <span className="text-[9px] font-bold text-white/70 uppercase tracking-widest">
-                      Holidays Left
+                      Total Holidays
                     </span>
                     <span className="text-xs font-black">
-                      {String(holidayStats.holidaysLeft).padStart(2, '0')}
+                      {String(holidayStats.totalHolidays).padStart(2, '0')}
                     </span>
                   </div>
                   <div className="flex items-center justify-between py-2 px-3 bg-white/10 rounded-xl border border-white/10 backdrop-blur-sm">

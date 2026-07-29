@@ -80,7 +80,7 @@ function AssignProjectModal({ open, onClose, employee, onAssign, projects }) {
       <button
         type="button"
         onClick={onClose}
-        className="flex-1 max-w-[140px] px-6 py-3 text-sm font-bold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all"
+        className="flex-1 max-w-[140px] px-6 py-3 text-sm font-bold text-gray-800 bg-white border border-gray-800 rounded-xl hover:bg-gray-50 transition-all"
       >
         Cancel
       </button>

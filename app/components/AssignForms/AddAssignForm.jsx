@@ -782,7 +782,7 @@ export default function AddAssignForm({
       footer={
         mode !== 'view' && (
           <div className="flex justify-center space-x-4 items-center w-full">
-            <Button onClick={onClose} className="min-w-[100px]">
+            <Button onClick={onClose} className="min-w-[100px] h-10 border border-gray-800 rounded-xl">
               Cancel
             </Button>
 

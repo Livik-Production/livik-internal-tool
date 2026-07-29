@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
-import { Printer, Download, Mail, ChevronDown, User, FileText } from 'lucide-react';
+import { Printer, Download, Mail, ChevronDown, User, FileText, ZoomIn, ZoomOut } from 'lucide-react';
 import PrimaryButton from '../../Buttons/PrimaryButton';
 import IconButton from '../../Buttons/IconButton';
 import CustomModalForm from '../../CustomModalForm';
@@ -132,6 +132,7 @@ const OfferLetterTab = ({ isViewOnly = false }) => {
   const [showPreview, setShowPreview] = useState(false);
   const [payslipData, setPayslipData] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(0.8);
 
   const [letterContent, setLetterContent] = useState({
     name: 'MR. DOE',
@@ -294,7 +295,7 @@ const OfferLetterTab = ({ isViewOnly = false }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  
+
 
   // Handle input change and suggestions - FIXED VERSION
   const handleInputChange = (value) => {
@@ -571,10 +572,6 @@ const OfferLetterTab = ({ isViewOnly = false }) => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-1">
             {/* LEFT COLUMN: Controls */}
             <div className="space-y-6 sticky top-2 self-start">
-              {/* 1. Employee Selection with Suggestions */}
-             
-             
-
               {/* 3. Letter Type Selection Dropdown */}
               <div>
                 <h3 className="text-sm font-medium text-gray-700 mb-3">
@@ -606,56 +603,11 @@ const OfferLetterTab = ({ isViewOnly = false }) => {
                               setSelectedLetterType(canonicalId);
                               setIsLetterTypeOpen(false);
                             }}
-                            className={`px-4 py-3 cursor-pointer border-b border-gray-100 last:border-b-0 flex items-center gap-3 transition-colors ${
-                              isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'
-                            }`}
+                            className={`px-4 py-3 cursor-pointer border-b border-gray-100 last:border-b-0 flex items-center gap-3 transition-colors ${isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'
+                              }`}
                           >
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                              isSelected ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'
-                            }`}>
-                              <FileText size={20} />
-                            </div>
-                            <div>
-                              <div className={`text-sm font-semibold ${isSelected ? 'text-blue-900' : 'text-gray-900'}`}>
-                                {lt.label}
-                              </div>
-                              <div className="text-xs text-gray-500 font-medium mt-0.5">
-                                Letter Template
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                    <span className={selectedLetterType ? "text-gray-900" : "text-gray-500"}>
-                      {selectedLetterType ? getSelectedLetterLabel() : "-- Select a letter type --"}
-                    </span>
-                    <ChevronDown
-                      size={18}
-                      className={`text-gray-500 transition-transform ${isLetterTypeOpen ? "rotate-180" : ""}`}
-                    />
-                  </div>
-
-                  {isLetterTypeOpen && (
-                    <div className="absolute top-full left-0 z-20 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto no-scroll">
-                      {dynamicLetterTypes.map((lt) => {
-                        const canonicalId = mapToCanonicalId(lt.value || lt.label);
-                        const isSelected = selectedLetterType === canonicalId;
-                        return (
-                          <div
-                            key={lt.id || canonicalId}
-                            onClick={() => {
-                              setSelectedLetterType(canonicalId);
-                              setIsLetterTypeOpen(false);
-                            }}
-                            className={`px-4 py-3 cursor-pointer border-b border-gray-100 last:border-b-0 flex items-center gap-3 transition-colors ${
-                              isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'
-                            }`}
-                          >
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                              isSelected ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'
-                            }`}>
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isSelected ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'
+                              }`}>
                               <FileText size={20} />
                             </div>
                             <div>
@@ -672,6 +624,48 @@ const OfferLetterTab = ({ isViewOnly = false }) => {
                     </div>
                   )}
                 </div>
+              </div>
+
+              {/* 1. Employee Selection with Suggestions */}
+              <div className="relative w-80" ref={suggestionsRef}>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Enter Employee ID or Name
+                </label>
+                <input
+                  type="text"
+                  value={empId}
+                  onChange={(e) => handleInputChange(e.target.value)}
+                  onFocus={handleInputFocus}
+                  onClick={handleInputFocus}
+                  placeholder="Type employee ID or name..."
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+
+                {/* Suggestions dropdown */}
+                {suggestions.length > 0 && (
+                  <div className="absolute top-full left-0 z-20 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto no-scroll">
+                    {suggestions.map((emp) => (
+                      <div
+                        key={emp.id}
+                        onClick={() => handleSelectEmployee(emp)}
+                        className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0 flex items-center gap-3 transition-colors"
+                      >
+                        <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-gray-500 shrink-0">
+                          <User size={20} />
+                        </div>
+                        <div>
+                          <div className="text-sm font-semibold text-gray-900">{emp.name}</div>
+                          <div className="text-xs text-gray-500 font-medium mt-0.5">ID: {emp.id}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {employees.length === 0 && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    No employees found. Make sure your Redux store is populated.
+                  </p>
+                )}
               </div>
 
               {/* 2. Employee Details Display */}
@@ -723,46 +717,7 @@ const OfferLetterTab = ({ isViewOnly = false }) => {
                   </div>
                 </div>
               )}
- <div className="relative w-80" ref={suggestionsRef}>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Enter Employee ID or Name
-                </label>
-                <input
-                  type="text"
-                  value={empId}
-                  onChange={(e) => handleInputChange(e.target.value)}
-                  onFocus={handleInputFocus}
-                  onClick={handleInputFocus}
-                  placeholder="Type employee ID or name..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
 
-                {/* Suggestions dropdown */}
-                {suggestions.length > 0 && (
-                  <div className="absolute top-full left-0 z-20 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto no-scroll">
-                    {suggestions.map((emp) => (
-                      <div
-                        key={emp.id}
-                        onClick={() => handleSelectEmployee(emp)}
-                        className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0 flex items-center gap-3 transition-colors"
-                      >
-                        <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-gray-500 shrink-0">
-                           <User size={20} />
-                        </div>
-                        <div>
-                           <div className="text-sm font-semibold text-gray-900">{emp.name}</div>
-                           <div className="text-xs text-gray-500 font-medium mt-0.5">ID: {emp.id}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {employees.length === 0 && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    No employees found. Make sure your Redux store is populated.
-                  </p>
-                )}
-              </div>
               {/* 4. Letter Pad Type & Options */}
               <div>
                 <h3 className="font-medium text-gray-700 mb-3">
@@ -853,6 +808,7 @@ const OfferLetterTab = ({ isViewOnly = false }) => {
                 </div>
               )}
             </div>
+          </div>
           <CustomModalForm
             open={showPreview}
             onCancel={() => setShowPreview(false)}
@@ -931,11 +887,31 @@ const OfferLetterTab = ({ isViewOnly = false }) => {
               </>
             }
           >
-            <div className="flex-1 overflow-y-auto p-4 no-scroll">
-              <div className="flex justify-center">
-                {renderLetterComponent()}
+            <div className="flex-1 overflow-y-auto bg-gray-200 relative">
+              {/* Floating Zoom Controls */}
+              <div className="absolute top-4 right-8 flex gap-2 z-10 print:hidden">
+                <IconButton
+                  onClick={() => setZoomLevel(prev => Math.min(prev + 0.1, 2))}
+                  className="hover:bg-gray-300 text-gray-700 bg-white shadow-sm border border-gray-200"
+                  title="Zoom In"
+                >
+                  <ZoomIn size={18} />
+                </IconButton>
+                <IconButton
+                  onClick={() => setZoomLevel(prev => Math.max(prev - 0.1, 0.5))}
+                  className="hover:bg-gray-300 text-gray-700 bg-white shadow-sm border border-gray-200"
+                  title="Zoom Out"
+                >
+                  <ZoomOut size={18} />
+                </IconButton>
               </div>
-              <div className="pt-4 text-center text-sm text-gray-600 print:hidden">
+
+              <div className="flex justify-center" style={{ padding: '20mm' }}>
+                <div style={{ zoom: zoomLevel }}>
+                  {renderLetterComponent()}
+                </div>
+              </div>
+              <div className="pt-1 pb-4 text-center text-sm text-gray-600 print:hidden">
                 <p>
                   This is a computer generated {getSelectedLetterLabel()}. No
                   signature is required.

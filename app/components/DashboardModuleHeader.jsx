@@ -9,7 +9,7 @@ import Loader from './Loader';
 import NotificationBell from './NotificationBell';
 import ConfirmDialog from './ConfirmDialog';
 
-export default function DashboardModuleHeader({ quickActions }) {
+export default function DashboardModuleHeader({ quickActions, hideGreeting }) {
   const router = useRouter();
   const dispatch = useDispatch();
   const authUser = useSelector((state) => state.auth.user);
@@ -86,19 +86,21 @@ export default function DashboardModuleHeader({ quickActions }) {
 
   return (
     <div className="text-gray-600 relative z-[48]">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center pl-4 bg-[#f8fafc]">
-        <div className="flex flex-col [animation-delay:100ms] animate-dashboard-reveal fill-mode-forwards opacity-0">
-          <div className="text-xl md:text-3xl font-semibold mt-2 text-black">
-            <span>Welcome</span>{' '}
-            <span className="text-[#29a2d6]">{name}, </span>
-            {getGreeting()}
+      <div className={`flex flex-col md:flex-row items-start md:items-center pl-4 bg-[#f8fafc] border-b border-gray-300 ${hideGreeting ? 'justify-end' : 'justify-between'}`}>
+        {!hideGreeting && (
+          <div className="flex flex-col [animation-delay:100ms] animate-dashboard-reveal fill-mode-forwards opacity-0">
+            <div className="text-xl md:text-3xl font-semibold mt-2 text-black">
+              <span>Welcome</span>{' '}
+              <span className="text-[#29a2d6]">{name}, </span>
+              {getGreeting()}
+            </div>
+            <div className="text-[10px] font-bold text-gray-400 mt-1 mb-3 uppercase tracking-widest">
+              {designation}
+            </div>
           </div>
-          <div className="text-[10px] font-bold text-gray-400 mt-1 mb-3 uppercase tracking-widest">
-            {designation}
-          </div>
-        </div>
+        )}
 
-        <div className="flex items-center gap-3 mt-2 md:mt-0">
+        <div className="flex items-center justify-end gap-3 w-full md:w-auto mt-2 md:m-3 pb-2 md:pb-0">
           <NotificationBell placement="bottom" />
 
           <button

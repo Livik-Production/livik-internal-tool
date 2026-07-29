@@ -327,6 +327,7 @@ const CashFlowTab = ({
             onChange={setPaymentModeFilter}
             placeholder="All Methods"
             className="w-full md:w-auto"
+            showScrollbar={true}
           />
           <FilterDropdown
             options={[{ value: 'all', label: 'All Months' }, ...monthOptions]}
@@ -334,6 +335,7 @@ const CashFlowTab = ({
             onChange={setSelectedMonthNum}
             placeholder="Month"
             className="w-full md:w-auto"
+            showScrollbar={true}
           />
           <FilterDropdown
             options={[

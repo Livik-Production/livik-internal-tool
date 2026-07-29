@@ -442,6 +442,14 @@ function ProjectTeamModal({
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-[#004475] transition-all"
             />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-2 top-2 text-gray-400 hover:text-gray-600 p-0.5 rounded-md focus:outline-none focus:ring-1 focus:ring-[#004475]/20"
+              >
+                <X size={16} />
+              </button>
+            )}
           </div>
           {activeTab === 'assigned' && (
             <button
@@ -620,7 +628,7 @@ function CreateProjectModal({ open, onClose, onSubmit }) {
       <button
         type="button"
         onClick={onClose}
-        className="flex-1 max-w-[140px] px-6 py-3 text-sm font-bold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all"
+        className="flex-1 max-w-[140px] px-6 py-2.5 text-sm font-bold text-gray-600 bg-white border border-gray-800 rounded-xl hover:bg-gray-50 transition-all"
       >
         Cancel
       </button>

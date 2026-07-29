@@ -534,6 +534,7 @@ const AllExpenseTab = ({
           onChange={setSelectedMonthNum}
           placeholder="Month"
           className="w-full md:w-32"
+          showScrollbar={true}
         />
 
         <FilterDropdown
@@ -633,7 +634,7 @@ const AllExpenseTab = ({
             rowKey="id"
             className="border border-gray-200 rounded-lg"
             maxHeight="60vh"
-            showScrollbar={true}
+            showScrollbar={false}
           />
 
           <div className="mt-4">

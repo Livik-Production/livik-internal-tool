@@ -858,7 +858,7 @@ const LeaveRequestForm = ({
           type="button"
           onClick={onClose}
           disabled={isSubmitting}
-          className="py-2 px-4 text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 font-medium rounded-lg transition-colors disabled:opacity-50"
+          className="py-2 px-4 text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-600 font-medium rounded-lg transition-colors disabled:opacity-50"
         >
           {mode === 'view' ? 'Close' : 'Cancel'}
         </Button>

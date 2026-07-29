@@ -237,7 +237,7 @@ const CustomerFormModal = ({
 
   const renderFooter = (
     <div className="flex items-center justify-between w-full">
-      <Button onClick={handleClose} disabled={isSubmitting}>
+      <Button onClick={handleClose} disabled={isSubmitting} className="border border-gray-800 rounded-lg px-2 py-1">
         {type === 'view' ? 'Close' : 'Cancel'}
       </Button>
 

@@ -607,7 +607,7 @@ export default function ContactSubmissionsTab({ navigationState, clearNavigation
               <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/50 shrink-0">
                 <button
                   onClick={() => setSelectedSubmission(null)}
-                  className="px-5 py-2.5 border border-gray-300 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
+                  className="px-5 py-2.5 border border-gray-800 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
                 >
                   Close
                 </button>

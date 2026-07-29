@@ -340,7 +340,12 @@ function HRPageContent() {
         setFilteredEmployees(
           employees.filter((e) => {
             const statusUpper = (e.status || e.__raw?.status || '').toUpperCase();
-            return (statusUpper === 'ACTIVE' || statusUpper === 'INACTIVE') && !isPendingStatus(e);
+            if (statusFilter === 'ACTIVE') {
+              return (statusUpper === 'ACTIVE' || statusUpper === 'APPROVED') && !isPendingStatus(e);
+            } else if (statusFilter === 'INACTIVE') {
+              return statusUpper === 'INACTIVE' && !isPendingStatus(e);
+            }
+            return (statusUpper === 'ACTIVE' || statusUpper === 'INACTIVE' || statusUpper === 'APPROVED') && !isPendingStatus(e);
           })
         );
       } else if (activeMainTab !== 'pendingEmployees') {
@@ -365,7 +370,12 @@ function HRPageContent() {
 
         if (activeMainTab === 'all') {
           const statusUpper = (employee.status || employee.__raw?.status || '').toUpperCase();
-          return matchesQuery && (statusUpper === 'ACTIVE' || statusUpper === 'INACTIVE');
+          if (statusFilter === 'ACTIVE') {
+            return matchesQuery && (statusUpper === 'ACTIVE' || statusUpper === 'APPROVED');
+          } else if (statusFilter === 'INACTIVE') {
+            return matchesQuery && statusUpper === 'INACTIVE';
+          }
+          return matchesQuery && (statusUpper === 'ACTIVE' || statusUpper === 'INACTIVE' || statusUpper === 'APPROVED');
         }
         return matchesQuery;
       });
@@ -883,7 +893,10 @@ function HRPageContent() {
   };
 
   // counts
-  const employeeCount = employees.filter((e) => e.status === 'Active').length;
+  const employeeCount = employees.filter((e) => {
+    const status = (e.status || e.__raw?.status || '').toUpperCase();
+    return status === 'ACTIVE' || status === 'APPROVED';
+  }).length;
 
   // main tab switch
   const handleTabSwitch = (tabId) => {

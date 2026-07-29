@@ -272,7 +272,7 @@ export default function CreatePayrollModal({
               )}
               <div className="flex justify-end gap-3">
                 {!isViewOnly && (
-                  <Button onClick={onClose} className="px-4 py-2">
+                  <Button onClick={onClose} className="px-4  border border-gray-800 rounded-xl">
                     Cancel
                   </Button>
                 )}

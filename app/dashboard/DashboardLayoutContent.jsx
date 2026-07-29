@@ -30,7 +30,7 @@ export default function DashboardLayoutContent({ children }) {
   }, []);
 
   const authUser = useSelector(selectAuthUser);
-  
+
   // Check if this is a new employee who needs to complete their profile.
   // Only show wizard for PENDING employees who haven't filled their details.
   // Active / PENDING_ADMIN employees must never be redirected to the wizard.
@@ -77,9 +77,8 @@ export default function DashboardLayoutContent({ children }) {
 
       {/* Sidebar Container */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-gray-200 transform transition-all duration-300 ease-in-out md:translate-x-0 md:bg-white md:static md:h-screen md:sticky md:top-0 ${
-          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        } ${isOverlayOpen ? 'blur-[6px] pointer-events-none' : ''}`}
+        className={`fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-gray-200 transform transition-all duration-300 ease-in-out md:translate-x-0 md:bg-white md:static md:h-screen md:sticky md:top-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          } ${isOverlayOpen ? 'blur-[6px] pointer-events-none' : ''}`}
       >
         <div className="h-full overflow-y-auto relative">
           <Suspense fallback={null}>
@@ -92,7 +91,7 @@ export default function DashboardLayoutContent({ children }) {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 h-[calc(100vh-65px)] md:h-screen overflow-y-auto p-1.5 relative bg-linear-to-br from-[#1a3a4a] to-[#2d5266] ">
+      <main className="flex-1 h-[calc(100vh-65px)] md:h-screen overflow-y-auto p-1 relative bg-linear-to-br from-[#1a3a4a] to-[#2d5266] ">
         <div className="max-w-full mx-auto h-full flex flex-col min-h-0">
           <div className="bg-transparent h-full flex flex-col min-h-0">
             <div

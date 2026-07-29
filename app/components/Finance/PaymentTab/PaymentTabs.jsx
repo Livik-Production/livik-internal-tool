@@ -545,7 +545,7 @@ export default function PaymentTabs({
 
       {/* Search Bar */}
       <div className="mb-3 justify-end flex">
-        <div className="w-full max-w-md">
+        <div className="w-80 max-w-md">
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
              <Search className="absolute left-3 h-4 w-4 text-gray-400" />

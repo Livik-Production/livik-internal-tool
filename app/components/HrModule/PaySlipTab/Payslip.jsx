@@ -366,7 +366,7 @@ const PaySlip = ({
             }
             @page {
               size: A4;
-              margin: 20mm;
+              margin: 0;
             }
 
             #payslip-print {
