@@ -8,7 +8,7 @@ import { NotificationService } from '../../../../services/notification.service';
 
 export async function POST(req) {
   try {
-    const { month, createdBy, updatedBy } = await req.json(); // e.g., "2026-01"
+    const { month, createdBy, updatedBy, settings } = await req.json(); // e.g., "2026-01"
 
     if (!month) {
       return NextResponse.json({ error: 'Month is required' }, { status: 400 });
@@ -63,7 +63,11 @@ export async function POST(req) {
 
     // 2. Fetch Attendance Summary utilizing shared logic
     // Centralized filtering in getMonthlyAttendanceSummary now handles join-date logic
-    const attendanceSummary = await getMonthlyAttendanceSummary(month);
+    const attendanceSummaryAll = await getMonthlyAttendanceSummary(month);
+    // Management employees are excluded from payroll processing
+    const attendanceSummary = attendanceSummaryAll.filter(
+      (emp) => (emp.workType || '').toUpperCase() !== 'MANAGEMENT'
+    );
 
     // Calculate details for each employee (Using best matching historical salary setup)
     const payrollRecords = attendanceSummary.map((emp) => {
@@ -256,39 +260,41 @@ export async function POST(req) {
         },
       });
 
-      // Send emails
-      const emailPromises = employeeDetails
-        .filter((emp) => emp.email) // Only employees with email
-        .map((emp) => {
-          const htmlContent = payrollCreatedMessage(
-            emp.firstName,
-            monthNameFull,
-            year
-          );
-          return sendMail({
-            to: emp.email,
-            subject: `Payroll Created - ${monthNameFull} ${year}`,
-            html: htmlContent,
+      // Send emails conditionally based on settings
+      if (settings?.sendPayslipEmail) {
+        const emailPromises = employeeDetails
+          .filter((emp) => emp.email) // Only employees with email
+          .map((emp) => {
+            const htmlContent = payrollCreatedMessage(
+              emp.firstName,
+              monthNameFull,
+              year
+            );
+            return sendMail({
+              to: emp.email,
+              subject: `Payroll Created - ${monthNameFull} ${year}`,
+              html: htmlContent,
+            });
           });
-        });
 
-      // Fire and forget email sending tracking
-      Promise.allSettled(emailPromises).then((results) => {
-        const failed = results.filter(
-          (r) =>
-            r.status === 'rejected' ||
-            (r.status === 'fulfilled' && !r.value.success)
-        );
-        if (failed.length > 0) {
-          console.error(
-            `Failed to send ${failed.length} payroll creation emails`
+        // Fire and forget email sending tracking
+        Promise.allSettled(emailPromises).then((results) => {
+          const failed = results.filter(
+            (r) =>
+              r.status === 'rejected' ||
+              (r.status === 'fulfilled' && !r.value.success)
           );
-        } else {
-          console.log(
-            `Successfully sent ${emailPromises.length} payroll creation emails`
-          );
-        }
-      });
+          if (failed.length > 0) {
+            console.error(
+              `Failed to send ${failed.length} payroll creation emails`
+            );
+          } else {
+            console.log(
+              `Successfully sent ${emailPromises.length} payroll creation emails`
+            );
+          }
+        });
+      }
 
       // Send In-App Notifications
       if (payrollRecords.length > 0) {
