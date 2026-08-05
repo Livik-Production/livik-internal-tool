@@ -53,7 +53,7 @@ export async function GET(req) {
 
     // Default: Fetch all employees with their latest setup
     // 1. Fetch all employees
-    const employees = await prisma.employee.findMany({
+    const employeesRaw = await prisma.employee.findMany({
       where: {
         status: 'Active',
       },
@@ -65,11 +65,17 @@ export async function GET(req) {
         designation: true,
         department: true,
         dateOfJoining: true,
+        workType: true,
       },
       orderBy: {
         createdAt: 'desc',
       },
     });
+
+    // Management employees are excluded from payroll
+    const employees = employeesRaw.filter(
+      (emp) => (emp.workType || '').toUpperCase() !== 'MANAGEMENT'
+    );
 
     // 2. Fetch latest salary setup for each employee
     const salarySetups = await prisma.salarySetup.findMany({

@@ -156,6 +156,7 @@ export default function EmploymentBankSection({
               <option value="">Select type</option>
               <option value="REGULAR">REGULAR</option>
               <option value="CONTRACT">CONTRACT</option>
+              <option value="MANAGEMENT">MANAGEMENT</option>
             </select>
             {errors.workType && (
               <div className="text-xs text-red-600 mt-1">{errors.workType}</div>

@@ -30,9 +30,18 @@ export async function GET(req) {
       );
     }
 
-    const summary = detailed
+    const summaryAll = detailed
       ? await getDetailedMonthlyAttendance(month, employeeId)
       : await getMonthlyAttendanceSummary(month, employeeId);
+
+    // Management employees are excluded from the general attendance list,
+    // but still visible when a specific employee is explicitly requested.
+    const summary = employeeId
+      ? summaryAll
+      : summaryAll.filter(
+          (emp) => (emp.workType || '').toUpperCase() !== 'MANAGEMENT'
+        );
+
     return NextResponse.json(summary);
   } catch (error) {
     console.error('Error fetching attendance summary:', error);

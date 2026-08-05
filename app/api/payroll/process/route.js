@@ -63,7 +63,11 @@ export async function POST(req) {
 
     // 2. Fetch Attendance Summary utilizing shared logic
     // Centralized filtering in getMonthlyAttendanceSummary now handles join-date logic
-    const attendanceSummary = await getMonthlyAttendanceSummary(month);
+    const attendanceSummaryAll = await getMonthlyAttendanceSummary(month);
+    // Management employees are excluded from payroll processing
+    const attendanceSummary = attendanceSummaryAll.filter(
+      (emp) => (emp.workType || '').toUpperCase() !== 'MANAGEMENT'
+    );
 
     // Calculate details for each employee (Using best matching historical salary setup)
     const payrollRecords = attendanceSummary.map((emp) => {
