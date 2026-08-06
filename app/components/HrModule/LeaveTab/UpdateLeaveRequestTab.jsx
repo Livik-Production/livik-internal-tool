@@ -13,6 +13,12 @@ import FilterDropdown from '../../Buttons/FilterDropdown';
 import IconButton from '../../Buttons/IconButton';
 import CustomModalForm from '../../CustomModalForm';
 
+const WORK_TYPE_OPTIONS = [
+  { value: 'REGULAR', label: 'Regular' },
+  { value: 'MANAGEMENT', label: 'Management' },
+  { value: 'CONTRACT', label: 'Contract' },
+];
+
 const UpdateLeaveRequestTab = ({
   onViewLeaveDetails,
   onDelete,
@@ -40,6 +46,7 @@ const UpdateLeaveRequestTab = ({
   const [balanceHistory, setBalanceHistory] = useState([]);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [workTypeFilter, setWorkTypeFilter] = useState('REGULAR');
   const [companyHolidays, setCompanyHolidays] = useState([]);
   const [isMonthDropdownOpen, setIsMonthDropdownOpen] = useState(false);
 
@@ -68,7 +75,7 @@ const UpdateLeaveRequestTab = ({
     if (!silent) setLoading(true);
     try {
       const res = await fetch(
-        `/api/hr/leave-balances?month=${selectedMonth}&year=${selectedYear}`
+        `/api/hr/leave-balances?month=${selectedMonth}&year=${selectedYear}&workType=${workTypeFilter}`
       );
       if (!res.ok) throw new Error('Failed to fetch leave balances');
       const balances = await res.json();
@@ -83,7 +90,7 @@ const UpdateLeaveRequestTab = ({
 
   useEffect(() => {
     fetchBalances();
-  }, [selectedMonth, selectedYear]);
+  }, [selectedMonth, selectedYear, workTypeFilter]);
 
   const getLeaveInfo = (balances, type) => {
     const b = balances?.find(
@@ -284,10 +291,10 @@ const UpdateLeaveRequestTab = ({
     return fullName.includes(query) || emp.empId.toLowerCase().includes(query);
   });
 
-  // Reset pagination when filtered data length, selectedMonth, or selectedYear changes
+  // Reset pagination when filtered data length, selectedMonth, selectedYear, or workTypeFilter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [filteredData.length, selectedMonth, selectedYear]);
+  }, [filteredData.length, selectedMonth, selectedYear, workTypeFilter]);
 
   // Paginated data
   const paginatedData = useMemo(() => {
@@ -511,6 +518,16 @@ const UpdateLeaveRequestTab = ({
                 }
               }}
               placeholder="Year"
+            />
+          </div>
+
+          {/* Work Type Selector */}
+          <div className="w-36">
+            <FilterDropdown
+              options={WORK_TYPE_OPTIONS}
+              value={workTypeFilter}
+              onChange={(val) => setWorkTypeFilter(val)}
+              placeholder="Work Type"
             />
           </div>
         </div>

@@ -1470,15 +1470,9 @@ function HRPageContent() {
                             e.__raw?.status ||
                             ''
                           ).toUpperCase();
-                          const workTypeUpper = (
-                            e.workType ||
-                            e.__raw?.workType ||
-                            ''
-                          ).toUpperCase();
                           return (
                             statusUpper !== 'PENDING' &&
-                            statusUpper !== 'PENDING_ADMIN' &&
-                            workTypeUpper !== 'MANAGEMENT'
+                            statusUpper !== 'PENDING_ADMIN'
                           );
                         })}
                         authUser={authUser}
