@@ -148,9 +148,17 @@ export async function POST(req) {
         lopDeduction = perDayPay * lopDays;
       }
 
-      const totalDeductions = Math.round(joiningDeduction + lopDeduction);
-      const netPay = Math.max(0, Math.round(fullMonthGross - totalDeductions));
-      const displayGross = Math.round(fullMonthGross);
+      let totalDeductions = Math.round(joiningDeduction + lopDeduction);
+      let netPay = Math.max(0, Math.round(fullMonthGross - totalDeductions));
+      let displayGross = Math.round(fullMonthGross);
+
+      // If the employee was present on zero days this month, the salary
+      // must be 0.00 regardless of the day-by-day gross/deduction figures.
+      if (presentDays === 0) {
+        displayGross = 0;
+        totalDeductions = 0;
+        netPay = 0;
+      }
 
       // Latest setup for record fields
       const latestSetup = empSetups.find((s) => {
@@ -181,8 +189,8 @@ export async function POST(req) {
         leaveDays: lopDays,
         holidayDays: holidayDays,
         grossPay: displayGross,
-        lopDeduction: Math.round(lopDeduction),
-        otherDeductions: Math.round(joiningDeduction),
+        lopDeduction: presentDays === 0 ? 0 : Math.round(lopDeduction),
+        otherDeductions: presentDays === 0 ? 0 : Math.round(joiningDeduction),
         totalDeductions: totalDeductions,
         netPay: netPay,
         status: 'PROCESSED',

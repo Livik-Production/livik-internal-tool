@@ -201,12 +201,22 @@ export async function POST(req) {
     actualHra = Math.max(0, actualHra);
     actualOther = Math.max(0, actualOther);
 
-    const gross = Math.round(actualGrossPay);
-    const lopDeduction = Math.round(calculatedLopDeduction);
-    const totalDeductions = Math.round(
-      joiningDeduction + calculatedLopDeduction
-    );
-    const netSalary = Math.max(0, Math.round(actualGrossPay - totalDeductions));
+    let gross = Math.round(actualGrossPay);
+    let lopDeduction = Math.round(calculatedLopDeduction);
+    let totalDeductions = Math.round(joiningDeduction + calculatedLopDeduction);
+    let netSalary = Math.max(0, Math.round(actualGrossPay - totalDeductions));
+
+    // If the employee was present on zero days this month, the salary
+    // must be 0.00 regardless of the day-by-day gross/deduction figures.
+    if ((empSummary?.presentDays || 0) === 0) {
+      actualBasic = 0;
+      actualHra = 0;
+      actualOther = 0;
+      gross = 0;
+      lopDeduction = 0;
+      totalDeductions = 0;
+      netSalary = 0;
+    }
 
     // 4. Construct Payslip Response
     const responseData = {

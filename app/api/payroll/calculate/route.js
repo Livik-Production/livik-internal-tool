@@ -109,9 +109,21 @@ export async function POST(req) {
         lopDeduction = perDayPay * lopDays;
       }
 
-      const totalDeductions = Math.round(joiningDeduction + lopDeduction);
-      const netPay = Math.max(0, Math.round(actualGrossPay - totalDeductions));
-      const displayGross = Math.round(actualGrossPay);
+      let totalDeductions = Math.round(joiningDeduction + lopDeduction);
+      let netPay = Math.max(0, Math.round(actualGrossPay - totalDeductions));
+      let displayGross = Math.round(actualGrossPay);
+      let displayLopDeduction = lopDeduction;
+      let displayJoiningDeduction = joiningDeduction;
+
+      // If the employee was present on zero days this month, the salary
+      // must be 0.00 regardless of the day-by-day gross/deduction figures.
+      if (presentDays === 0) {
+        displayGross = 0;
+        totalDeductions = 0;
+        netPay = 0;
+        displayLopDeduction = 0;
+        displayJoiningDeduction = 0;
+      }
 
       return {
         id: emp.id,
@@ -130,8 +142,8 @@ export async function POST(req) {
         _rawNetPay: netPay,
 
         deductions: {
-          lopDeduction: lopDeduction,
-          joiningDeduction: joiningDeduction,
+          lopDeduction: displayLopDeduction,
+          joiningDeduction: displayJoiningDeduction,
           totalDeductions: totalDeductions,
         },
       };
