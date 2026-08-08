@@ -190,10 +190,16 @@ const isPublicApi =
             return NextResponse.next();
           }
 
-          // 3. Fallback: Allow for Employees (case-insensitive)
+          // 3. Fallback: Allow for Employees (case-insensitive).
+          // Employees with no admin role assigned (session.roleId is null,
+          // e.g. plain portal users) also count as "Employee" here — this
+          // matters for endpoints like /api/hr/payslip where the employeeId
+          // is sent in the POST body rather than the URL, so step 2 above
+          // can't match it against session.employeeId.
           // Also allow POST/PUT for any logged-in user for Leave API (API handles validation)
           if (
             roleName === 'EMPLOYEE' ||
+            !session?.roleId ||
             (isLeaveApi &&
               (req.method === 'POST' ||
                 req.method === 'PUT' ||
