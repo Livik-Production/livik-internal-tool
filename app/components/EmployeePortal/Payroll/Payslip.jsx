@@ -28,7 +28,6 @@ const EmployeePayslipTab = ({
   initialPayslipYear = new Date().getFullYear(),
   processedMonths = [],
   onViewPayslip,
-  onDownloadPayslip,
   isLoading = false,
   selectedYear: propSelectedYear,
   onYearChange,
@@ -248,16 +247,6 @@ const EmployeePayslipTab = ({
     }
   };
 
-  const handleDownloadPayslip = (payslip) => {
-    if (onDownloadPayslip) {
-      onDownloadPayslip(payslip);
-    } else {
-      showSuccessToast(
-        `Downloading payslip for ${payslip.monthName} ${payslip.year}`
-      );
-    }
-  };
-
   const handleSendEmail = (payslip) => {
     showSuccessToast(
       `Sending payslip for ${payslip.monthName} ${payslip.year} via email`
@@ -402,7 +391,7 @@ const EmployeePayslipTab = ({
                           className="group relative bg-white border border-slate-200 rounded-xl p-3 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-500/5 transition-all duration-300 flex items-center justify-between gap-4 overflow-hidden"
                         >
                           {/* Subtle Background Accent */}
-                          <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/0 to-blue-50/0 group-hover:from-indigo-50/30 group-hover:to-blue-50/30 transition-all duration-500"></div>
+                          <div className="border border-gray-300 absolute inset-0 bg-gradient-to-br from-indigo-50/0 to-blue-50/0 group-hover:from-indigo-50/30 group-hover:to-blue-50/30 transition-all duration-500"></div>
 
                           {/* Left Side: Icon & Month */}
                           <div className="relative flex items-center gap-3">
@@ -428,13 +417,6 @@ const EmployeePayslipTab = ({
                               <Eye className="w-3.5 h-3.5" />
                               View
                             </PrimaryButton>
-                            <button
-                              onClick={() => handleDownloadPayslip(payslip)}
-                              className="p-1.5 bg-slate-50 text-slate-600 rounded-lg hover:bg-slate-100 hover:text-slate-900 transition-all active:scale-95 border border-slate-100"
-                              title="Download"
-                            >
-                              <Download className="w-3.5 h-3.5" />
-                            </button>
                           </div>
 
                           {/* Status Indicator (Subtle dot) */}

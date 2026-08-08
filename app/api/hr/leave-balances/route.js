@@ -6,8 +6,9 @@ export async function GET(req) {
     const url = new URL(req.url);
     const month = url.searchParams.get('month');
     const year = url.searchParams.get('year');
+    const workType = url.searchParams.get('workType');
 
-    const balances = await getAllEmployeesWithBalances(month, year);
+    const balances = await getAllEmployeesWithBalances(month, year, workType);
     return NextResponse.json(JSON.parse(JSON.stringify(balances)));
   } catch (error) {
     console.error('GET /api/hr/leave-balances error:', error);

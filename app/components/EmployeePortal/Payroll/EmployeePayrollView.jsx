@@ -119,17 +119,6 @@ export default function EmployeePayrollView({ employee }) {
     }
   };
 
-  const handleDownloadPayslip = (payslip) => {
-    const text = `Payslip: ${payslip.monthName} ${payslip.year}\nEmployee: ${employee.firstName}\nGross: ₹${payslip.gross}\nDeductions: ₹${payslip.deductions}\nNet Pay: ₹${payslip.net}\n`;
-    const blob = new Blob([text], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `payslip-${payslip.id}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
   const getComponentsForEffective = (effectiveId) => payrollData.components.filter((c) => c.effectiveId === effectiveId);
 
   const payrollYears = ['All Years', new Date().getFullYear(), new Date().getFullYear() - 1];
@@ -192,7 +181,6 @@ export default function EmployeePayrollView({ employee }) {
               onYearChange={setSelectedPayslipYear}
               processedMonths={payrollData.processedMonths || []}
               onViewPayslip={handleViewPayslip}
-              onDownloadPayslip={handleDownloadPayslip}
               isLoading={isPayrollLoading}
             />
           </div>
