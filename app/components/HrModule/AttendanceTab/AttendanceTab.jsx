@@ -21,6 +21,13 @@ import MarkAttendanceModal from './MarkAttendanceModal';
 import AttendanceDetailedModal from './AttendanceDetailedModal';
 import Loader from '../../Loader';
 import ConfirmDialog from '../../ConfirmDialog';
+import FilterDropdown from '../../Buttons/FilterDropdown';
+
+const WORK_TYPE_OPTIONS = [
+  { value: 'REGULAR', label: 'Regular' },
+  { value: 'MANAGEMENT', label: 'Management' },
+  { value: 'CONTRACT', label: 'Contract' },
+];
 
 export default function AttendanceTab({
   canControlAllEmployees,
@@ -28,6 +35,7 @@ export default function AttendanceTab({
   isAdmin = false,
 }) {
   const [data, setData] = useState([]);
+  const [workTypeFilter, setWorkTypeFilter] = useState('REGULAR');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -121,7 +129,9 @@ export default function AttendanceTab({
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/hr/attendance?month=${selectedMonth}`);
+      const res = await fetch(
+        `/api/hr/attendance?month=${selectedMonth}&workType=${workTypeFilter}`
+      );
       if (!res.ok) throw new Error('Failed to fetch attendance data');
       const summary = await res.json();
       setData(summary);
@@ -140,7 +150,7 @@ export default function AttendanceTab({
 
   useEffect(() => {
     fetchAttendanceData();
-  }, [selectedMonth]);
+  }, [selectedMonth, workTypeFilter]);
 
   // Listen for cross-component triggers to refresh attendance data
   useEffect(() => {
@@ -149,7 +159,7 @@ export default function AttendanceTab({
     return () => {
       window.removeEventListener('refresh-attendance-data', refreshHandler);
     };
-  }, [selectedMonth]); // Relies on selectedMonth to fetch correct data
+  }, [selectedMonth, workTypeFilter]); // Relies on selectedMonth/workTypeFilter to fetch correct data
 
   const handleSaveAttendance = async (date, newRecords) => {
     try {
@@ -226,7 +236,7 @@ export default function AttendanceTab({
     const fetchEditDetailed = async () => {
       try {
         const res = await fetch(
-          `/api/hr/attendance?month=${selectedMonth}&detailed=true`
+          `/api/hr/attendance?month=${selectedMonth}&detailed=true&workType=${workTypeFilter}`
         );
         if (res.ok) {
           const detail = await res.json();
@@ -242,7 +252,7 @@ export default function AttendanceTab({
 
     fetchEditLeaves();
     fetchEditDetailed();
-  }, [isEditModalOpen, selectedMonth]);
+  }, [isEditModalOpen, selectedMonth, workTypeFilter]);
 
   // Helper: check if employee has approved leave on a given date
   const checkEmployeeLeave = (empId, dateStr) => {
@@ -501,6 +511,15 @@ export default function AttendanceTab({
     return filteredData.slice(startIndex, startIndex + itemsPerPage);
   }, [filteredData, currentPage, itemsPerPage]);
 
+  // Employees matching the selected Work Type (used for Mark Attendance)
+  const employeesByWorkType = useMemo(() => {
+    return employees.filter(
+      (e) =>
+        (e.workType || e.__raw?.workType || '').toUpperCase() ===
+        workTypeFilter
+    );
+  }, [employees, workTypeFilter]);
+
   const columns = [
     { key: 'empId', label: 'Emp ID', className: 'font-medium text-gray-900' },
     { key: 'name', label: 'Name', className: 'text-gray-700' },
@@ -681,6 +700,24 @@ export default function AttendanceTab({
           </div>
         </div>
 
+        {/* Work Type Dropdown */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-gray-700">
+            Work Type :
+          </span>
+          <div className="w-36">
+            <FilterDropdown
+              options={WORK_TYPE_OPTIONS.map((o) => ({
+                value: o.value,
+                label: o.label,
+              }))}
+              value={workTypeFilter}
+              onChange={(val) => setWorkTypeFilter(val)}
+              placeholder="Work Type"
+            />
+          </div>
+        </div>
+
         {/* Summary View Button */}
         <button
           onClick={() => setIsDetailedModalOpen(true)}
@@ -773,8 +810,8 @@ export default function AttendanceTab({
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         employees={
-          employees.length > 0
-            ? employees
+          employeesByWorkType.length > 0
+            ? employeesByWorkType
             : data.map((d) => ({ id: d.id, empId: d.empId, name: d.name }))
         }
         onSave={handleSaveAttendance}

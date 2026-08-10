@@ -17,6 +17,7 @@ export async function GET(req) {
     const employeeId = searchParams.get('employeeId');
     const detailed = searchParams.get('detailed') === 'true';
     const action = searchParams.get('action');
+    const workType = searchParams.get('workType');
 
     if (action === 'getMonths') {
       const months = await getMarkedAttendanceMonths();
@@ -34,13 +35,22 @@ export async function GET(req) {
       ? await getDetailedMonthlyAttendance(month, employeeId)
       : await getMonthlyAttendanceSummary(month, employeeId);
 
-    // Management employees are excluded from the general attendance list,
-    // but still visible when a specific employee is explicitly requested.
-    const summary = employeeId
-      ? summaryAll
-      : summaryAll.filter(
-          (emp) => (emp.workType || '').toUpperCase() !== 'MANAGEMENT'
-        );
+    // A specific employee lookup is never filtered by work type.
+    // An explicit workType param filters down to that exact type (used by the
+    // Leave module's Attendance sub-tab). Otherwise, Management employees are
+    // excluded from the general attendance list by default.
+    let summary;
+    if (employeeId) {
+      summary = summaryAll;
+    } else if (workType) {
+      summary = summaryAll.filter(
+        (emp) => (emp.workType || '').toUpperCase() === workType.toUpperCase()
+      );
+    } else {
+      summary = summaryAll.filter(
+        (emp) => (emp.workType || '').toUpperCase() !== 'MANAGEMENT'
+      );
+    }
 
     return NextResponse.json(summary);
   } catch (error) {

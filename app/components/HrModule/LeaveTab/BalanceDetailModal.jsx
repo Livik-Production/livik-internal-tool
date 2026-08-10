@@ -216,6 +216,10 @@ const BalanceDetailModal = ({
           month: item.month,
           cl: Math.max(0, (item.cl || 0) - clUsed),
           sl: Math.max(0, (item.sl || 0) - slUsed),
+          // Raw credited amounts, kept as-is regardless of usage so the
+          // "CL Credited"/"SL Credited" columns always show the credited value.
+          clCredited: item.cl || 0,
+          slCredited: item.sl || 0,
           lop,
           clUsed,
           slUsed,
@@ -314,7 +318,7 @@ const BalanceDetailModal = ({
         open={true}
         onCancel={onClose}
         title={customTitle}
-        widthClass="max-w-3xl"
+        widthClass="max-w-5xl"
       >
         <div className="p-3 px-4">
           {/* Year Filter */}
@@ -378,18 +382,18 @@ const BalanceDetailModal = ({
           ) : (
             <div
               className="border border-gray-100 rounded-xl overflow-auto shadow-sm"
-              style={{ maxHeight: '300px' }}
+              style={{ maxHeight: '380px' }}
             >
               <table className="w-full text-left text-sm border-collapse">
                 <thead className="bg-gray-50 text-gray-600 font-bold uppercase text-[10px] tracking-widest sticky top-0">
                   <tr>
                     <th className="px-5 py-3">Month</th>
-                    <th className="px-5 py-3 text-center">CL</th>
-                    <th className="px-5 py-3 text-center">SL</th>
-                    <th className="px-5 py-3 text-center">LOP</th>
+                    <th className="px-5 py-3 text-center">CL Credited</th>
+                    <th className="px-5 py-3 text-center">SL Credited</th>
                     <th className="px-5 py-3 text-center">CL Used</th>
                     <th className="px-5 py-3 text-center">SL Used</th>
-                    <th className="px-5 py-3 text-center">Total</th>
+                    <th className="px-5 py-3 text-center">LOP</th>
+                    <th className="px-5 py-3 text-center">Taken</th>
                     <th className="px-5 py-3 text-right">Actions</th>
                   </tr>
                 </thead>
@@ -421,19 +425,19 @@ const BalanceDetailModal = ({
                         </div>
                       </td>
                       <td className="px-5 py-3 text-center text-blue-600 font-bold">
-                        {row.cl || '-'}
+                        {row.clCredited || '-'}
                       </td>
                       <td className="px-5 py-3 text-center text-green-600 font-bold">
-                        {row.sl || '-'}
-                      </td>
-                      <td className="px-5 py-3 text-center text-orange-500 font-bold">
-                        {row.lop || '-'}
+                        {row.slCredited || '-'}
                       </td>
                       <td className="px-5 py-3 text-center text-red-500 font-bold">
                         {row.clUsed || '-'}
                       </td>
                       <td className="px-5 py-3 text-center text-red-500 font-bold">
                         {row.slUsed || '-'}
+                      </td>
+                      <td className="px-5 py-3 text-center text-orange-500 font-bold">
+                        {row.lop || '-'}
                       </td>
                       <td className="px-5 py-3 text-center">
                         <div className="flex flex-col items-center">
