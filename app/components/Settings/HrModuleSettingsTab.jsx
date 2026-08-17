@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { CalendarDays, SquarePen, Trash, AlertCircle, Loader2 } from 'lucide-react';
+import { CalendarDays, SquarePen, Trash, AlertCircle, Loader2, ReceiptText } from 'lucide-react';
 import CustomTable from '../CustomTable';
 import { showSuccessToast, showErrorToast } from '../Toast';
 import IconButton from '../Buttons/IconButton';
@@ -23,6 +23,14 @@ export default function HrModuleSettingsTab() {
     sendEmailOnRequest: true,
     sendEmailOnApproval: true,
   });
+  const [companyDetails, setCompanyDetails] = useState(null);
+  const [payslipSettings, setPayslipSettings] = useState({
+    companyName: '',
+    address: '',
+    companyEmail: '',
+  });
+  const [isPayslipSettingsLoading, setIsPayslipSettingsLoading] =
+    useState(false);
   const [payrollHistory, setPayrollHistory] = useState([]);
   const [editingRecord, setEditingRecord] = useState(null);
   const [isViewOnly, setIsViewOnly] = useState(false);
@@ -63,9 +71,27 @@ export default function HrModuleSettingsTab() {
     }
   };
 
+  const fetchPayslipSettings = async () => {
+    try {
+      const response = await fetch('/api/companyDetails');
+      if (response.ok) {
+        const data = await response.json();
+        setCompanyDetails(data || {});
+        setPayslipSettings({
+          companyName: data?.companyName || '',
+          address: data?.address || '',
+          companyEmail: data?.companyEmail || '',
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching payslip settings:', error);
+    }
+  };
+
   useEffect(() => {
     fetchSettings();
     fetchHistory();
+    fetchPayslipSettings();
   }, []);
 
   const handlePayrollSettingChange = (e) => {
@@ -82,6 +108,50 @@ export default function HrModuleSettingsTab() {
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }));
+  };
+
+  const handlePayslipSettingChange = (e) => {
+    const { name, value } = e.target;
+    setPayslipSettings((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSavePayslipSettings = async () => {
+    if (
+      !payslipSettings.companyName ||
+      !payslipSettings.companyEmail ||
+      !payslipSettings.address
+    ) {
+      showErrorToast('Company name, address, and email are required.');
+      return;
+    }
+
+    setIsPayslipSettingsLoading(true);
+    try {
+      const response = await fetch('/api/companyDetails', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...companyDetails,
+          ...payslipSettings,
+        }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to save payslip settings');
+      }
+      const updated = await response.json();
+      setCompanyDetails(updated);
+      showSuccessToast('Payslip settings saved successfully!');
+    } catch (error) {
+      console.error('Error saving payslip settings:', error);
+      showErrorToast(error.message || 'Failed to save payslip settings.');
+    } finally {
+      setIsPayslipSettingsLoading(false);
+    }
   };
 
   const handleSaveSettings = async () => {
@@ -244,6 +314,17 @@ export default function HrModuleSettingsTab() {
             >
               Leave Settings
             </button>
+            <button
+              onClick={() => setActiveHrSubTab('payslip')}
+              className={`relative flex items-center mr-1 px-5 py-2 font-semibold text-base transition-all duration-300 rounded-t-xl ${
+                activeHrSubTab === 'payslip'
+                  ? 'bg-[#e7f0fa] text-[#173469] border-b-4 border-[#173469]'
+                  : 'bg-transparent text-gray-500 border-b-4 border-transparent hover:text-[#173469] hover:bg-[#e7f0fa]'
+              }`}
+              style={{ outline: 'none', boxShadow: 'none' }}
+            >
+              Payslip Settings
+            </button>
           </div>
 
           {activeHrSubTab === 'attendance' ? (
@@ -365,7 +446,7 @@ export default function HrModuleSettingsTab() {
                 </div>
               )}
             </div>
-          ) : (
+          ) : activeHrSubTab === 'leave' ? (
             <div className="space-y-6 max-w-2xl animate-in fade-in duration-300">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
@@ -456,6 +537,78 @@ export default function HrModuleSettingsTab() {
                       <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                     ) : (
                       'Save Leave Settings'
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-6 max-w-2xl animate-in fade-in duration-300">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                  <ReceiptText size={20} />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-slate-800 text-left">
+                    Payslip Header Details
+                  </h2>
+                  <p className="text-xs text-gray-500 text-left mt-0.5">
+                    Controls the company name, address, and email shown on
+                    the payslip letterhead.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-gray-700 block text-left">
+                    Company Name
+                  </label>
+                  <input
+                    type="text"
+                    name="companyName"
+                    value={payslipSettings.companyName}
+                    onChange={handlePayslipSettingChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-gray-700 block text-left">
+                    Company Email
+                  </label>
+                  <input
+                    type="email"
+                    name="companyEmail"
+                    value={payslipSettings.companyEmail}
+                    onChange={handlePayslipSettingChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-gray-700 block text-left">
+                    Address
+                  </label>
+                  <textarea
+                    name="address"
+                    value={payslipSettings.address}
+                    onChange={handlePayslipSettingChange}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+
+                <div className="pt-3 flex justify-end">
+                  <button
+                    onClick={handleSavePayslipSettings}
+                    disabled={isPayslipSettingsLoading}
+                    className="px-6 py-2.5 text-sm font-bold text-white bg-[#004475] rounded-xl transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center min-w-[140px]"
+                  >
+                    {isPayslipSettingsLoading ? (
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    ) : (
+                      'Save Payslip Settings'
                     )}
                   </button>
                 </div>

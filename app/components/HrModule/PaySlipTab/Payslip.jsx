@@ -1,5 +1,13 @@
+'use client';
+
 // components/PaySlip.jsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+
+const DEFAULT_COMPANY_DETAILS = {
+  companyName: 'Livik Technologies',
+  address: 'HIG A-7, 2nd Street, 9th Cross\nR.M. Colony, Dindigul - 624001',
+  companyEmail: 'info@liviktech.com',
+};
 
 const PaySlip = ({
   employeeData = {},
@@ -8,6 +16,31 @@ const PaySlip = ({
   month = 'December', // Add month prop
   year = '2025', // Add year prop
 }) => {
+  const [companyDetails, setCompanyDetails] = useState(
+    DEFAULT_COMPANY_DETAILS
+  );
+
+  useEffect(() => {
+    const fetchCompanyDetails = async () => {
+      try {
+        const res = await fetch('/api/companyDetails');
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.companyName) {
+            setCompanyDetails({
+              companyName: data.companyName,
+              address: data.address || DEFAULT_COMPANY_DETAILS.address,
+              companyEmail:
+                data.companyEmail || DEFAULT_COMPANY_DETAILS.companyEmail,
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching company details for payslip:', error);
+      }
+    };
+    fetchCompanyDetails();
+  }, []);
   // Default salary + payroll data
   const data = {
     bankName: payslipData?.bankName || '—',
@@ -38,12 +71,12 @@ const PaySlip = ({
   // 🔥 DYNAMIC MAPPING FROM OfferLetterTab
   const employee = {
     ...data,
-    employeeName: payslipData?.employeeName || employeeData.name || '—',
-    employeeId: payslipData?.employeeId || employeeData.id || '—',
+    employeeName: payslipData?.employeeName || employeeData?.name || '—',
+    employeeId: payslipData?.employeeId || employeeData?.id || '—',
     designation:
-      payslipData?.designation || employeeData.role || 'Frontend Developer',
-    location: payslipData?.location || employeeData.address || '—',
-    phone: employeeData.phone || '—',
+      payslipData?.designation || employeeData?.role || 'Frontend Developer',
+    location: payslipData?.location || employeeData?.address || '—',
+    phone: employeeData?.phone || '—',
   };
 
   const isWithPad = letterPad === 'with';
@@ -145,14 +178,14 @@ const PaySlip = ({
 
               {/* Company Details */}
               <div className="flex-grow flex justify-end">
-                <div className="text-sm leading-5 text-gray-700 text-left">
+                <div className="text-sm leading-5 text-gray-700 text-left py-4">
                   <p className="font-semibold text-gray-900">
-                    Livik Technologies
+                    {companyDetails.companyName}
                   </p>
-                  <p>HIG A-7, 2nd Street, 9th Cross</p>
-                  <p>R.M. Colony, Dindigul - 624001</p>
-                  <p>Tel: +91 8610470324</p>
-                  <p>Email: liviktechnologies@gmail.com</p>
+                  <p className="whitespace-pre-line">
+                    {companyDetails.address}
+                  </p>
+                  <p>Email: {companyDetails.companyEmail}</p>
                 </div>
               </div>
             </div>
@@ -204,10 +237,12 @@ const PaySlip = ({
                   <div className="flex justify-between p-3">
                     {' '}
                     {/* Last row */}
-                    <span className="font-semibold text-gray-700">
-                      Location
+                    <span className="font-semibold text-gray-700 shrink-0">
+                      Address
                     </span>
-                    <span className="font-medium">{employee.location}</span>
+                    <span className="font-medium text-right flex-1 ml-2">
+                      {employee.location}
+                    </span>
                   </div>
                 </div>
                 {/* Right Column */}
@@ -231,6 +266,12 @@ const PaySlip = ({
                   <div className="flex justify-between border-b border-gray-300 p-3">
                     <span className="font-semibold text-gray-700">
                       No.of Days{' '}
+                    </span>
+                    <span className="font-medium">{employee.nod}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-gray-300 p-3">
+                    <span className="font-semibold text-gray-700">
+                      Present Days
                     </span>
                     <span className="font-medium">{employee.nod}</span>
                   </div>
