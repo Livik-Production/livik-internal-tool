@@ -388,23 +388,10 @@ const OfferLetterTab = ({ isViewOnly = false }) => {
     setShowLetterModal(true);
   };
 
-  // Re-fetch payslip data when month or year changes while modal is open
-  useEffect(() => {
-    if (showPayslipModal && selectedEmployee) {
-      handleViewPayslip();
-    }
-  }, [payslipMonth, payslipYear]);
-
-  // Add this function for viewing payslip
-  const handleViewPayslip = async () => {
-    if (!selectedEmployee) {
-      showAlert(
-        'Selection Required',
-        'Please select an employee first.',
-        'warning'
-      );
-      return;
-    }
+  // Fetches payslip data for the selected employee/month/year.
+  // Used both for the live preview panel (silent) and the "View" modal.
+  const fetchPayslipData = async ({ silent = false } = {}) => {
+    if (!selectedEmployee) return null;
 
     try {
       setIsGenerating(true);
@@ -425,17 +412,43 @@ const OfferLetterTab = ({ isViewOnly = false }) => {
 
       const data = await res.json();
       setPayslipData(data);
-      setShowPayslipModal(true);
+      return data;
     } catch (err) {
       console.error(err);
-      showAlert(
-        'Generation Error',
-        'Error generating payslip: ' + err.message,
-        'danger'
-      );
+      if (!silent) {
+        showAlert(
+          'Generation Error',
+          'Error generating payslip: ' + err.message,
+          'danger'
+        );
+      }
+      return null;
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  // Keep the live preview panel in sync whenever payslip is the selected
+  // letter type and the employee/month/year change.
+  useEffect(() => {
+    if (selectedLetterType === 'payslip' && selectedEmployee) {
+      fetchPayslipData({ silent: true });
+    }
+  }, [selectedLetterType, selectedEmployee, payslipMonth, payslipYear]);
+
+  // Add this function for viewing payslip
+  const handleViewPayslip = async () => {
+    if (!selectedEmployee) {
+      showAlert(
+        'Selection Required',
+        'Please select an employee first.',
+        'warning'
+      );
+      return;
+    }
+
+    const data = await fetchPayslipData();
+    if (data) setShowPayslipModal(true);
   };
 
   // Get the current letter type label for display
@@ -505,6 +518,16 @@ const OfferLetterTab = ({ isViewOnly = false }) => {
             employeeData={selectedEmployee}
             letterPad={letterPadOption}
             letterPadType={letterPadType}
+          />
+        );
+      case 'payslip':
+        return (
+          <PaySlip
+            employeeData={selectedEmployee}
+            payslipData={payslipData}
+            letterPad={letterPadOption}
+            month={payslipMonth}
+            year={payslipYear}
           />
         );
       default:
@@ -799,7 +822,12 @@ const OfferLetterTab = ({ isViewOnly = false }) => {
                   Select a letter type to see preview
                 </div>
               ) : (
-                <div className="w-full flex justify-center origin-top" style={{ transform: 'scale(0.85)' }}>
+                <div
+                  className="w-full flex justify-center origin-top"
+                  style={{
+                    transform: `scale(${selectedLetterType === 'payslip' ? 0.62 : 0.85})`,
+                  }}
+                >
                   {renderLetterComponent() || (
                     <div className="flex items-center justify-center h-full text-gray-400">
                       Preview not available for this letter type
