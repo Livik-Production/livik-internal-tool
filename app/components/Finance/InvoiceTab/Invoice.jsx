@@ -517,12 +517,15 @@ const InvoiceTable = ({ onRefresh }) => {
         items: invoiceData.products.map((p, i) => {
           const desc = p.description || '';
           const currency = p.currency || 'INR';
+          const gstIncluded = p.gstIncluded !== false;
+          // Metadata is packed into the existing `description` column (no schema
+          // change): the GST-exclusion marker is placed BEFORE the `||CUR:`
+          // currency marker so every existing parser that reads the currency via
+          // `.split('||CUR:')[1]` keeps working unchanged.
           return {
             serialNumber: i + 1,
             particular: p.name || p.productName || 'Item',
-            description: desc
-              ? `${desc}||CUR:${currency}`
-              : `||CUR:${currency}`,
+            description: `${desc}${gstIncluded ? '' : '||GST:0'}||CUR:${currency}`,
             hsnSacCode: p.hsn || p.hsnCode || '',
             amount: Number(p.amount || p.price || 0),
           };
@@ -530,6 +533,12 @@ const InvoiceTable = ({ onRefresh }) => {
 
         taxPercent:
           Number(invoiceData.cgstRate || 0) + Number(invoiceData.sgstRate || 0),
+        // Actual GST amount, already excluding any items marked "GST Include" = off.
+        // Sent explicitly so the saved total reflects that exclusion instead of
+        // being re-derived from taxPercent over the full subtotal.
+        taxAmount:
+          Number(invoiceData.cgstAmount || 0) +
+          Number(invoiceData.sgstAmount || 0),
         discountPercent:
           invoiceData.discountType === 'percentage'
             ? Number(invoiceData.discountValue || 0)
@@ -588,6 +597,46 @@ const InvoiceTable = ({ onRefresh }) => {
   };
 
   const handleInvoiceNumberClick = (invoice) => {
+    // The GST-exclusion marker (if present) is packed just before the
+    // `||CUR:` currency marker inside each item's description column.
+    const products = (invoice.items || []).map((i) => {
+      const rawDescription = i.description || '';
+      const parts = rawDescription.split('||CUR:');
+      let description = parts[0] || '';
+      const currency = parts[1] || 'INR';
+      let gstIncluded = true;
+      if (description.endsWith('||GST:0')) {
+        gstIncluded = false;
+        description = description.slice(0, -'||GST:0'.length);
+      }
+      return {
+        name: i.particular,
+        description,
+        price: i.amount,
+        hsn: i.hsnSacCode,
+        currency,
+        gstIncluded,
+      };
+    });
+
+    const subTotal = Number(invoice.subTotal || 0);
+    const discountPercent = Number(invoice.discountPercent || 0);
+    const discountAmount = (subTotal * discountPercent) / 100;
+    const subtotalAfterDiscount = subTotal - discountAmount;
+
+    const taxPercent = Number(invoice.taxPercent || 0);
+    const cgstRate = taxPercent / 2;
+    const sgstRate = taxPercent / 2;
+
+    // Only GST-included items contribute to the taxable base, matching how the
+    // total was originally calculated when the invoice was created.
+    const gstTaxableAmount = products.reduce((sum, p) => {
+      if (p.gstIncluded === false) return sum;
+      return sum + Number(p.price || 0);
+    }, 0);
+    const cgstAmount = (gstTaxableAmount * cgstRate) / 100;
+    const sgstAmount = (gstTaxableAmount * sgstRate) / 100;
+
     // Construct preview data
     const previewData = {
       id: invoice.id,
@@ -602,44 +651,17 @@ const InvoiceTable = ({ onRefresh }) => {
         email: invoice.customer?.email || '',
         mobile: invoice.customer?.mobile || '',
       },
-      products:
-        invoice.items?.map((i) => {
-          const rawDescription = i.description || '';
-          const parts = rawDescription.split('||CUR:');
-          const description = parts[0] || '';
-          const currency = parts[1] || 'INR';
-          return {
-            name: i.particular,
-            description: description,
-            price: i.amount,
-            hsn: i.hsnSacCode,
-            currency: currency,
-          };
-        }) || [],
-      totalAmount: Number(invoice.subTotal || 0),
-      subtotalAfterDiscount:
-        Number(invoice.total || 0) /
-        (1 + Number(invoice.taxPercent || 0) / 100),
-      discountAmount:
-        Number(invoice.subTotal || 0) -
-        Number(invoice.total || 0) /
-          (1 + Number(invoice.taxPercent || 0) / 100), // Approximate back-calc or just use stored totals
-      // Actually invoice object has totals
+      products,
+      totalAmount: subTotal,
+      subtotalAfterDiscount,
+      discountAmount,
+      // The stored total already reflects the GST exclusion (see calcTotals
+      // override in lib/invoiceService.js), so it's trusted directly here.
       totalAmountWithGST: Number(invoice.total || 0),
-
-      // We don't have separated CGST/SGST amounts stored in DB easily accessible here unless we calc.
-      cgstRate: Number(invoice.taxPercent || 0) / 2,
-      sgstRate: Number(invoice.taxPercent || 0) / 2,
-      cgstAmount:
-        (Number(invoice.total || 0) -
-          Number(invoice.total || 0) /
-            (1 + Number(invoice.taxPercent || 0) / 100)) /
-        2,
-      sgstAmount:
-        (Number(invoice.total || 0) -
-          Number(invoice.total || 0) /
-            (1 + Number(invoice.taxPercent || 0) / 100)) /
-        2,
+      cgstRate,
+      sgstRate,
+      cgstAmount,
+      sgstAmount,
 
       date: invoice.invoiceDate,
       invoiceNumber: invoice.invoiceNumber,

@@ -91,6 +91,64 @@ const PreviewForm = ({
 
   const primaryCurrency = products?.[0]?.currency || 'INR';
 
+  // Items with GST include unchecked are listed after the GST calculation row.
+  // Items without the flag (e.g. previously saved invoices) default to included.
+  const gstIncludedProducts = (products || []).filter(
+    (p) => p.gstIncluded !== false
+  );
+  const gstExcludedProducts = (products || []).filter(
+    (p) => p.gstIncluded === false
+  );
+
+  // Whether there is any actual GST to show at all.
+  const hasGstTax =
+    Number(cgstAmount || 0) > 0.004 ||
+    Number(sgstAmount || 0) > 0.004 ||
+    Number(totalAmountWithGST || 0) - Number(totalAmount || 0) > 0.004;
+
+  const renderProductRow = (product, displayNumber) => {
+    const descriptionLines = (product.description || '')
+      .split('\n')
+      .filter(Boolean);
+
+    return (
+      <div key={displayNumber} className="flex">
+        <div className="w-12 shrink-0 border-r border-[#1f2937] p-1 pt-2 text-center text-xs">
+          {displayNumber}
+        </div>
+
+        <div className="flex-1 border-r border-[#1f2937] p-1 pt-2 px-2">
+          <div className="font-bold text-[13px] text-[#111827] leading-tight">
+            {product.name || product.productName || 'Product Name'}
+          </div>
+
+          {descriptionLines.map((line, i) => (
+            <div
+              key={i}
+              className={`text-[11px] text-[#374151] leading-tight mt-0.5 ${i === 0 ? 'italic' : ''}`}
+            >
+              {line}
+            </div>
+          ))}
+        </div>
+
+        <div className="w-24 shrink-0 border-r border-[#1f2937] p-1 pt-2 text-center text-[11px] text-[#374151]">
+          {product.hsn || product.hsnCode || '12345'}
+        </div>
+
+        <div className="w-28 shrink-0 p-1 pt-2 text-center text-[12px] font-bold text-[#111827] pr-4">
+          {Number(product.price || product.amount || 0).toLocaleString(
+            'en-IN',
+            {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            }
+          )}
+        </div>
+      </div>
+    );
+  };
+
   // Helper function for number to words
 
   const numberToWords = (num) => {
@@ -544,50 +602,13 @@ const PreviewForm = ({
             {/* Table Body */}
 
             <div className="flex flex-col min-h-[320px]">
-              {products?.map((product, index) => {
-                const descriptionLines = (product.description || '')
-
-                  .split('\n')
-
-                  .filter(Boolean);
-
-                return (
-                  <div key={index} className="flex">
-                    <div className="w-12 shrink-0 border-r border-[#1f2937] p-1 pt-2 text-center text-xs">
-                      {index + 1}
-                    </div>
-
-                    <div className="flex-1 border-r border-[#1f2937] p-1 pt-2 px-2">
-                      <div className="font-bold text-[13px] text-[#111827] leading-tight">
-                        {product.name || product.productName || 'Product Name'}
-                      </div>
-
-                      {descriptionLines.map((line, i) => (
-                        <div
-                          key={i}
-                          className={`text-[11px] text-[#374151] leading-tight mt-0.5 ${i === 0 ? 'italic' : ''}`}
-                        >
-                          {line}
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="w-24 shrink-0 border-r border-[#1f2937] p-1 pt-2 text-center text-[11px] text-[#374151]">
-                      {product.hsn || product.hsnCode || '12345'}
-                    </div>
-
-                    <div className="w-28 shrink-0 p-1 pt-2 text-center text-[12px] font-bold text-[#111827] pr-4">
-                      {Number(
-                        product.price || product.amount || 0
-                      ).toLocaleString('en-IN', {
-                        minimumFractionDigits: 2,
-
-                        maximumFractionDigits: 2,
-                      })}
-                    </div>
-                  </div>
-                );
-              }) || (
+              {products ? (
+                <>
+                  {gstIncludedProducts.map((product, index) =>
+                    renderProductRow(product, index + 1)
+                  )}
+                </>
+              ) : (
                   <div className="flex">
                     <div className="w-12 border-r border-[#1f2937] p-1 pt-2 text-center text-xs whitespace-nowrap">
                       1
@@ -618,7 +639,7 @@ const PreviewForm = ({
                   </div>
                 )}
 
-              {/* Taxes (directly below items) */}
+              {/* Taxes (directly below GST-included items) */}
 
               {(discountAmount > 0 ||
                 cgstAmount > 0 ||
@@ -711,6 +732,15 @@ const PreviewForm = ({
                   </div>
                 )}
 
+              {/* GST-excluded items are listed after the GST calculation row */}
+              {products &&
+                gstExcludedProducts.map((product, index) =>
+                  renderProductRow(
+                    product,
+                    gstIncludedProducts.length + index + 1
+                  )
+                )}
+
               {/* Filler space to push Total to bottom, maintaining column borders */}
 
               <div className="flex flex-1 min-h-[100px]">
@@ -768,6 +798,7 @@ const PreviewForm = ({
             </div>
           )}{' '}
           {/* TAX TABLE */}
+          {hasGstTax && (
           <div className="w-full border-b border-[#1f2937] border-t-0 bg-white">
             {/* Table Header */}
 
@@ -923,7 +954,9 @@ const PreviewForm = ({
               </div>
             </div>
           </div>
+          )}
           {/* TAX AMOUNT IN WORDS */}
+          {hasGstTax && (
           <div className="w-full border-b border-[#1f2937] py-2 px-2 bg-white text-[10px] text-[#374151] flex items-center">
             <span className="mr-2">Tax Amount (in words) :</span>
 
@@ -939,6 +972,7 @@ const PreviewForm = ({
               Only
             </span>
           </div>
+          )}
           {/* FOOTER SECTION */}
           <div className="w-full flex">
             {/* Left Box */}
