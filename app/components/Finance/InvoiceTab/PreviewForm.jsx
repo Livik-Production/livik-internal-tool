@@ -683,7 +683,7 @@ const PreviewForm = ({
 
                     <div className="w-24 border-r border-[#1f2937]"></div>
 
-                    <div className="w-28 p-1 px-2 pt-6 text-right flex flex-col font-bold text-[12px] text-[#111827] pr-4">
+                    <div className="w-28 shrink-0 p-1 pt-6 text-center flex flex-col items-center font-bold text-[12px] text-[#111827] pr-4">
                       {discountAmount > 0 && (
                         <div className="text-[#dc2626]">
                           -{' '}
