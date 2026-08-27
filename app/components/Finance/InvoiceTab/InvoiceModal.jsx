@@ -26,6 +26,7 @@ const ClientSelectionModal = ({
   const [showCloseConfirm, setShowCloseConfirm] = useState(false); // Close confirmation state
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [totalAmount, setTotalAmount] = useState(0);
+  const [gstApplicableAmount, setGstApplicableAmount] = useState(0);
   const [invoiceType, setInvoiceType] = useState('actual'); // 'actual' or 'proforma'
 
   // Only use the clients passed as prop, no default clients
@@ -216,6 +217,7 @@ const ClientSelectionModal = ({
 
         setSelectedProducts(products);
         setTotalAmount(initialData.subTotal || 0); // Use subTotal from invoice
+        setGstApplicableAmount(initialData.subTotal || 0); // No per-item GST flag persisted; treat all as GST-included
 
         // If initialData is present (editing or duplicating), start at Step 1
         setShowProductModal(false);
@@ -225,6 +227,7 @@ const ClientSelectionModal = ({
         setSelectedClient(null);
         setSelectedProducts([]);
         setTotalAmount(0);
+        setGstApplicableAmount(0);
         setShowProductModal(false);
         setShowGSTModal(false);
       }
@@ -292,9 +295,10 @@ const ClientSelectionModal = ({
   }, []);
 
   // Handle product modal next
-  const handleProductModalNext = useCallback((products, amount) => {
+  const handleProductModalNext = useCallback((products, amount, gstAmount) => {
     setSelectedProducts(products);
     setTotalAmount(amount);
+    setGstApplicableAmount(gstAmount !== undefined ? gstAmount : amount);
     setShowProductModal(false);
     setShowGSTModal(true);
   }, []);
@@ -624,6 +628,7 @@ const ClientSelectionModal = ({
         onCreateInvoice={handleCreateInvoice}
         selectedProducts={selectedProducts}
         totalAmount={totalAmount}
+        gstApplicableAmount={gstApplicableAmount}
         selectedClient={selectedClient}
         initialData={initialData} // Pass initialData primarily for GST/Discount values
         invoiceType={invoiceType} // Pass invoice type to GST modal
