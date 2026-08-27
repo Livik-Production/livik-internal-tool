@@ -24,6 +24,7 @@ const GSTCalculationModal = ({
   onCreateInvoice,
   selectedProducts = [],
   totalAmount = 0,
+  gstApplicableAmount,
   selectedClient,
   initialData, // New prop
   invoiceType,
@@ -44,6 +45,14 @@ const GSTCalculationModal = ({
   const [notes, setNotes] = useState('');
 
   const primaryCurrency = selectedProducts?.[0]?.currency || 'INR';
+
+  // Amount that GST should actually be computed on (items with GST include checked).
+  // Falls back to the full total when not provided, preserving prior behavior.
+  const gstTaxableAmount = Math.min(
+    gstApplicableAmount !== undefined ? gstApplicableAmount : totalAmount,
+    totalAmount
+  );
+  const gstExemptAmount = Math.max(totalAmount - gstTaxableAmount, 0);
 
   const CURRENCIES = [
     { code: 'INR', symbol: '₹' },
@@ -115,8 +124,9 @@ const GSTCalculationModal = ({
       }
 
       const subtotalAfterDisc = totalAmount - discount;
-      const cgst = (subtotalAfterDisc * cgstRate) / 100;
-      const sgst = (subtotalAfterDisc * sgstRate) / 100;
+      // CGST/SGST apply only to the amount of items with GST include checked
+      const cgst = (gstTaxableAmount * cgstRate) / 100;
+      const sgst = (gstTaxableAmount * sgstRate) / 100;
       const totalWithGST = subtotalAfterDisc + cgst + sgst;
 
       setDiscountAmount(discount);
@@ -125,7 +135,7 @@ const GSTCalculationModal = ({
       setSgstAmount(sgst);
       setTotalAmountWithGST(totalWithGST);
     }
-  }, [totalAmount, cgstRate, sgstRate, discountValue, discountType]);
+  }, [totalAmount, gstTaxableAmount, cgstRate, sgstRate, discountValue, discountType]);
 
   const handleCgstRateChange = (e) => {
     const value = parseFloat(e.target.value) || 0;
@@ -405,6 +415,12 @@ const GSTCalculationModal = ({
                 <span>Subtotal After Discount</span>
                 <span>{formatCurrency(subtotalAfterDiscount)}</span>
               </div>
+              {gstExemptAmount > 0 && (
+                <div className="flex justify-between items-center text-sm font-medium text-gray-500">
+                  <span>GST Exempt Amount (GST Include unchecked)</span>
+                  <span>{formatCurrency(gstExemptAmount)}</span>
+                </div>
+              )}
               <div className="flex justify-between items-center text-sm font-medium text-gray-600">
                 <span>Tax Breakdown (CGST + SGST)</span>
                 <span>{formatCurrency(cgstAmount + sgstAmount)}</span>

@@ -22,6 +22,7 @@ const EditInvoiceModal = ({
   const [selectedClient, setSelectedClient] = useState(null);
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [totalAmount, setTotalAmount] = useState(0);
+  const [gstApplicableAmount, setGstApplicableAmount] = useState(0);
   const [invoiceType, setInvoiceType] = useState('actual');
   const [gstData, setGstData] = useState({
     cgstRate: 9,
@@ -53,6 +54,7 @@ const EditInvoiceModal = ({
       setSelectedClient(client);
       setSelectedProducts(invoice.products || []);
       setTotalAmount(invoice.amount || 0);
+      setGstApplicableAmount(invoice.amount || 0); // No per-item GST flag persisted; treat all as GST-included
       setInvoiceType(invoice.invoiceType || 'actual');
 
       // Set GST data from invoice
@@ -81,9 +83,10 @@ const EditInvoiceModal = ({
   };
 
   // Handle product selection from step 2
-  const handleProductSelect = (products, amount) => {
+  const handleProductSelect = (products, amount, gstAmount) => {
     setSelectedProducts(products);
     setTotalAmount(amount);
+    setGstApplicableAmount(gstAmount !== undefined ? gstAmount : amount);
     setCurrentStep(3);
   };
 
@@ -255,6 +258,7 @@ const EditInvoiceModal = ({
                 onCreateInvoice={handleSaveInvoice}
                 selectedProducts={selectedProducts}
                 totalAmount={totalAmount}
+                gstApplicableAmount={gstApplicableAmount}
                 selectedClient={selectedClient}
                 initialGSTData={gstData}
                 onUpdateGST={handleGSTUpdate}

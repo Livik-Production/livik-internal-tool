@@ -90,6 +90,7 @@ const ProductSelectionModal = ({
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [tableRows, setTableRows] = useState([]);
   const [totalAmount, setTotalAmount] = useState(0);
+  const [gstApplicableAmount, setGstApplicableAmount] = useState(0);
   const [focusField, setFocusField] = useState(null); // { rowId, field }
   const [rowToRemove, setRowToRemove] = useState(null);
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
@@ -108,6 +109,7 @@ const ProductSelectionModal = ({
           description: product.description || '',
           amount: product.amount || product.price || '',
           currency: product.currency || 'INR',
+          gstIncluded: product.gstIncluded !== false,
           isEditable: false, // Keep non-editable initially
           isNew: false,
         }));
@@ -121,6 +123,14 @@ const ProductSelectionModal = ({
           return sum + (isNaN(amount) ? 0 : amount);
         }, 0);
         setTotalAmount(initialTotal);
+
+        // Calculate initial GST-applicable amount (items with GST include checked)
+        const initialGstApplicable = initialProducts.reduce((sum, product) => {
+          if (product.gstIncluded === false) return sum;
+          const amount = parseFloat(product.amount || product.price || 0);
+          return sum + (isNaN(amount) ? 0 : amount);
+        }, 0);
+        setGstApplicableAmount(initialGstApplicable);
       } else {
         // Original empty row logic
         const emptyRow = {
@@ -131,12 +141,14 @@ const ProductSelectionModal = ({
           description: '',
           amount: '',
           currency: 'INR',
+          gstIncluded: true,
           isEditable: true, // This should be editable
           isNew: true,
         };
         setTableRows([emptyRow]);
         setSelectedProducts([]);
         setTotalAmount(0);
+        setGstApplicableAmount(0);
       }
     }
     // Only run when the modal opens/closes, ignoring initialProducts changes while open
@@ -150,6 +162,14 @@ const ProductSelectionModal = ({
       return sum + (isNaN(amount) ? 0 : amount);
     }, 0);
     setTotalAmount(total);
+
+    // Only items with GST include checked contribute to the GST-applicable amount
+    const gstTotal = selectedProducts.reduce((sum, product) => {
+      if (product.gstIncluded === false) return sum;
+      const amount = parseFloat(product.amount || 0);
+      return sum + (isNaN(amount) ? 0 : amount);
+    }, 0);
+    setGstApplicableAmount(gstTotal);
   }, [selectedProducts]);
 
   // Schedule auto-save for a row
@@ -191,6 +211,7 @@ const ProductSelectionModal = ({
         description: rowToSave.description?.trim() || '',
         amount: amountValue,
         currency: rowToSave.currency || 'INR',
+        gstIncluded: rowToSave.gstIncluded !== false,
       };
 
       // Update selected products
@@ -217,6 +238,7 @@ const ProductSelectionModal = ({
             description: rowToSave.description,
             amount: rowToSave.amount,
             currency: rowToSave.currency || 'INR',
+            gstIncluded: rowToSave.gstIncluded !== false,
           };
         }
         return row;
@@ -290,6 +312,19 @@ const ProductSelectionModal = ({
     scheduleAutoSave(rowId);
   };
 
+  // Handle GST include toggle for a row
+  const handleGstIncludedChange = (rowId, checked) => {
+    setTableRows((prevRows) =>
+      prevRows.map((row) =>
+        row.id === rowId ? { ...row, gstIncluded: checked } : row
+      )
+    );
+    // Also update in selectedProducts if the row has already been saved
+    setSelectedProducts((prev) =>
+      prev.map((p) => (p.id === rowId ? { ...p, gstIncluded: checked } : p))
+    );
+  };
+
   // Handle double-click on row to make it editable
   const handleRowDoubleClick = (rowId) => {
     setTableRows((prevRows) =>
@@ -338,6 +373,7 @@ const ProductSelectionModal = ({
       description: '',
       amount: '',
       currency: 'INR',
+      gstIncluded: true,
       isEditable: true,
       isNew: true,
     };
@@ -378,6 +414,7 @@ const ProductSelectionModal = ({
           description: '',
           amount: '',
           currency: 'INR',
+          gstIncluded: true,
           isEditable: true,
           isNew: true,
         },
@@ -434,6 +471,7 @@ const ProductSelectionModal = ({
                 description: row.description?.trim() || '',
                 amount: amountValue,
                 currency: row.currency || 'INR',
+                gstIncluded: row.gstIncluded !== false,
               };
 
               // Update selected products
@@ -469,7 +507,7 @@ const ProductSelectionModal = ({
     autoSaveTimeouts.current = {};
 
     if (selectedProducts.length > 0) {
-      onNext(selectedProducts, totalAmount);
+      onNext(selectedProducts, totalAmount, gstApplicableAmount);
     } else {
       alert('Please add at least one product before proceeding.');
     }
@@ -530,9 +568,9 @@ const ProductSelectionModal = ({
               {
                 key: 'sno',
                 label: 'S.No',
-                className: 'w-14',
+                className: 'w-10 !px-2 !py-2',
                 render: (row) => (
-                  <div className="w-7 h-7 flex items-center justify-center bg-gray-50 rounded text-[10px] font-bold text-gray-400 border border-gray-100 mx-auto">
+                  <div className="w-6 h-6 flex items-center justify-center bg-gray-50 rounded text-[10px] font-bold text-gray-400 border border-gray-100 mx-auto">
                     {row.sno}
                   </div>
                 ),
@@ -540,7 +578,7 @@ const ProductSelectionModal = ({
               {
                 key: 'hsnCode',
                 label: 'HSN Code',
-                className: 'min-w-[140px] w-40',
+                className: 'min-w-[90px] w-24 !px-2 !py-2',
                 render: (row, index) =>
                   row.isEditable ? (
                     <input
@@ -565,7 +603,7 @@ const ProductSelectionModal = ({
                   ) : (
                     <div
                       onClick={(e) => handleInputClick(row.id, 'hsnCode', e)}
-                      className="cursor-text py-2"
+                      className="cursor-text py-1 whitespace-normal break-words"
                     >
                       <span className="font-medium text-xs text-gray-900">
                         {row.hsnCode || '—'}
@@ -576,7 +614,7 @@ const ProductSelectionModal = ({
               {
                 key: 'productName',
                 label: 'Item Name',
-                className: 'min-w-[250px]',
+                className: 'min-w-[130px] !px-3 !py-2',
                 render: (row) =>
                   row.isEditable ? (
                     <input
@@ -602,7 +640,7 @@ const ProductSelectionModal = ({
                       onClick={(e) =>
                         handleInputClick(row.id, 'productName', e)
                       }
-                      className="cursor-text py-2"
+                      className="cursor-text py-1 whitespace-normal break-words"
                     >
                       <span className="font-semibold text-sm text-gray-800">
                         {row.productName || '—'}
@@ -613,7 +651,7 @@ const ProductSelectionModal = ({
               {
                 key: 'description',
                 label: 'Description',
-                className: 'min-w-[350px]',
+                className: 'min-w-[140px] !px-3 !py-2',
                 render: (row) =>
                   row.isEditable ? (
                     <textarea
@@ -638,7 +676,7 @@ const ProductSelectionModal = ({
                       onClick={(e) =>
                         handleInputClick(row.id, 'description', e)
                       }
-                      className="cursor-text py-2"
+                      className="cursor-text py-1 whitespace-normal break-words"
                     >
                       <span className="text-xs text-gray-500 leading-relaxed">
                         {row.description || '—'}
@@ -649,11 +687,11 @@ const ProductSelectionModal = ({
               {
                 key: 'amount',
                 label: 'Amount',
-                className: 'min-w-[240px] w-60',
+                className: 'min-w-[160px] w-44 !px-2 !py-2',
                 render: (row) => {
                   const currInfo = getCurrencyInfo(row.currency || 'INR');
                   return row.isEditable ? (
-                    <div className="flex items-center justify-center gap-1.5 mx-auto max-w-[220px]">
+                    <div className="flex items-center justify-center gap-1 mx-auto max-w-[170px]">
                       <CurrencySelector
                         currency={row.currency || 'INR'}
                         onSelect={(code) => handleCurrencyChange(row.id, code)}
@@ -666,7 +704,7 @@ const ProductSelectionModal = ({
                             handleFieldChange(row.id, 'amount', e.target.value)
                           }
                           onClick={(e) => handleInputClick(row.id, 'amount', e)}
-                          className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm bg-white text-center font-medium text-gray-900 focus:border-blue-500 outline-none"
+                          className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm bg-white text-center font-medium text-gray-900 focus:border-blue-500 outline-none"
                           placeholder="0.00"
                           autoFocus={
                             focusField?.rowId === row.id &&
@@ -692,9 +730,28 @@ const ProductSelectionModal = ({
                 },
               },
               {
+                key: 'gstIncluded',
+                label: 'GST',
+                className: 'w-14 !px-1 !py-2',
+                render: (row) => (
+                  <div className="flex justify-center">
+                    <input
+                      type="checkbox"
+                      checked={row.gstIncluded !== false}
+                      onChange={(e) =>
+                        handleGstIncludedChange(row.id, e.target.checked)
+                      }
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                      title="Include this item in GST calculation"
+                    />
+                  </div>
+                ),
+              },
+              {
                 key: 'actions',
                 label: '',
-                className: 'w-16 pr-4',
+                className: 'w-10 !px-1 !py-2',
                 render: (row) => (
                   <div className="flex justify-center">
                     <IconButton
@@ -702,7 +759,7 @@ const ProductSelectionModal = ({
                       className="text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all rounded-lg"
                       title="Remove Item"
                     >
-                      <Trash2Icon size={16} />
+                      <Trash2Icon size={14} />
                     </IconButton>
                   </div>
                 ),
@@ -711,8 +768,16 @@ const ProductSelectionModal = ({
             data={tableRows}
             rowKey="id"
             maxHeight="none"
-            headerAlignment={{ amount: 'center', actions: 'center' }}
-            cellAlignment={{ amount: 'center', actions: 'center' }}
+            headerAlignment={{
+              amount: 'center',
+              gstIncluded: 'center',
+              actions: 'center',
+            }}
+            cellAlignment={{
+              amount: 'center',
+              gstIncluded: 'center',
+              actions: 'center',
+            }}
             rowClassName={(row) =>
               `border-b border-gray-100 ${
                 row.isEditable
