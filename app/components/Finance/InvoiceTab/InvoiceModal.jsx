@@ -203,8 +203,15 @@ const ClientSelectionModal = ({
           initialData.items?.map((item, index) => {
             const rawDescription = item.description || '';
             const parts = rawDescription.split('||CUR:');
-            const description = parts[0] || '';
+            let description = parts[0] || '';
             const currency = parts[1] || 'INR';
+            // The GST-exclusion marker (if present) is packed just before the
+            // `||CUR:` currency marker inside the description column.
+            let gstIncluded = true;
+            if (description.endsWith('||GST:0')) {
+              gstIncluded = false;
+              description = description.slice(0, -'||GST:0'.length);
+            }
             return {
               id: item.id || `edit-${index}`,
               hsnCode: item.hsnSacCode || '',
@@ -212,12 +219,18 @@ const ClientSelectionModal = ({
               amount: item.amount || 0,
               description: description,
               currency: currency,
+              gstIncluded: gstIncluded,
             };
           }) || [];
 
         setSelectedProducts(products);
         setTotalAmount(initialData.subTotal || 0); // Use subTotal from invoice
-        setGstApplicableAmount(initialData.subTotal || 0); // No per-item GST flag persisted; treat all as GST-included
+        // Only items with GST include checked contribute to the GST-applicable amount
+        const gstApplicable = products.reduce((sum, p) => {
+          if (p.gstIncluded === false) return sum;
+          return sum + Number(p.amount || 0);
+        }, 0);
+        setGstApplicableAmount(gstApplicable);
 
         // If initialData is present (editing or duplicating), start at Step 1
         setShowProductModal(false);
