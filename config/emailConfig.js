@@ -62,7 +62,7 @@ function extractAddress(value) {
 // Nodemailer-compatible shim so existing callers (transporter.sendMail(options)) don't change.
 // Note: Graph app-only sendMail always uses the mailbox's own configured display name —
 // the "Display Name" portion of a "Name <email>" `from` is ignored, only the address is used.
-async function sendMail({ to, subject, text, html, from }) {
+async function sendMail({ to, subject, text = '', html = '', from = '' }) {
   const token = await getAccessToken();
   const sender = extractAddress(from) || SENDER_EMAIL;
 
