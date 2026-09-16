@@ -195,10 +195,10 @@ export async function PUT(req, context) {
 
         const adminEmails = admins.map(a => a.email).filter(Boolean);
         
-        if (adminEmails.length > 0 && process.env.EMAIL_ID) {
+        if (adminEmails.length > 0 && process.env.MS_SENDER_EMAIL) {
           const empName = `${updated.firstName || ''} ${updated.lastName || ''}`.trim();
           await transporter.sendMail({
-            from: process.env.EMAIL_ID,
+            from: process.env.MS_SENDER_EMAIL,
             to: adminEmails,
             subject: `Pending Admin Approval: ${empName}`,
             html: `

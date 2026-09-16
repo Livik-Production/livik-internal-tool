@@ -1,34 +1,20 @@
 import 'dotenv/config';
-import nodemailer from 'nodemailer';
+import transporter from './config/emailConfig.js';
 
-const host = process.env.SMTP_HOST || 'smtp.gmail.com';
-const port = parseInt(process.env.SMTP_PORT || '587', 10);
-const user = process.env.SMTP_USER || process.env.EMAIL_ID;
-const pass = process.env.SMTP_PASS || process.env.GOOGLE_APP_PASSWORD;
-const from = process.env.MAIL_FROM || `HR Team <${user || 'hr@example.com'}>`;
+const from = process.env.MAIL_FROM || `HR Team <${process.env.MS_SENDER_EMAIL || 'noreply@liviktech.com'}>`;
 
-console.log('--- SMTP Config ---');
-console.log('Host:', host);
-console.log('Port:', port);
-console.log('User:', user);
-console.log('Pass:', pass ? '********' : 'NOT SET');
+console.log('--- Microsoft Graph Mail Config ---');
+console.log('MS_SENDER_EMAIL:', process.env.MS_SENDER_EMAIL);
+console.log('MS_TENANT_ID:', process.env.MS_TENANT_ID ? 'SET' : 'NOT SET');
+console.log('MS_CLIENT_ID:', process.env.MS_CLIENT_ID ? 'SET' : 'NOT SET');
+console.log('MS_CLIENT_SECRET:', process.env.MS_CLIENT_SECRET ? 'SET' : 'NOT SET');
 console.log('From:', from);
-console.log('-------------------');
-
-const transporter = nodemailer.createTransport({
-  host,
-  port,
-  secure: port === 465,
-  auth: { user, pass },
-});
+console.log('-----------------------------------');
 
 try {
-  await transporter.verify();
-  console.log('✅ SMTP connection verified!');
-  
-  const testTo = process.env.EMAIL_ID || user;
+  const testTo = process.env.MS_SENDER_EMAIL;
   console.log(`\nSending test invoice reminder email to: ${testTo}`);
-  
+
   const info = await transporter.sendMail({
     from,
     to: testTo,
@@ -52,10 +38,8 @@ try {
       </div>
     `,
   });
-  
+
   console.log('✅ Email sent successfully!');
-  console.log('Message ID:', info.messageId);
-  console.log('Response:', info.response);
   console.log('Accepted:', info.accepted);
   console.log('Rejected:', info.rejected);
 } catch (err) {

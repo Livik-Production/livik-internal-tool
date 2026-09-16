@@ -1,28 +1,14 @@
 // lib/mailer.ts
-import nodemailer from 'nodemailer';
+import transporter from '../config/emailConfig.js';
 
-const host = process.env.SMTP_HOST || 'smtp.gmail.com';
-const port = parseInt(process.env.SMTP_PORT || '587', 10);
-const user = process.env.SMTP_USER || process.env.EMAIL_ID;
-const pass = process.env.SMTP_PASS || process.env.GOOGLE_APP_PASSWORD;
-const from = process.env.MAIL_FROM || `HR Team <${user || 'hr@example.com'}>`;
+const from =
+  process.env.MAIL_FROM || `HR Team <${process.env.MS_SENDER_EMAIL || 'noreply@liviktech.com'}>`;
 
-// Create Nodemailer transporter
-export const transporter = nodemailer.createTransport({
-  host,
-  port,
-  secure: port === 465, // true for 465, false for other ports
-  auth: {
-    user,
-    pass,
-  },
-});
+export { transporter };
 
-console.info('[Mailer] Using SMTP', {
-  host,
-  port,
-  user,
-  from,               // the exact “From” header
+console.info('[Mailer] Using Microsoft Graph', {
+  sender: process.env.MS_SENDER_EMAIL,
+  from,
 });
 
 /**

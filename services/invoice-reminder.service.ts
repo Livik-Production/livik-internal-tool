@@ -46,11 +46,13 @@ export async function processInvoiceReminders(
 
     console.log(`[InvoiceReminderService] Today's date: ${today.toISOString()}`);
 
-    console.log('[InvoiceReminderService] SMTP Config:');
-    console.log('  EMAIL_ID:', process.env.EMAIL_ID);
+    console.log('[InvoiceReminderService] Mail Config (Microsoft Graph):');
+    console.log('  MS_SENDER_EMAIL:', process.env.MS_SENDER_EMAIL);
+    console.log('  MS_TENANT_ID:', process.env.MS_TENANT_ID ? 'SET' : 'NOT SET');
+    console.log('  MS_CLIENT_ID:', process.env.MS_CLIENT_ID ? 'SET' : 'NOT SET');
     console.log(
-      '  GOOGLE_APP_PASSWORD:',
-      process.env.GOOGLE_APP_PASSWORD ? 'SET' : 'NOT SET'
+      '  MS_CLIENT_SECRET:',
+      process.env.MS_CLIENT_SECRET ? 'SET' : 'NOT SET'
     );
 
     /**
