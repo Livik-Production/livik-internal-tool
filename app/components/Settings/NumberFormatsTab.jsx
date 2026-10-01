@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import {
   CreditCard,
+  FileText,
   Users,
   Package,
 } from 'lucide-react';
@@ -15,6 +16,14 @@ export default function NumberFormatsTab() {
   // State for Invoice formats
   const [invoiceConfig, setInvoiceConfig] = useState({
     prefix: 'INV-',
+    nextNumber: '1001',
+    padding: 4,
+    suffix: '-2026',
+  });
+
+  // State for Quotation formats
+  const [quotationConfig, setQuotationConfig] = useState({
+    prefix: 'QTN-',
     nextNumber: '1001',
     padding: 4,
     suffix: '-2026',
@@ -62,6 +71,7 @@ export default function NumberFormatsTab() {
         if (resFormats.ok) {
           const data = await resFormats.json();
           if (data.invoice) setInvoiceConfig(data.invoice);
+          if (data.quotation) setQuotationConfig(data.quotation);
           if (data.employee) setEmployeeConfig(data.employee);
           if (data.contract_employee) setContractEmployeeConfig(data.contract_employee);
           
@@ -100,6 +110,13 @@ export default function NumberFormatsTab() {
     }));
   };
 
+  const handleQuotationChange = (field, value) => {
+    setQuotationConfig((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
   const handleEmployeeChange = (field, value) => {
     setEmployeeConfig((prev) => ({
       ...prev,
@@ -131,6 +148,8 @@ export default function NumberFormatsTab() {
       let payload = {};
       if (section === 'invoice') {
         payload.invoice = invoiceConfig;
+      } else if (section === 'quotation') {
+        payload.quotation = quotationConfig;
       } else if (section === 'employee') {
         payload.employee = employeeConfig;
       } else if (section === 'contract') {
@@ -331,6 +350,147 @@ export default function NumberFormatsTab() {
                 className="px-4 py-1.5 bg-[#004475] text-white font-semibold text-xs rounded-xl hover:bg-[#003358] active:bg-[#00223a] transition-all flex items-center gap-2 shadow-sm"
               >
                 {isSaving === 'invoice' ? (
+                  <>
+                    <div className="h-3 w-3 border-[1.5px] border-white border-t-transparent rounded-full animate-spin"></div>
+                    Saving...
+                  </>
+                ) : (
+                  'Save'
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* ================= QUOTATION FORMAT CARD ================= */}
+          <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
+                <div className="p-2 bg-violet-50 text-violet-600 rounded-xl">
+                  <FileText size={20} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-800 text-sm">
+                    Quotation Number Format
+                  </h3>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {/* Prefix */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                    Prefix
+                  </label>
+                  <input
+                    type="text"
+                    value={quotationConfig.prefix}
+                    onChange={(e) =>
+                      handleQuotationChange('prefix', e.target.value)
+                    }
+                    placeholder="e.g. QTN-"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-50/50 focus:border-blue-400 outline-none transition-all font-mono"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Next Sequence Number */}
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                      Next Number
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={quotationConfig.nextNumber}
+                      onChange={(e) =>
+                        handleQuotationChange('nextNumber', e.target.value)
+                      }
+                      placeholder="e.g. 1001"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-50/50 focus:border-blue-400 outline-none transition-all font-mono"
+                    />
+                  </div>
+
+                  {/* Padding */}
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                      Number Padding
+                    </label>
+                    <select
+                      value={quotationConfig.padding}
+                      onChange={(e) =>
+                        handleQuotationChange(
+                          'padding',
+                          parseInt(e.target.value, 10)
+                        )
+                      }
+                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-50/50 focus:border-blue-400 outline-none transition-all bg-white font-mono"
+                    >
+                      <option value={2}>2 Digits (e.g. 01)</option>
+                      <option value={3}>3 Digits (e.g. 001)</option>
+                      <option value={4}>4 Digits (e.g. 0001)</option>
+                      <option value={5}>5 Digits (e.g. 00001)</option>
+                      <option value={6}>6 Digits (e.g. 000001)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Suffix */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                    Suffix
+                  </label>
+                  <input
+                    type="text"
+                    value={quotationConfig.suffix}
+                    onChange={(e) =>
+                      handleQuotationChange('suffix', e.target.value)
+                    }
+                    placeholder="e.g. -2026"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-50/50 focus:border-blue-400 outline-none transition-all font-mono"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Live Preview Block */}
+            <div className="mt-6 pt-5 border-t border-gray-100">
+              <span className="text-[10px] uppercase tracking-wider font-bold text-gray-400 block mb-2">
+                Live Format Preview
+              </span>
+              <div className="bg-violet-50/50 border border-violet-100 rounded-xl p-3.5 flex items-center justify-between">
+                <span className="text-xs font-medium text-violet-800">
+                  Generated Quotation ID:
+                </span>
+                <span className="font-mono text-sm font-bold text-violet-700 bg-violet-100 px-3 py-1 rounded-lg">
+                  {getFormattedNumber(quotationConfig)}
+                </span>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setQuotationConfig({
+                    prefix: 'QTN-',
+                    nextNumber: '1001',
+                    padding: 4,
+                    suffix: '-2026',
+                  });
+                  showSuccessToast('Reset to default.');
+                }}
+                className="px-3 py-1.5 border border-gray-600 text-gray-600 font-semibold text-xs rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors"
+              >
+                Reset
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSaveSection('quotation')}
+                disabled={isSaving === 'quotation'}
+                className="px-4 py-1.5 bg-[#004475] text-white font-semibold text-xs rounded-xl hover:bg-[#003358] active:bg-[#00223a] transition-all flex items-center gap-2 shadow-sm"
+              >
+                {isSaving === 'quotation' ? (
                   <>
                     <div className="h-3 w-3 border-[1.5px] border-white border-t-transparent rounded-full animate-spin"></div>
                     Saving...

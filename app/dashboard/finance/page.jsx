@@ -5,6 +5,7 @@ import { useSelector } from 'react-redux';
 import { useSearchParams } from 'next/navigation';
 import OverviewForm from '../../components/Finance/Overview';
 import InvoiceTable from '../../components/Finance/InvoiceTab/Invoice';
+import QuotationTable from '../../components/Finance/QuotationTab/Quotation';
 import PaymentTable from '../../components/Finance/PaymentTab/Payment';
 import ExpensesTable from '../../components/Finance/ExpenseTab/Expenses';
 import Loader from '../../components/Loader';
@@ -20,6 +21,7 @@ import NotificationBell from '../../components/NotificationBell';
 const TAB_CONFIG = [
   { id: 'overview', label: 'Dashboard', right: 'finance_view_overview' },
   { id: 'invoice', label: 'Invoice', right: 'finance_view_invoices' },
+  { id: 'quotation', label: 'Quotation', right: 'finance_view_quotations' },
   { id: 'payment', label: 'Payments', right: 'finance_view_payments' },
   { id: 'expenses', label: 'Expenses', right: 'finance_view_expenses' },
 ];
@@ -417,6 +419,8 @@ function FinanceContent() {
                   onRefresh={fetchInvoices}
                 />
               )}
+
+              {activeTab === 'quotation' && <QuotationTable />}
               {activeTab === 'payment' && (
                 <PaymentTable
                   invoices={invoices}
