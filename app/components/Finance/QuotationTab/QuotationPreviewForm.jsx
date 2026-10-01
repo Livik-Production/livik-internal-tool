@@ -64,6 +64,19 @@ const QuotationPreviewForm = ({
       ? items.reduce((sum, i) => sum + Number(i.amount || 0), 0)
       : Number(subTotal || 0);
 
+  // Split the terms text so the "Payment Terms" section (and everything
+  // after it) moves to the right column as a whole, instead of being broken
+  // up wherever a CSS column happens to wrap.
+  let termsLeft = termsAndConditions || '';
+  let termsRight = '';
+  if (termsAndConditions) {
+    const splitIndex = termsAndConditions.search(/payment terms/i);
+    if (splitIndex > -1) {
+      termsLeft = termsAndConditions.slice(0, splitIndex).trim();
+      termsRight = termsAndConditions.slice(splitIndex).trim();
+    }
+  }
+
   // Helper: number to words (mirrors Invoice's PreviewForm)
   const numberToWords = (num) => {
     if (!num || isNaN(num)) return 'Zero';
@@ -305,78 +318,41 @@ const QuotationPreviewForm = ({
             </div>
           </div>
 
-          {/* GST & TERMS SECTION + BANK DETAILS */}
-          <div className="w-full flex border border-[#d1d5db]">
-            {/* Left - Terms and Conditions */}
-            <div className="w-1/2 shrink-0 p-3">
-              <div className="font-bold text-[12px] text-[#111827] mb-2">
-                Terms and Conditions
+          {/* GST & TERMS SECTION */}
+          <div className="w-full border border-[#d1d5db] p-3 pb-28 relative">
+            <div className="font-bold text-[14px] text-[#111827] mb-2">
+              Terms and Conditions
+            </div>
+            <div className="flex items-start gap-6">
+              <div className="w-1/2">
+                <div className="font-semibold text-[12px] text-[#111827] mb-1">
+                  GST:{' '}
+                  {Number(gstPercent || 0) > 0
+                    ? `${Number(gstPercent)}% applicable`
+                    : 'Extra as applicable'}
+                </div>
+                {termsLeft && (
+                  <div className="mt-2 text-sm text-[#374151] whitespace-pre-wrap leading-relaxed">
+                    {termsLeft}
+                  </div>
+                )}
               </div>
-              <div className="font-semibold text-[12px] text-[#111827] mb-1">
-                GST:{' '}
-                {Number(gstPercent || 0) > 0
-                  ? `${Number(gstPercent)}% applicable`
-                  : 'Extra as applicable'}
-              </div>
-              {termsAndConditions && (
-                <div className="mt-2 text-sm text-[#374151] whitespace-pre-wrap leading-relaxed">
-                  {termsAndConditions}
+              {termsRight && (
+                <div className="w-1/2 text-sm text-[#374151] whitespace-pre-wrap leading-relaxed">
+                  {termsRight}
                 </div>
               )}
             </div>
 
-            {/* Right - Company's Bank Details (above) + Signatory (below, last) */}
-            <div className="w-1/2 shrink-0 border-l border-[#d1d5db] flex flex-col">
-              {/* Company's Bank Details */}
-              <div className="p-3 text-[9px] text-[#111827]">
-                <div className="mb-1 underline font-bold">
-                  Company's Bank Details
-                </div>
-
-                <div className="flex">
-                  <span className="w-24 shrink-0 whitespace-nowrap">A/c Holder's Name</span>
-                  <span className="font-bold whitespace-nowrap">
-                    :{' '}
-                    {companyDetails?.accountHolderName ||
-                      'LIVIKTECH SOLUTIONS PRIVATE LIMITED'}
-                  </span>
-                </div>
-
-                <div className="flex mt-0.5">
-                  <span className="w-24 shrink-0 whitespace-nowrap">Bank Name</span>
-                  <span className="font-bold whitespace-nowrap">
-                    : {companyDetails?.bankName || 'HDFC Bank Ltd'}
-                  </span>
-                </div>
-
-                <div className="flex mt-0.5">
-                  <span className="w-24 shrink-0 whitespace-nowrap">A/c No.</span>
-                  <span className="font-bold whitespace-nowrap">
-                    : {companyDetails?.accountNumber || '1234567899632'}
-                  </span>
-                </div>
-
-                <div className="flex mt-0.5">
-                  <span className="w-24 shrink-0 whitespace-nowrap">IFSC Code </span>
-                  <span className="font-bold whitespace-nowrap">
-                    :{' '}
-                    {companyDetails?.ifscCode
-                      ? `${companyDetails.ifscCode}`
-                      : 'HDFC000053'}
-                  </span>
-                </div>
+            {/* Signatory - pinned to the bottom-right */}
+            <div className="absolute bottom-3 right-4 flex flex-col items-end text-right">
+              <div className="text-[10px] font-bold text-[#111827]">
+                for{' '}
+                {companyDetails?.companyName ||
+                  'LIVIKTECH SOLUTIONS PRIVATE LIMITED'}
               </div>
-
-              {/* Signatory - pinned to the bottom of this column */}
-              <div className="mt-auto border-t border-[#d1d5db] p-3 flex flex-col items-end text-right">
-                <div className="text-[10px] font-bold text-[#111827]">
-                  for{' '}
-                  {companyDetails?.companyName ||
-                    'LIVIKTECH SOLUTIONS PRIVATE LIMITED'}
-                </div>
-                <div className="text-[9px] text-[#374151] mt-9">
-                  Authorised Signatory
-                </div>
+              <div className="text-[9px] text-[#374151] mt-9">
+                Authorised Signatory
               </div>
             </div>
           </div>
