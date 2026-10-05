@@ -146,6 +146,12 @@ async function seedPermissions() {
       rightName: 'finance_control_invoices',
       description: 'Can create, update, delete invoices',
     },
+    {
+      module: 'Finance',
+      displayName: 'Finance Control Quotations',
+      rightName: 'finance_control_quotations',
+      description: 'Can create, update, delete quotations',
+    },
 
     // Finance Module - 4 rights
     {
@@ -159,6 +165,12 @@ async function seedPermissions() {
       displayName: 'Finance View Invoices',
       rightName: 'finance_view_invoices',
       description: 'Can view invoices',
+    },
+    {
+      module: 'Finance',
+      displayName: 'Finance View Quotations',
+      rightName: 'finance_view_quotations',
+      description: 'Can view quotations',
     },
     {
       module: 'Finance',

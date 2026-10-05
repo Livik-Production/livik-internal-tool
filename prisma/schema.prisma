@@ -329,6 +329,37 @@ model InvoiceItem {
   @@index([invoiceNumber])
 }
 
+model Quotation {
+  id                 String          @id @default(cuid())
+  quotationNumber    String          @unique @map("quotation_number")
+  quotationDate      DateTime        @map("quotation_date")
+  customerId         String          @map("customer_id")
+  subject            String?
+  greeting           String?         @db.Text
+  gstPercent         Decimal         @default(0) @db.Decimal(5, 2)
+  termsAndConditions String?         @map("terms_and_conditions") @db.Text
+  subTotal           Decimal         @db.Decimal(12, 2)
+  status             String          @default("DRAFT")
+  createdAt          DateTime        @default(now()) @map("created_at")
+  updatedAt          DateTime        @updatedAt @map("updated_at")
+  items              QuotationItem[]
+
+  @@index([quotationDate])
+  @@index([quotationNumber])
+  @@index([customerId])
+}
+
+model QuotationItem {
+  id              String    @id @default(cuid())
+  quotationNumber String    @map("quotation_number")
+  serialNumber    Int       @map("serial_number")
+  moduleName      String    @map("module_name")
+  amount          Decimal   @db.Decimal(12, 2)
+  quotation       Quotation @relation(fields: [quotationNumber], references: [quotationNumber])
+
+  @@index([quotationNumber])
+}
+
 model InvoicePayment {
   id             String   @id @default(cuid())
   invoiceId      String   @map("invoice_id")

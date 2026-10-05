@@ -50,7 +50,7 @@ export async function GET() {
 export async function PUT(request) {
   try {
     const body = await request.json();
-    const modules = ['invoice', 'employee', 'contract_employee'];
+    const modules = ['invoice', 'quotation', 'employee', 'contract_employee'];
     // Add dynamic asset keys from the request body
     Object.keys(body).forEach(key => {
       if (key.startsWith('asset_') && !modules.includes(key)) {
