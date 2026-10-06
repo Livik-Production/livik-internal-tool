@@ -35,7 +35,7 @@ export const handleDownloadInvoicePDF = async (
     const fileName = `Invoice_${invoiceData?.invoiceNumber || invoiceData?.client?.name || 'Invoice'}_${Date.now()}.pdf`;
 
     const options = {
-      margin: 0,
+      margin: 10,
 
       filename: fileName,
 

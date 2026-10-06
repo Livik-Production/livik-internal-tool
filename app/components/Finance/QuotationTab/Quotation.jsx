@@ -301,9 +301,8 @@ const QuotationTable = ({ onRefresh }) => {
         quotationDate:
           editingQuotation?.quotationDate || new Date().toISOString(),
         customerId,
-        subject: quotationData.subject || '',
-        greeting: quotationData.greeting || '',
         gstPercent: quotationData.gstPercent || 0,
+        discountPercent: quotationData.discountPercent || 0,
         termsAndConditions: quotationData.termsAndConditions || '',
         items: quotationData.items.map((item, i) => ({
           serialNumber: i + 1,
@@ -379,6 +378,7 @@ const QuotationTable = ({ onRefresh }) => {
       items,
       subTotal: quotation.subTotal,
       gstPercent: quotation.gstPercent,
+      discountPercent: quotation.discountPercent,
       termsAndConditions: quotation.termsAndConditions,
     };
 
@@ -494,7 +494,7 @@ const QuotationTable = ({ onRefresh }) => {
             columns={[
               {
                 key: 'quotationNumber',
-                label: 'Quotation No',
+                label: 'SL. no.',
                 render: (quotation) => (
                   <div className="text-left py-1">
                     <HyperlinkButton
@@ -555,15 +555,7 @@ const QuotationTable = ({ onRefresh }) => {
                     {getCity(quotation)}
                   </span>
                 ),
-              },
-              {
-                key: 'subject',
-                label: 'Subject',
-                render: (quotation) => (
-                  <span className="text-gray-600 text-sm truncate">
-                    {quotation.subject || '—'}
-                  </span>
-                ),
+
               },
               {
                 key: 'amount',
@@ -699,7 +691,7 @@ const QuotationTable = ({ onRefresh }) => {
       >
         <div className="p-6 bg-gray-50/50 min-h-[400px] flex justify-center">
           <div
-            className="bg-white rounded-2xl shadow-sm border border-gray-100 p-0 overflow-hidden printable"
+            className="bg-white rounded-2xl shadow-sm border border-gray-100 p-0 overflow-hidden printable w-full"
             id="quotation-print"
           >
             {previewQuotationData && (

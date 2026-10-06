@@ -32,6 +32,7 @@ const QuotationTermsModal = ({
   nextQuotationNumber,
 }) => {
   const [gstPercent, setGstPercent] = useState(0);
+  const [discountPercent, setDiscountPercent] = useState(0);
   const [termsAndConditions, setTermsAndConditions] = useState(DEFAULT_TERMS);
   const [showPreview, setShowPreview] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -41,6 +42,9 @@ const QuotationTermsModal = ({
       if (initialData.gstPercent !== undefined) {
         setGstPercent(Number(initialData.gstPercent));
       }
+      if (initialData.discountPercent !== undefined) {
+        setDiscountPercent(Number(initialData.discountPercent));
+      }
       if (initialData.termsAndConditions !== undefined) {
         setTermsAndConditions(initialData.termsAndConditions || DEFAULT_TERMS);
       }
@@ -48,8 +52,17 @@ const QuotationTermsModal = ({
   }, [initialData]);
 
   const handleGstChange = (e) => {
-    const value = parseFloat(e.target.value);
-    setGstPercent(isNaN(value) ? 0 : value);
+    const value = e.target.value;
+    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+      setGstPercent(value);
+    }
+  };
+
+  const handleDiscountChange = (e) => {
+    const value = e.target.value;
+    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+      setDiscountPercent(value);
+    }
   };
 
   const previewData = {
@@ -66,6 +79,7 @@ const QuotationTermsModal = ({
     items,
     subTotal,
     gstPercent,
+    discountPercent,
     termsAndConditions,
   };
 
@@ -77,6 +91,7 @@ const QuotationTermsModal = ({
       items,
       subTotal,
       gstPercent,
+      discountPercent,
       termsAndConditions,
     };
 
@@ -93,26 +108,45 @@ const QuotationTermsModal = ({
 
   const modalContent = (
     <div className="flex flex-col h-full bg-white">
-      <div className="flex-1 overflow-y-auto p-4">
-        <div className="max-w-3xl mx-auto space-y-6">
-          <div className="bg-white p-6 rounded border border-gray-100 shadow-sm">
-            <h4 className="text-lg font-bold text-gray-800 mb-4">GST</h4>
-            <label className="block text-sm font-semibold text-gray-500 mb-3">
-              GST Rate (%)
-            </label>
-            <input
-              type="number"
-              value={gstPercent}
-              onChange={handleGstChange}
-              className="w-full max-w-[200px] px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-medium text-gray-900 bg-gray-50/30"
-            />
-            <p className="text-xs text-gray-400 mt-2">
-              Shown on the quotation as a rate only (e.g. "GST: 18%
-              applicable"). Leave at 0 to show "Extra as applicable".
-            </p>
+      <div className="flex-1 overflow-y-auto px-1 py-1">
+        <div className="w-full space-y-6">
+          <div className="p-6 rounded border border-gray-200 shadow-sm bg-gray-100 m-2">
+            <h4 className="text-lg font-bold text-gray-800 mb-4">Taxes & Discounts</h4>
+            <div className="flex flex-col sm:flex-row gap-6">
+              <div className="flex-1">
+                <label className="block text-sm font-semibold text-gray-500 mb-3">
+                  GST Rate (%)
+                </label>
+                <input
+                  type="text"
+                  value={gstPercent}
+                  onChange={handleGstChange}
+                  className="bg-white w-full max-w-[200px] px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-medium text-gray-900 bg-gray-50/30"
+                />
+                <p className="text-xs text-gray-400 mt-2">
+                  Shown on the quotation as a rate only (e.g. "GST: 18%
+                  applicable"). Leave at 0 to show "Extra as applicable".
+                </p>
+              </div>
+
+              <div className="flex-1">
+                <label className="block text-sm font-semibold text-gray-500 mb-3">
+                  Discount Percentage (%)
+                </label>
+                <input
+                  type="text"
+                  value={discountPercent}
+                  onChange={handleDiscountChange}
+                  className="bg-white w-full max-w-[200px] px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-medium text-gray-900 bg-gray-50/30"
+                />
+                <p className="text-xs text-gray-400 mt-2">
+                  Discount applied to the subtotal before GST.
+                </p>
+              </div>
+            </div>
           </div>
 
-          <div className="bg-white p-6 rounded border border-gray-100 shadow-sm">
+          <div className="bg-gray-100 m-2 p-6 rounded border border-gray-100 shadow-sm">
             <h4 className="text-lg font-bold text-gray-800 mb-4">
               Terms & Conditions
             </h4>
@@ -120,7 +154,7 @@ const QuotationTermsModal = ({
               value={termsAndConditions}
               onChange={(e) => setTermsAndConditions(e.target.value)}
               rows={12}
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:border-blue-500 outline-none text-sm text-gray-700 resize-y"
+              className="bg-white w-full px-3 py-2 border border-gray-300 rounded focus:border-blue-500 outline-none text-sm text-gray-700 resize-y"
               placeholder="Implementation, training, payment terms, support, validity..."
             />
             <p className="text-xs text-gray-400 mt-2">
@@ -178,7 +212,7 @@ const QuotationTermsModal = ({
               {`Quotation Preview — ${previewData.quotationNumber}`}
             </span>
           }
-          widthClass="max-w-[1000px]"
+          widthClass="max-w-6xl"
           disableOutsideClick={true}
           footer={
             <div className="flex justify-end space-x-3 w-full items-center text-sm font-medium">
@@ -199,7 +233,7 @@ const QuotationTermsModal = ({
           }
         >
           <div className="w-full no-scrollbar relative bg-white flex justify-center">
-            <div className="bg-white p-0 printable">
+            <div className="bg-white p-0 printable w-full">
               <QuotationPreviewForm quotationData={previewData} />
             </div>
           </div>
