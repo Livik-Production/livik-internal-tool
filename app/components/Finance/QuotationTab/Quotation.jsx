@@ -638,7 +638,7 @@ const QuotationTable = ({ onRefresh }) => {
         }}
         title={
           <span className="mr-6 px-4 py-1.5 bg-gray-100 border border-gray-200 rounded-md text-md font-bold text-gray-800 shadow-sm uppercase">
-            QUOTATION - {previewQuotationData?.quotationNumber}
+            PROFORMA INVOICE - {previewQuotationData?.quotationNumber}
           </span>
         }
         widthClass="max-w-6xl text-lg"

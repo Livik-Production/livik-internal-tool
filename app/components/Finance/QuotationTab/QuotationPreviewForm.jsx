@@ -427,14 +427,73 @@ const QuotationPreviewForm = ({
           <div className="flex mt-8 border-t border-[#1f2937] -mx-3 mb-[-12px]">
             {/* Bank Details */}
             <div className="w-1/2 flex flex-col items-start text-left pl-4 py-3 border-r border-[#1f2937]">
-              <div className="text-[13px] font-bold text-[#111827] mb-1">
-                Bank Details
+              <div className="text-[12px] text-[#111827] underline mb-1">
+                Company's Bank Details
               </div>
-              <div className="text-[12px] text-[#374151] space-y-0.5">
-                <div>Bank Name: {companyDetails?.bankName || 'HDFC Bank'}</div>
-                <div>A/c No: {companyDetails?.accountNumber || '50200062402100'}</div>
-                <div>IFSC: {companyDetails?.ifscCode || 'HDFC0001234'}</div>
-                <div>Branch: {companyDetails?.branch || 'Dindigul'}</div>
+              <div className="text-[11px] text-[#111827] space-y-0.5">
+                <div className="flex whitespace-nowrap">
+                  <span className="w-32 shrink-0 whitespace-nowrap">A/c Holder's Name</span>
+                  <span>
+                    :{' '}
+                    <span className="font-semibold">
+                      {companyDetails?.accountHolderName || 'Livik'}
+                    </span>
+                  </span>
+                </div>
+                <div className="flex whitespace-nowrap">
+                  <span className="w-32 shrink-0 whitespace-nowrap">Bank Name</span>
+                  <span>
+                    :{' '}
+                    <span className="font-semibold">
+                      {companyDetails?.bankName || 'Canara Bank'}
+                    </span>
+                  </span>
+                </div>
+                <div className="flex whitespace-nowrap">
+                  <span className="w-32 shrink-0 whitespace-nowrap">A/c No.</span>
+                  <span>
+                    :{' '}
+                    <span className="font-semibold">
+                      {companyDetails?.accountNumber || '22233345211'}
+                    </span>
+                  </span>
+                </div>
+                <div className="flex whitespace-nowrap">
+                  <span className="w-32 shrink-0 whitespace-nowrap">Branch</span>
+                  <span>
+                    :{' '}
+                    <span className="font-semibold">
+                      {companyDetails?.branchName || 'RM Colony, Dindigul'}
+                    </span>
+                  </span>
+                </div>
+                <div className="flex whitespace-nowrap">
+                  <span className="w-32 shrink-0 whitespace-nowrap">IFSC Code</span>
+                  <span>
+                    :{' '}
+                    <span className="font-semibold">
+                      {companyDetails?.ifscCode || 'HDFC000053'}
+                    </span>
+                  </span>
+                </div>
+                <div className="flex whitespace-nowrap">
+                  <span className="w-32 shrink-0 whitespace-nowrap">SWIFT Code</span>
+                  <span>
+                    :{' '}
+                    <span className="font-semibold">
+                      {companyDetails?.swiftCode || 'HDFCDED'}
+                    </span>
+                  </span>
+                </div>
+                <div className="flex whitespace-nowrap">
+                  <span className="w-32 shrink-0 whitespace-nowrap">PAN Number</span>
+                  <span>
+                    :{' '}
+                    <span className="font-semibold">
+                      {companyDetails?.panNumber || 'AAQCM8677E'}
+                    </span>
+                  </span>
+                </div>
               </div>
             </div>
 
