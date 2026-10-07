@@ -36,7 +36,7 @@ export default async function QuotationPage({ params }) {
     })),
     subTotal: quotation.subTotal,
     gstPercent: quotation.gstPercent,
-    discountPercent: quotation.discountPercent,
+    discountAmount: quotation.discountAmount,
     termsAndConditions: quotation.termsAndConditions,
   };
 

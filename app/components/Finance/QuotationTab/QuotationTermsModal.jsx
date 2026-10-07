@@ -3,19 +3,21 @@ import Button from '../../Buttons/Button';
 import PrimaryButton from '../../Buttons/PrimaryButton';
 import CustomModalForm from '../../CustomModalForm';
 import QuotationPreviewForm from './QuotationPreviewForm';
+import RichTextEditor from './RichTextEditor';
 
-const DEFAULT_TERMS = `Implementation: Included
-User Training: Included
-Data Migration: Included for agreed master data
-
-Payment Terms:
-30% – Advance
-40% – After major module completion
-20% – User Acceptance Testing
-10% – Go-Live
-
-Support: 3 months free support after Go-Live.
-Quotation Validity: 30 days.`;
+const DEFAULT_TERMS = `<div><strong>Implementation:</strong> Included</div>
+<div><strong>User Training:</strong> Included</div>
+<div><strong>Data Migration:</strong> Included for agreed master data</div>
+<div><br></div>
+<div><strong>Payment Terms:</strong></div>
+<ul>
+<li>30% &ndash; Advance</li>
+<li>40% &ndash; After major module completion</li>
+<li>20% &ndash; User Acceptance Testing</li>
+<li>10% &ndash; Go-Live</li>
+</ul>
+<div><strong>Support:</strong> 3 months free support after Go-Live.</div>
+<div><strong>Quotation Validity:</strong> 30 days.</div>`;
 
 const QuotationTermsModal = ({
   isOpen,
@@ -32,7 +34,7 @@ const QuotationTermsModal = ({
   nextQuotationNumber,
 }) => {
   const [gstPercent, setGstPercent] = useState(0);
-  const [discountPercent, setDiscountPercent] = useState(0);
+  const [discountAmount, setDiscountAmount] = useState(0);
   const [termsAndConditions, setTermsAndConditions] = useState(DEFAULT_TERMS);
   const [showPreview, setShowPreview] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -42,8 +44,8 @@ const QuotationTermsModal = ({
       if (initialData.gstPercent !== undefined) {
         setGstPercent(Number(initialData.gstPercent));
       }
-      if (initialData.discountPercent !== undefined) {
-        setDiscountPercent(Number(initialData.discountPercent));
+      if (initialData.discountAmount !== undefined) {
+        setDiscountAmount(Number(initialData.discountAmount));
       }
       if (initialData.termsAndConditions !== undefined) {
         setTermsAndConditions(initialData.termsAndConditions || DEFAULT_TERMS);
@@ -61,7 +63,7 @@ const QuotationTermsModal = ({
   const handleDiscountChange = (e) => {
     const value = e.target.value;
     if (value === '' || /^\d*\.?\d*$/.test(value)) {
-      setDiscountPercent(value);
+      setDiscountAmount(value);
     }
   };
 
@@ -79,7 +81,7 @@ const QuotationTermsModal = ({
     items,
     subTotal,
     gstPercent,
-    discountPercent,
+    discountAmount,
     termsAndConditions,
   };
 
@@ -91,7 +93,7 @@ const QuotationTermsModal = ({
       items,
       subTotal,
       gstPercent,
-      discountPercent,
+      discountAmount,
       termsAndConditions,
     };
 
@@ -131,11 +133,11 @@ const QuotationTermsModal = ({
 
               <div className="flex-1">
                 <label className="block text-sm font-semibold text-gray-500 mb-3">
-                  Discount Percentage (%)
+                  Discount Amount (₹)
                 </label>
                 <input
                   type="text"
-                  value={discountPercent}
+                  value={discountAmount}
                   onChange={handleDiscountChange}
                   className="bg-white w-full max-w-[200px] px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-medium text-gray-900 bg-gray-50/30"
                 />
@@ -150,16 +152,14 @@ const QuotationTermsModal = ({
             <h4 className="text-lg font-bold text-gray-800 mb-4">
               Terms & Conditions
             </h4>
-            <textarea
+            <RichTextEditor
               value={termsAndConditions}
-              onChange={(e) => setTermsAndConditions(e.target.value)}
-              rows={12}
-              className="bg-white w-full px-3 py-2 border border-gray-300 rounded focus:border-blue-500 outline-none text-sm text-gray-700 resize-y"
+              onChange={setTermsAndConditions}
               placeholder="Implementation, training, payment terms, support, validity..."
             />
             <p className="text-xs text-gray-400 mt-2">
-              Shown below the module table on the quotation, exactly as
-              written here.
+              Select any text to bold, italicize, underline, or turn it into a
+              bullet list — it'll appear exactly like that on the quotation.
             </p>
           </div>
         </div>

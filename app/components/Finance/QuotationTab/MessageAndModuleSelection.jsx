@@ -6,7 +6,7 @@ import Button from '../../Buttons/Button';
 import PrimaryButton from '../../Buttons/PrimaryButton';
 import IconButton from '../../Buttons/IconButton';
 import CustomModalForm from '../../CustomModalForm';
-
+import RichTextEditor from './RichTextEditor';
 const DEFAULT_GREETING =
   'Dear Sir/Madam,\n\nThank you for giving us the opportunity to provide our ERP solution for your business. Based on our discussion, we are pleased to submit the following quotation.';
 
@@ -221,7 +221,7 @@ const MessageAndModuleSelection = ({
         <CustomModalForm
           open={isOpen}
           onClose={onCloseFlow || onBack}
-          title="Step 2: Message & Modules"
+          title="Step 2: Description of Services"
           widthClass="max-w-6xl"
           disableOutsideClick={true}
           footer={

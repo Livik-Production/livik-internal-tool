@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 
 import Loader from '../../Loader';
-
+import { renderFormattedTerms } from './formatTerms';
+import RichTextEditor from './RichTextEditor';
 const QuotationPreviewForm = ({
   quotationData = {},
   initialCompanyDetails = null,
@@ -56,7 +57,7 @@ const QuotationPreviewForm = ({
     items = [],
     subTotal,
     gstPercent,
-    discountPercent,
+    discountAmount,
     termsAndConditions,
   } = quotationData || {};
 
@@ -65,23 +66,18 @@ const QuotationPreviewForm = ({
       ? items.reduce((sum, i) => sum + Number(i.amount || 0), 0)
       : Number(subTotal || 0);
 
-  const discountAmount = total * (Number(discountPercent || 0) / 100);
-  const totalAfterDiscount = total - discountAmount;
+  const finalDiscountAmount = Number(discountAmount || 0);
+  const totalAfterDiscount = total - finalDiscountAmount;
   const gstAmount = totalAfterDiscount * (Number(gstPercent || 0) / 100);
   const grandTotal = totalAfterDiscount + gstAmount;
 
-  // Split the terms text so the "Payment Terms" section (and everything
-  // after it) moves to the right column as a whole, instead of being broken
-  // up wherever a CSS column happens to wrap.
-  let termsLeft = termsAndConditions || '';
-  let termsRight = '';
-  if (termsAndConditions) {
-    const splitIndex = termsAndConditions.search(/payment terms/i);
-    if (splitIndex > -1) {
-      termsLeft = termsAndConditions.slice(0, splitIndex).trim();
-      termsRight = termsAndConditions.slice(splitIndex).trim();
-    }
-  }
+  // Terms & Conditions is now authored as rich HTML (bold/italic/underline/
+  // bullets) via RichTextEditor. Splitting raw HTML by string position would
+  // risk cutting a tag in half, so it's rendered as a single block instead
+  // of the old left/right "Payment Terms" column split. Quotations saved
+  // before this change still store plain text, so that's detected here and
+  // rendered through the legacy line-based formatter for compatibility.
+  const isHtmlTerms = /<[a-z][\s\S]*>/i.test(termsAndConditions || '');
 
   // Helper: number to words (mirrors Invoice's PreviewForm)
   const numberToWords = (num) => {
@@ -126,7 +122,11 @@ const QuotationPreviewForm = ({
 
   return (
     <div className="w-full">
-      <div className="flex flex-col justify-center p-3 print:bg-white print:px-6 print:py-4 w-full no-scroll">
+      {/* Plain block, not flex: Chromium's print/PDF engine doesn't reliably
+          honor page-break-inside: avoid on an element that is itself a flex
+          item, which was forcing the Terms section onto its own page even
+          though there was plenty of room left on page 1. */}
+      <div className="p-3 print:bg-white print:px-6 print:py-4 w-full no-scroll">
         {/* HEADER OUTSIDE BORDER */}
         <div className="w-full flex justify-end items-center mb-2 px-2 mt-6">
           {/* Right Logo */}
@@ -246,16 +246,18 @@ const QuotationPreviewForm = ({
               </div>
               <div className="flex-1 border-r border-[#1f2937] p-1 text-[11px] font-semibold flex flex-col justify-center items-center text-center">
                 <div style={{ textAlign: 'center', width: '100%' }}>
-                  Description for services
+                  Description of Services
                 </div>
               </div>
-              <div className="w-28 shrink-0 p-1 text-[11px] font-semibold flex flex-col justify-center items-center text-center">
+              <div className="w-36 shrink-0 p-1 text-[11px] font-semibold flex flex-col justify-center items-center text-center">
                 <div style={{ textAlign: 'center', width: '100%' }}>Amount</div>
               </div>
             </div>
 
-            {/* Table Body - fixed to the height of 5 rows, regardless of record count */}
-            <div className="flex flex-col h-[155px] overflow-hidden">
+            {/* Table Body - fills to the height of 5 rows when there are
+                fewer, but grows (and spills onto a following page) instead
+                of clipping once there are more than 5 items. */}
+            <div className="flex flex-col min-h-[155px]">
               {(items.length > 0
                 ? items
                 : [{ serialNumber: 1, moduleName: 'Module', amount: 0 }]
@@ -271,7 +273,7 @@ const QuotationPreviewForm = ({
                     </div>
                   </div>
 
-                  <div className="w-28 shrink-0 p-1 pt-2 text-center text-[12px] font-bold text-[#111827] pr-4">
+                  <div className="w-36 shrink-0 p-1 pt-2 text-center text-[12px] font-bold text-[#111827] pr-4">
                     {Number(item.amount || 0).toLocaleString('en-IN', {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
@@ -284,7 +286,7 @@ const QuotationPreviewForm = ({
               <div className="flex flex-1 min-h-[10px]">
                 <div className="w-12 shrink-0 border-r border-[#1f2937]"></div>
                 <div className="flex-1 border-r border-[#1f2937]"></div>
-                <div className="w-28 shrink-0"></div>
+                <div className="w-36 shrink-0"></div>
               </div>
             </div>
 
@@ -293,7 +295,7 @@ const QuotationPreviewForm = ({
               <div className="flex-1 border-r border-[#1f2937] p-1 pr-4 text-right font-bold text-[12px] text-[#111827] flex flex-col justify-center">
                 Total
               </div>
-              <div className="w-28 p-1 px-2 font-bold text-[13px] text-[#111827] flex justify-between items-center">
+              <div className="w-36 p-1 px-2 font-bold text-[13px] text-[#111827] flex justify-between items-center">
                 <span>₹</span>
                 <span className="pr-2">
                   {Number(total || 0).toLocaleString('en-IN', {
@@ -305,15 +307,15 @@ const QuotationPreviewForm = ({
             </div>
 
             {/* Table Footer - Discount */}
-            {Number(discountPercent || 0) > 0 && (
+            {Number(discountAmount || 0) > 0 && (
               <div className="flex border-t border-[#1f2937] min-h-[28px]">
                 <div className="flex-1 border-r border-[#1f2937] p-1 pr-4 text-right font-bold text-[12px] text-[#111827] flex flex-col justify-center">
-                  Discount ({discountPercent}%)
+                  Discount
                 </div>
-                <div className="w-28 p-1 px-2 font-bold text-[13px] text-[#111827] flex justify-between items-center">
+                <div className="w-36 p-1 px-2 font-bold text-[13px] text-[#111827] flex justify-between items-center">
                   <span>- ₹</span>
                   <span className="pr-2">
-                    {Number(discountAmount || 0).toLocaleString('en-IN', {
+                    {Number(finalDiscountAmount || 0).toLocaleString('en-IN', {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}
@@ -328,7 +330,7 @@ const QuotationPreviewForm = ({
                 <div className="flex-1 border-r border-[#1f2937] p-1 pr-4 text-right font-bold text-[12px] text-[#111827] flex flex-col justify-center">
                   GST ({gstPercent}%)
                 </div>
-                <div className="w-28 p-1 px-2 font-bold text-[13px] text-[#111827] flex justify-between items-center">
+                <div className="w-36 p-1 px-2 font-bold text-[13px] text-[#111827] flex justify-between items-center">
                   <span>+ ₹</span>
                   <span className="pr-2">
                     {Number(gstAmount || 0).toLocaleString('en-IN', {
@@ -341,12 +343,12 @@ const QuotationPreviewForm = ({
             )}
 
             {/* Table Footer - Grand Total */}
-            {(Number(discountPercent || 0) > 0 || Number(gstPercent || 0) > 0) && (
+            {(Number(discountAmount || 0) > 0 || Number(gstPercent || 0) > 0) && (
               <div className="flex border-t border-[#1f2937] min-h-[28px]">
                 <div className="flex-1 border-r border-[#1f2937] p-1 pr-4 text-right font-bold text-[13px] text-[#111827] flex flex-col justify-center">
                   Grand Total
                 </div>
-                <div className="w-28 p-1 px-2 font-bold text-[13px] text-[#111827] flex justify-between items-center">
+                <div className="w-36 p-1 px-2 font-bold text-[13px] text-[#111827] flex justify-between items-center">
                   <span>₹</span>
                   <span className="pr-2">
                     {Number(grandTotal || 0).toLocaleString('en-IN', {
@@ -371,32 +373,55 @@ const QuotationPreviewForm = ({
           </div>
         </div>
 
-        {/* GST & TERMS SECTION */}
-        <div className="w-full border-x border-b border-t border-[#1f2937] p-3 flex flex-col min-h-[160px]" style={{ pageBreakInside: 'avoid' }}>
+        {/* GST & TERMS SECTION
+            Wrapped in a plain block div carrying page-break-inside: avoid —
+            Chromium's print engine doesn't reliably honor that rule when it's
+            set directly on a flex container, which was pushing this whole
+            section onto its own page with a large blank gap left on page 1. */}
+        <div style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+        <div className="w-full border-x border-b border-t border-[#1f2937] p-3 flex flex-col min-h-[160px]">
           <div className="font-bold text-[14px] text-[#111827] mb-2">
             Terms and Conditions
           </div>
 
-          <div className="flex items-start gap-6 flex-1">
-            <div className="w-1/2">
-              <div className="font-semibold text-[12px] text-[#111827] mb-1">
-                GST:{' '}
-                {Number(gstPercent || 0) > 0
-                  ? `${Number(gstPercent)}% applicable`
-                  : 'Extra as applicable'}
-              </div>
-              {termsLeft && (
-                <div className="mt-2 text-sm text-[#374151] whitespace-pre-wrap leading-relaxed">
-                  {termsLeft}
-                </div>
-              )}
+          <div className="flex-1">
+            <div className="font-semibold text-[12px] text-[#111827] mb-1">
+              GST:{' '}
+              {Number(gstPercent || 0) > 0
+                ? `${Number(gstPercent)}% applicable`
+                : 'Extra as applicable'}
             </div>
-            {termsRight && (
-              <div className="w-1/2 text-sm text-[#374151] whitespace-pre-wrap leading-relaxed">
-                {termsRight}
-              </div>
+            {termsAndConditions && (
+              isHtmlTerms ? (
+                <div
+                  className="quotation-terms-html mt-2 text-sm text-[#374151] leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: termsAndConditions }}
+                />
+              ) : (
+                <div className="mt-2 text-sm text-[#374151] leading-relaxed space-y-0.5">
+                  {renderFormattedTerms(termsAndConditions)}
+                </div>
+              )
             )}
           </div>
+
+          {/* Global on purpose: this content comes from dangerouslySetInnerHTML,
+              so it never picks up styled-jsx's scoping class. */}
+          <style jsx global>{`
+            .quotation-terms-html ul {
+              list-style: disc;
+              padding-left: 1.25rem;
+              margin: 4px 0;
+            }
+            .quotation-terms-html ol {
+              list-style: decimal;
+              padding-left: 1.25rem;
+              margin: 4px 0;
+            }
+            .quotation-terms-html li {
+              margin-bottom: 2px;
+            }
+          `}</style>
 
           {/* Bottom aligned: Bank Details (Left) + Signatory (Right) */}
           <div className="flex mt-8 border-t border-[#1f2937] -mx-3 mb-[-12px]">
@@ -425,6 +450,7 @@ const QuotationPreviewForm = ({
               </div>
             </div>
           </div>
+        </div>
         </div>
       </div>
 
