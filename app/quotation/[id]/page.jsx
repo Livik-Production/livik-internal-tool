@@ -36,6 +36,7 @@ export default async function QuotationPage({ params }) {
     })),
     subTotal: quotation.subTotal,
     gstPercent: quotation.gstPercent,
+    discountPercent: quotation.discountPercent,
     termsAndConditions: quotation.termsAndConditions,
   };
 
@@ -44,7 +45,8 @@ export default async function QuotationPage({ params }) {
       id="quotation-print"
       className="print:m-0 print:p-0"
       style={{
-        width: '794px',
+        width: '100%',
+        maxWidth: '794px',
         margin: '0 auto',
         background: '#fff',
       }}

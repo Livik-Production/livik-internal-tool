@@ -126,36 +126,6 @@ const MessageAndModuleSelection = ({
       </div>
 
       <div className="flex-1 overflow-auto p-4 bg-white space-y-6">
-        {/* Section 1: Message */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
-          <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-3">
-            Quotation Message
-          </h3>
-          <div className="mb-3">
-            <label className="block text-xs font-semibold text-gray-500 mb-1">
-              Subject
-            </label>
-            <input
-              type="text"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              placeholder="Subject (e.g. Quotation for ERP Software)"
-              className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:border-blue-500 outline-none"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1">
-              Greeting / Message
-            </label>
-            <textarea
-              value={greeting}
-              onChange={(e) => setGreeting(e.target.value)}
-              rows={5}
-              className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:border-blue-500 outline-none resize-y"
-              placeholder="Dear Sir/Madam, ..."
-            />
-          </div>
-        </div>
 
         {/* Section 2: Module Selection */}
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
@@ -186,7 +156,7 @@ const MessageAndModuleSelection = ({
               },
               {
                 key: 'moduleName',
-                label: 'Module',
+                label: 'Description for service',
                 render: (row) => (
                   <input
                     type="text"
