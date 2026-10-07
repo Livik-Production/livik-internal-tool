@@ -156,7 +156,7 @@ const MessageAndModuleSelection = ({
               },
               {
                 key: 'moduleName',
-                label: 'Description for service',
+                label: 'Description of Services',
                 render: (row) => (
                   <input
                     type="text"
