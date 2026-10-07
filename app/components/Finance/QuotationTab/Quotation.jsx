@@ -302,7 +302,7 @@ const QuotationTable = ({ onRefresh }) => {
           editingQuotation?.quotationDate || new Date().toISOString(),
         customerId,
         gstPercent: quotationData.gstPercent || 0,
-        discountPercent: quotationData.discountPercent || 0,
+        discountAmount: quotationData.discountAmount || 0,
         termsAndConditions: quotationData.termsAndConditions || '',
         items: quotationData.items.map((item, i) => ({
           serialNumber: i + 1,
@@ -378,7 +378,7 @@ const QuotationTable = ({ onRefresh }) => {
       items,
       subTotal: quotation.subTotal,
       gstPercent: quotation.gstPercent,
-      discountPercent: quotation.discountPercent,
+      discountAmount: quotation.discountAmount,
       termsAndConditions: quotation.termsAndConditions,
     };
 
