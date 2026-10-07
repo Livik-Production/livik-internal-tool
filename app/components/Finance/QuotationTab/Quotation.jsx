@@ -428,7 +428,7 @@ const QuotationTable = ({ onRefresh }) => {
   if (isLoading) {
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 min-h-[400px] flex items-center justify-center">
-        <Loader label="Loading quotations..." size="lg" fullScreen={false} />
+        <Loader label="Loading proforma invoices..." size="lg" fullScreen={false} />
       </div>
     );
   }

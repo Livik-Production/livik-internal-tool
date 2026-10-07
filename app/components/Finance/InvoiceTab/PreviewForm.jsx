@@ -304,40 +304,38 @@ const PreviewForm = ({
 
   return (
     <div>
-      <div className="flex flex-col justify-center p-3 print:bg-white print:p-0 w-full no-scroll">
-        {/* HEADER OUTSIDE BORDER */}
-        <div className="w-full flex justify-end items-center mb-2 px-2 mt-6">
-          <div className="shrink-0 text-right pr-2">
-            <img
-              src="/asset/livik-logo.png"
-              alt="Company Logo"
-              className="h-[60px] object-contain print:h-[50px]"
-            />
-          </div>
-        </div>
+      {/* Invoice Title
+      <div className="text-center font-bold text-[14px] mt-3 tracking-wider uppercase">
+        {invoiceType === 'Proforma' ? 'PROFORMA INVOICE' : (invoiceType || 'TAX INVOICE')}
+      </div> */}
 
-        <div className="w-full text-center mb-4">
-          <h2 className="text-xl font-bold font-serif tracking-wide text-[#111827]">
-            {invoiceType === 'Proforma' ? 'PROFORMA INVOICE' : (invoiceType || 'TAX INVOICE')}
-          </h2>
-        </div>
-
+      <div className="flex justify-center p-3 print:bg-white print:p-0 w-full no-scroll">
         <div className="w-full border border-[#1f2937] bg-white text-sm">
-          <div className="flex border-t border-b border-[#1f2937]">
+          <div className="flex">
             {/* Left Column */}
 
-            <div className="w-1/2 shrink-0 border-r border-[#1f2937] p-2 px-2.5 flex flex-col justify-between relative bg-white min-h-[140px]">
+            <div className="w-1/2 shrink-0 border-r border-[#1f2937] bg-white flex flex-col">
               {/* Top Box: Company Info */}
 
-              <div>
-                <h2 className="text-[16px] font-bold text-[#111827] uppercase leading-tight mt-1 mb-1">
-                  {companyDetails?.companyName || 'LIVIK SOFTWARE SOLUTIONS'}
-                </h2>
+              <div className="p-1.5">
+                <div className="flex flex-col items-start gap-2 mb-1">
+                  <div className="shrink-0 mt-0">
+                    <img
+                      src="/asset/livik-logo.png"
+                      alt="Livik Logo"
+                      className="h-11 object-contain print:h-10"
+                    />
+                  </div>
 
-                <div className="space-y-0.5">
-                  <p className="text-[12px] text-[#374151] whitespace-pre-wrap leading-tight">
-                    {companyDetails?.address || 'R.M colony\nDindigul - Tamilnadu'}
-                  </p>
+                  <div className="space-y-1">
+                    <h1 className="text-[15px] font-bold text-[#111827] leading-tight uppercase mt-0.5">
+                      {companyDetails?.companyName ||
+                        'LIVIK SOFTWARE SOLUTIONS PVT. LTD.'}
+                    </h1>
+
+                    <p className="text-[12px] text-[#374151] leading-tight mt-0.5">
+                      {companyDetails?.address || '9th cross, RM colony,'}
+                    </p>
 
                     <p className="text-[12px] text-[#374151] leading-tight">
                       {companyDetails?.city
@@ -366,6 +364,7 @@ const PreviewForm = ({
                   </div>
                 </div>
               </div>
+            </div>
 
             {/* Right Column */}
 
@@ -996,9 +995,8 @@ const PreviewForm = ({
                 <div className="mb-1 underline">Company's Bank Details</div>
 
                 <div className="flex">
-                  <span className="w-32">A/c Holder's Name</span>
-
-                  <span className="font-bold">
+                  <span className="w-32 shrink-0 whitespace-nowrap">A/c Holder's Name</span>
+                  <span className="font-bold flex-1 break-words">
                     :{' '}
                     {companyDetails?.accountHolderName ||
                       'LIVIKTECH SOLUTIONS PRIVATE LIMITED'}
@@ -1006,25 +1004,22 @@ const PreviewForm = ({
                 </div>
 
                 <div className="flex mt-0.5">
-                  <span className="w-32">Bank Name</span>
-
-                  <span className="font-bold">
+                  <span className="w-32 shrink-0 whitespace-nowrap">Bank Name</span>
+                  <span className="font-bold flex-1 break-words">
                     : {companyDetails?.bankName || 'HDFC Bank Ltd'}
                   </span>
                 </div>
 
                 <div className="flex mt-0.5">
-                  <span className="w-32">A/c No.</span>
-
-                  <span className="font-bold">
+                  <span className="w-32 shrink-0 whitespace-nowrap">A/c No.</span>
+                  <span className="font-bold flex-1 break-words">
                     : {companyDetails?.accountNumber || '1234567899632'}
                   </span>
                 </div>
 
                 <div className="flex mt-0.5">
-                  <span className="w-32">Branch </span>
-
-                  <span className="font-bold">
+                  <span className="w-32 shrink-0 whitespace-nowrap">Branch </span>
+                  <span className="font-bold flex-1 break-words">
                     :{' '}
                     {companyDetails?.branchName
                       ? `${companyDetails.branchName}`
@@ -1033,9 +1028,8 @@ const PreviewForm = ({
                 </div>
 
                 <div className="flex mt-0.5">
-                  <span className="w-32">IFSC Code </span>
-
-                  <span className="font-bold">
+                  <span className="w-32 shrink-0 whitespace-nowrap">IFSC Code </span>
+                  <span className="font-bold flex-1 break-words">
                     :{' '}
                     {companyDetails?.ifscCode
                       ? `${companyDetails.ifscCode}`
@@ -1044,17 +1038,15 @@ const PreviewForm = ({
                 </div>
 
                 <div className="flex mt-0.5">
-                  <span className="w-32">SWIFT Code</span>
-
-                  <span className="font-bold">
+                  <span className="w-32 shrink-0 whitespace-nowrap">SWIFT Code</span>
+                  <span className="font-bold flex-1 break-words">
                     : {companyDetails?.swiftCode || 'HDFCDED'}
                   </span>
                 </div>
 
                 <div className="flex mt-0.5">
-                  <span className="w-32">PAN Number</span>
-
-                  <span className="font-bold">
+                  <span className="w-32 shrink-0 whitespace-nowrap">PAN Number</span>
+                  <span className="font-bold flex-1 break-words">
                     : {companyDetails?.panNumber || 'AAQCM8677E'}
                   </span>
                 </div>
