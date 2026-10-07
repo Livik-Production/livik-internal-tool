@@ -431,9 +431,9 @@ const QuotationPreviewForm = ({
                 Company's Bank Details
               </div>
               <div className="text-[11px] text-[#111827] space-y-0.5 pr-2">
-                <div className="flex">
+                <div className="flex min-w-0">
                   <span className="w-32 shrink-0 whitespace-nowrap">A/c Holder's Name</span>
-                  <span className="flex-1">
+                  <span className="flex-1 min-w-0 break-words">
                     :{' '}
                     <span className="font-semibold break-words">
                       {companyDetails?.accountHolderName || 'Livik'}
