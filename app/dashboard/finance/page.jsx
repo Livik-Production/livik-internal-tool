@@ -21,7 +21,7 @@ import NotificationBell from '../../components/NotificationBell';
 const TAB_CONFIG = [
   { id: 'overview', label: 'Dashboard', right: 'finance_view_overview' },
   { id: 'invoice', label: 'Invoice', right: 'finance_view_invoices' },
-  { id: 'quotation', label: 'Quotation', right: 'finance_view_quotations' },
+  { id: 'quotation', label: 'Proforma Invoice', right: 'finance_view_quotations' },
   { id: 'payment', label: 'Payments', right: 'finance_view_payments' },
   { id: 'expenses', label: 'Expenses', right: 'finance_view_expenses' },
 ];
