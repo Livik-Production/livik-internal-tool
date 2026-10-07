@@ -976,14 +976,6 @@ const PreviewForm = ({
             {/* Left Box */}
 
             <div className="flex-1 p-2 flex flex-col justify-end">
-              <div className="flex items-center text-[11px] text-[#111827] mb-1">
-                <span className="w-28">Company's PAN</span>
-
-                <span className="font-bold">
-                  : {companyDetails?.panNumber || 'AAQCM8677E'}
-                </span>
-              </div>
-
               <div className="text-[10px] text-[#374151] underline mb-0.5">
                 Declaration
               </div>
@@ -1056,6 +1048,14 @@ const PreviewForm = ({
 
                   <span className="font-bold">
                     : {companyDetails?.swiftCode || 'HDFCDED'}
+                  </span>
+                </div>
+
+                <div className="flex mt-0.5">
+                  <span className="w-32">PAN Number</span>
+
+                  <span className="font-bold">
+                    : {companyDetails?.panNumber || 'AAQCM8677E'}
                   </span>
                 </div>
               </div>
