@@ -55,12 +55,6 @@ export async function GET(request) {
       printBackground: true,
       preferCSSPageSize: true,
       scale: 1,
-      margin: {
-        top: '20px',
-        bottom: '20px',
-        left: '0px',
-        right: '0px',
-      },
     });
 
     await browser.close();

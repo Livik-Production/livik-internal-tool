@@ -54,7 +54,8 @@ export default async function QuotationPage({ params }) {
       <style
         dangerouslySetInnerHTML={{
           __html: `
-        @page { size: A4; margin: 0; }
+        @page { size: A4; margin-top: 15mm; margin-bottom: 20mm; margin-left: 0; margin-right: 0; }
+        @page :first { margin-top: 0mm; }
 
         body {
           background: white !important;

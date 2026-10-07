@@ -128,13 +128,13 @@ const QuotationPreviewForm = ({
           though there was plenty of room left on page 1. */}
       <div className="p-3 print:bg-white print:px-3 print:py-4 w-full no-scroll">
         {/* HEADER OUTSIDE BORDER */}
-        <div className="w-full flex justify-end items-center mb-2 px-2 mt-6">
+        <div className="w-full flex justify-end items-center mb-2 px-2 mt-0">
           {/* Right Logo */}
           <div className="shrink-0 text-right pr-2">
             <img
               src="/asset/livik-logo.png"
               alt="Company Logo"
-              className="h-[60px] object-contain"
+              className="h-[80px] object-contain"
             />
           </div>
         </div>
@@ -148,7 +148,7 @@ const QuotationPreviewForm = ({
           style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}
         >
           {/* Invoice-like Header */}
-          <div className="flex border-t border-b border-[#1f2937]">
+          <div className="flex border-b border-[#1f2937]">
             {/* Left Column (Company Details) */}
             <div className="w-1/2 shrink-0 border-r border-[#1f2937] p-2 px-2.5 flex flex-col justify-between relative bg-white min-h-[140px]">
               <div>
@@ -217,13 +217,13 @@ const QuotationPreviewForm = ({
                   {client?.name || 'SURYA PLASTICS'}
                 </h2>
 
-                <div className="text-[11.5px] text-[#374151] whitespace-pre-wrap leading-tight mb-1">
+                <div className="text-[11.5px] text-[#374151] whitespace-pre-wrap leading-tight">
                   {[client?.address, client?.city, client?.state, client?.pincode]
                     .filter(Boolean)
                     .join(', ') || '80, State highway, Nambiampalayam, Dindigul, Tamil Nadu - 641670'}
                 </div>
 
-                <div className="mt-2 space-y-0.5 pt-1">
+                <div className="space-y-0.5">
                   <p className="text-[11px] text-[#374151] leading-tight">
                     GSTIN/UIN : {client?.gstin || client?.gstnNumber || '33AXNPR8237L1ZR'}
                   </p>
@@ -238,7 +238,7 @@ const QuotationPreviewForm = ({
 
 
           {/* MODULE TABLE */}
-          <div className="w-full border-t border-b border-[#1f2937]">
+          <div className="w-full border-b border-[#1f2937]">
             {/* Table Header */}
             <div className="flex border-b border-[#1f2937] h-8">
               <div className="w-12 shrink-0 border-r border-[#1f2937] p-1 text-[11px] font-semibold flex flex-col justify-center items-center text-center whitespace-nowrap">
@@ -249,15 +249,15 @@ const QuotationPreviewForm = ({
                   Description of Services
                 </div>
               </div>
-              <div className="w-36 shrink-0 p-1 text-[11px] font-semibold flex flex-col justify-center items-center text-center">
-                <div style={{ textAlign: 'center', width: '100%' }}>Amount</div>
+              <div className="w-36 shrink-0 p-1 text-[11px] font-semibold flex flex-col justify-center items-end pr-4">
+                <div>Amount</div>
               </div>
             </div>
 
             {/* Table Body - fills to the height of 5 rows when there are
                 fewer, but grows (and spills onto a following page) instead
                 of clipping once there are more than 5 items. */}
-            <div className="flex flex-col min-h-[155px]">
+            <div className="flex flex-col">
               {(items.length > 0
                 ? items
                 : [{ serialNumber: 1, moduleName: 'Module', amount: 0 }]
@@ -273,7 +273,7 @@ const QuotationPreviewForm = ({
                     </div>
                   </div>
 
-                  <div className="w-36 shrink-0 p-1 pt-2 text-center text-[12px] font-bold text-[#111827] pr-4">
+                  <div className="w-36 shrink-0 p-1 pt-2 text-right text-[12px] font-bold text-[#111827] pr-4">
                     {Number(item.amount || 0).toLocaleString('en-IN', {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
@@ -282,12 +282,6 @@ const QuotationPreviewForm = ({
                 </div>
               ))}
 
-              {/* Filler space to maintain column borders down to the Total row */}
-              <div className="flex flex-1 min-h-[10px]">
-                <div className="w-12 shrink-0 border-r border-[#1f2937]"></div>
-                <div className="flex-1 border-r border-[#1f2937]"></div>
-                <div className="w-36 shrink-0"></div>
-              </div>
             </div>
 
             {/* Table Footer - Total Row */}
@@ -296,8 +290,9 @@ const QuotationPreviewForm = ({
                 Total
               </div>
               <div className="w-36 p-1 px-2 font-bold text-[13px] text-[#111827] flex justify-between items-center">
-                <span>₹</span>
+                <span></span>
                 <span className="pr-2">
+                  ₹{' '}
                   {Number(total || 0).toLocaleString('en-IN', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
@@ -313,8 +308,9 @@ const QuotationPreviewForm = ({
                   Discount
                 </div>
                 <div className="w-36 p-1 px-2 font-bold text-[13px] text-[#111827] flex justify-between items-center">
-                  <span>- ₹</span>
+                  <span>(-)</span>
                   <span className="pr-2">
+                    ₹{' '}
                     {Number(finalDiscountAmount || 0).toLocaleString('en-IN', {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
@@ -331,8 +327,9 @@ const QuotationPreviewForm = ({
                   GST ({gstPercent}%)
                 </div>
                 <div className="w-36 p-1 px-2 font-bold text-[13px] text-[#111827] flex justify-between items-center">
-                  <span>+ ₹</span>
+                  <span>(+)</span>
                   <span className="pr-2">
+                    ₹{' '}
                     {Number(gstAmount || 0).toLocaleString('en-IN', {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
@@ -349,8 +346,9 @@ const QuotationPreviewForm = ({
                   Grand Total
                 </div>
                 <div className="w-36 p-1 px-2 font-bold text-[13px] text-[#111827] flex justify-between items-center">
-                  <span>₹</span>
+                  <span></span>
                   <span className="pr-2">
+                    ₹{' '}
                     {Number(grandTotal || 0).toLocaleString('en-IN', {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
@@ -378,8 +376,8 @@ const QuotationPreviewForm = ({
             Chromium's print engine doesn't reliably honor that rule when it's
             set directly on a flex container, which was pushing this whole
             section onto its own page with a large blank gap left on page 1. */}
-        <div style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-        <div className="w-full border-x border-b border-t border-[#1f2937] p-3 flex flex-col min-h-[160px]">
+        <div style={{ pageBreakInside: 'auto', breakInside: 'auto', WebkitBoxDecorationBreak: 'clone', boxDecorationBreak: 'clone' }}>
+        <div className="w-full border border-[#1f2937] p-3 flex flex-col min-h-[160px] -mt-[1px]" style={{ WebkitBoxDecorationBreak: 'clone', boxDecorationBreak: 'clone' }}>
           <div className="font-bold text-[14px] text-[#111827] mb-2">
             Terms and Conditions
           </div>
@@ -422,18 +420,20 @@ const QuotationPreviewForm = ({
               margin-bottom: 2px;
             }
           `}</style>
+        </div>
+        </div>
 
-          {/* Bottom aligned: Bank Details (Left) + Signatory (Right) */}
-          <div className="flex mt-8 border-t border-[#1f2937] -mx-3 mb-[-12px]">
-            {/* Bank Details */}
-            <div className="w-[55%] flex flex-col items-start text-left pl-4 py-3 border-r border-[#1f2937]">
+        {/* Bank Details & Signatory */}
+        <div className="w-full flex border border-[#1f2937] -mt-[1px] bg-white" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+          {/* Bank Details */}
+          <div className="w-[55%] flex flex-col items-start text-left pl-4 py-3 border-r border-[#1f2937]">
               <div className="text-[12px] text-[#111827] underline mb-1">
                 Company's Bank Details
               </div>
               <div className="text-[11px] text-[#111827] space-y-0.5 pr-2">
-                <div className="flex">
+                <div className="flex min-w-0">
                   <span className="w-32 shrink-0 whitespace-nowrap">A/c Holder's Name</span>
-                  <span className="flex-1">
+                  <span className="flex-1 min-w-0 break-words">
                     :{' '}
                     <span className="font-semibold break-words">
                       {companyDetails?.accountHolderName || 'Livik'}
@@ -507,9 +507,7 @@ const QuotationPreviewForm = ({
               <div className="text-[12px] text-[#374151] mt-9">
                 Authorised Signatory
               </div>
-            </div>
           </div>
-        </div>
         </div>
       </div>
 
