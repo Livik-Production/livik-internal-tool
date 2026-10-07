@@ -363,49 +363,17 @@ const ClientSelectionModal = ({
     <div className="flex flex-col h-full">
       {/* Header Actions: Invoice Type & Search */}
       <div className="px-6 py-4 border-b border-gray-100 flex-shrink-0 bg-white shadow-sm z-10 flex items-center justify-between">
-        {/* Invoice Type Selection */}
+        {/* Invoice Type — only "Actual" now; Proforma is created via its own
+            Quotation flow instead. */}
         <div className="flex justify-between gap-x-5">
-          <div className="flex flex-col space-y-1">
-            <div className="flex items-center space-x-6">
-              <span className="text-sm font-semibold text-gray-900">
-                Invoice Type:
-              </span>
-              <div className="flex space-x-4">
-                <label className="flex items-center space-x-2 cursor-pointer group">
-                  <input
-                    type="radio"
-                    name="invoiceType"
-                    value="actual"
-                    checked={invoiceType === 'actual'}
-                    onChange={(e) => handleInvoiceTypeChange(e.target.value)}
-                    className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                  />
-                  <span className="text-sm text-gray-700 group-hover:text-blue-600 transition-colors">
-                    Actual Invoice
-                  </span>
-                </label>
-                <label className="flex items-center space-x-2 cursor-pointer group">
-                  <input
-                    type="radio"
-                    name="invoiceType"
-                    value="proforma"
-                    checked={invoiceType === 'proforma'}
-                    onChange={(e) => handleInvoiceTypeChange(e.target.value)}
-                    className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                  />
-                  <span className="text-sm text-gray-700 group-hover:text-blue-600 transition-colors">
-                    Proforma Invoice
-                  </span>
-                </label>
-              </div>
-            </div>
-          </div>
-          <div>
-            <div className="text-[11px] text-gray-900 italic text-bold mt-0.5">
-              {invoiceType === 'actual'
-                ? '( Actual invoice for tax purposes )'
-                : '( Pre-bill for quotation purposes )'}
-            </div>
+          <div className="flex items-center space-x-6">
+            <span className="text-sm font-semibold text-gray-900">
+              Invoice Type:
+            </span>
+            <span className="text-sm text-gray-700">Actual Invoice</span>
+            <span className="text-[11px] text-gray-500 italic">
+              ( Actual invoice for tax purposes )
+            </span>
           </div>
         </div>
 

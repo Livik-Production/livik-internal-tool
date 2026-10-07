@@ -67,7 +67,7 @@ export default async function QuotationPage({ params }) {
             width: 210mm !important;
             min-height: 297mm !important;
             margin: 0 !important;
-            padding: 12mm !important;
+            padding: 12mm 8mm !important;
             box-sizing: border-box !important;
             transform: none !important;
             zoom: 1 !important;

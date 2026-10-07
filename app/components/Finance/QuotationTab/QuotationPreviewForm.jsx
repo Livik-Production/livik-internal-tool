@@ -126,7 +126,7 @@ const QuotationPreviewForm = ({
           honor page-break-inside: avoid on an element that is itself a flex
           item, which was forcing the Terms section onto its own page even
           though there was plenty of room left on page 1. */}
-      <div className="p-3 print:bg-white print:px-6 print:py-4 w-full no-scroll">
+      <div className="p-3 print:bg-white print:px-3 print:py-4 w-full no-scroll">
         {/* HEADER OUTSIDE BORDER */}
         <div className="w-full flex justify-end items-center mb-2 px-2 mt-6">
           {/* Right Logo */}
@@ -426,70 +426,70 @@ const QuotationPreviewForm = ({
           {/* Bottom aligned: Bank Details (Left) + Signatory (Right) */}
           <div className="flex mt-8 border-t border-[#1f2937] -mx-3 mb-[-12px]">
             {/* Bank Details */}
-            <div className="w-1/2 flex flex-col items-start text-left pl-4 py-3 border-r border-[#1f2937]">
+            <div className="w-[55%] flex flex-col items-start text-left pl-4 py-3 border-r border-[#1f2937]">
               <div className="text-[12px] text-[#111827] underline mb-1">
                 Company's Bank Details
               </div>
-              <div className="text-[11px] text-[#111827] space-y-0.5">
-                <div className="flex whitespace-nowrap">
+              <div className="text-[11px] text-[#111827] space-y-0.5 pr-2">
+                <div className="flex">
                   <span className="w-32 shrink-0 whitespace-nowrap">A/c Holder's Name</span>
-                  <span>
+                  <span className="flex-1">
                     :{' '}
-                    <span className="font-semibold">
+                    <span className="font-semibold break-words">
                       {companyDetails?.accountHolderName || 'Livik'}
                     </span>
                   </span>
                 </div>
-                <div className="flex whitespace-nowrap">
+                <div className="flex">
                   <span className="w-32 shrink-0 whitespace-nowrap">Bank Name</span>
-                  <span>
+                  <span className="flex-1">
                     :{' '}
-                    <span className="font-semibold">
+                    <span className="font-semibold break-words">
                       {companyDetails?.bankName || 'Canara Bank'}
                     </span>
                   </span>
                 </div>
-                <div className="flex whitespace-nowrap">
+                <div className="flex">
                   <span className="w-32 shrink-0 whitespace-nowrap">A/c No.</span>
-                  <span>
+                  <span className="flex-1">
                     :{' '}
-                    <span className="font-semibold">
+                    <span className="font-semibold break-words">
                       {companyDetails?.accountNumber || '22233345211'}
                     </span>
                   </span>
                 </div>
-                <div className="flex whitespace-nowrap">
+                <div className="flex">
                   <span className="w-32 shrink-0 whitespace-nowrap">Branch</span>
-                  <span>
+                  <span className="flex-1">
                     :{' '}
-                    <span className="font-semibold">
+                    <span className="font-semibold break-words">
                       {companyDetails?.branchName || 'RM Colony, Dindigul'}
                     </span>
                   </span>
                 </div>
-                <div className="flex whitespace-nowrap">
+                <div className="flex">
                   <span className="w-32 shrink-0 whitespace-nowrap">IFSC Code</span>
-                  <span>
+                  <span className="flex-1">
                     :{' '}
-                    <span className="font-semibold">
+                    <span className="font-semibold break-words">
                       {companyDetails?.ifscCode || 'HDFC000053'}
                     </span>
                   </span>
                 </div>
-                <div className="flex whitespace-nowrap">
+                <div className="flex">
                   <span className="w-32 shrink-0 whitespace-nowrap">SWIFT Code</span>
-                  <span>
+                  <span className="flex-1">
                     :{' '}
-                    <span className="font-semibold">
+                    <span className="font-semibold break-words">
                       {companyDetails?.swiftCode || 'HDFCDED'}
                     </span>
                   </span>
                 </div>
-                <div className="flex whitespace-nowrap">
+                <div className="flex">
                   <span className="w-32 shrink-0 whitespace-nowrap">PAN Number</span>
-                  <span>
+                  <span className="flex-1">
                     :{' '}
-                    <span className="font-semibold">
+                    <span className="font-semibold break-words">
                       {companyDetails?.panNumber || 'AAQCM8677E'}
                     </span>
                   </span>
@@ -498,7 +498,7 @@ const QuotationPreviewForm = ({
             </div>
 
             {/* Signatory */}
-            <div className="w-1/2 flex flex-col items-end text-right justify-end pr-4 py-3">
+            <div className="w-[45%] flex flex-col items-end text-right justify-end pr-4 py-3">
               <div className="text-[13px] font-bold text-[#111827]">
                 for{' '}
                 {companyDetails?.companyName ||
