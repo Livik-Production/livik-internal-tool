@@ -2,6 +2,8 @@
 import { NextResponse } from 'next/server';
 import { createExpense, getAllExpenses } from '../../../lib/expenseService.js';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req) {
   try {
     const url = new URL(req.url);

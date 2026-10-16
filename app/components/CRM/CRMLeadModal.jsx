@@ -1,25 +1,72 @@
-import React from 'react';
+import React, { useState } from 'react';
 import CustomModalForm from '../CustomModalForm';
+import Button from '../Buttons/Button';
+import PrimaryButton from '../Buttons/PrimaryButton';
+import CloseButton from '../Buttons/CloseButton';
+import { History, Calendar, Clock, SquarePen, Trash2, Loader2 } from 'lucide-react';
 
 export default function CRMLeadModal(props) {
   const {
-    showAddLeadModal, setShowAddLeadModal, modalMode, handleAddLead,
+    showAddLeadModal, setShowAddLeadModal, modalMode, setModalMode, handleAddLead,
     formCompany, setFormCompany, formCompanyEmail, setFormCompanyEmail,
-    formCompanyWebsite, setFormCompanyWebsite, formCompanyAddress, setFormCompanyAddress,
-    formFirstName, setFormFirstName, formLastName, setFormLastName,
+    formCompanyWebsite, setFormCompanyWebsite, formCompanyLinkedin, setFormCompanyLinkedin, formCompanyAddress, setFormCompanyAddress,
+    formLeadName, setFormLeadName,
+    formLeadWhatsapp, setFormLeadWhatsapp, formLeadLinkedin, setFormLeadLinkedin,
     formPocDepartment, setFormPocDepartment, formPhone, setFormPhone,
-    formEmail, setFormEmail, pocDropdownRef, isPocDropdownOpen, setIsPocDropdownOpen,
+    formEmail, setFormEmail, formSource, setFormSource, formStage, setFormStage, pocDropdownRef, isPocDropdownOpen, setIsPocDropdownOpen,
     pocSearchQuery, setPocSearchQuery, filteredPocSuggestions,
     formEmployeeType, setFormEmployeeType, representativeDropdownRef,
     representativeSearch, setRepresentativeSearch, isRepresentativeDropdownOpen,
     setIsRepresentativeDropdownOpen, formEmployeeSelectedId, setFormEmployeeSelectedId,
     formEmployeeDetailsText, filteredSuggestions,
     formDate, setFormDate, formTime, setFormTime, reminderDropdownRef,
-    formReminderName, setFormReminderName, isReminderDropdownOpen,
-    setIsReminderDropdownOpen, filteredReminderPocSuggestions, formReminderDate,
-    setFormReminderDate, formNotes, setFormNotes, currentEditingLead,
-    formatDateTime, isSubmitting
+    isReminderDropdownOpen,
+    setIsReminderDropdownOpen, filteredReminderPocSuggestions,
+    formFollowUps, setFormFollowUps, formNotes, setFormNotes, currentEditingLead,
+    formatDateTime, isSubmitting, formExpectedRevenue, setFormExpectedRevenue,
+    formVisibility, setFormVisibility, authUser
   } = props;
+
+  const [showFollowUp, setShowFollowUp] = useState(false);
+  const [editingFollowUpIndex, setEditingFollowUpIndex] = useState(-1);
+  const [currentFollowUp, setCurrentFollowUp] = useState({ date: '', time: '', notes: '' });
+
+  const handleSaveFollowUp = () => {
+    if (!currentFollowUp.date) return;
+    if (editingFollowUpIndex >= 0) {
+      const updated = [...formFollowUps];
+      updated[editingFollowUpIndex] = currentFollowUp;
+      setFormFollowUps(updated);
+    } else {
+      setFormFollowUps([...formFollowUps, currentFollowUp]);
+    }
+    setCurrentFollowUp({ date: '', time: '', notes: '' });
+    setEditingFollowUpIndex(-1);
+    setShowFollowUp(false);
+  };
+
+  const handleEditFollowUp = (index) => {
+    setCurrentFollowUp(formFollowUps[index]);
+    setEditingFollowUpIndex(index);
+    setShowFollowUp(true);
+  };
+
+  const handleDeleteFollowUp = (index) => {
+    setFormFollowUps(formFollowUps.filter((_, i) => i !== index));
+    if (editingFollowUpIndex === index) {
+      setEditingFollowUpIndex(-1);
+      setCurrentFollowUp({ date: '', time: '', notes: '' });
+      setShowFollowUp(false);
+    }
+  };
+
+  React.useEffect(() => {
+    if (!showAddLeadModal) {
+      setShowFollowUp(false);
+      setEditingFollowUpIndex(-1);
+      setCurrentFollowUp({ date: '', time: '', notes: '' });
+    }
+  }, [showAddLeadModal]);
 
   return (
     <CustomModalForm
@@ -33,152 +80,31 @@ export default function CRMLeadModal(props) {
         
         {/* Company Details Section */}
         <div>
-          <div className="border-b border-slate-200 pb-2 mb-4">
-            <h3 className="text-lg font-bold text-gray-800">Company Details</h3>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-4">
-            <div>
-              <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-                Company Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. Acme Corp"
-                value={formCompany}
-                onChange={(e) => setFormCompany(e.target.value)}
-                className="w-full bg-white border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-hidden text-sm text-slate-800 px-3 py-2 rounded-lg transition-colors placeholder-slate-400 font-medium disabled:bg-slate-50 disabled:text-slate-805 disabled:opacity-100 disabled:border-slate-200"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-                Company Email
-              </label>
-              <input
-                type="email"
-                placeholder="e.g. info@acmecorp.com"
-                value={formCompanyEmail}
-                onChange={(e) => setFormCompanyEmail(e.target.value)}
-                className="w-full bg-white border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-hidden text-sm text-slate-800 px-3 py-2 rounded-lg transition-colors placeholder-slate-400 font-medium disabled:bg-slate-50 disabled:text-slate-805 disabled:opacity-100 disabled:border-slate-200"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-                Website URL
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. acmecorp.com"
-                value={formCompanyWebsite}
-                onChange={(e) => setFormCompanyWebsite(e.target.value)}
-                className="w-full bg-white border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-hidden text-sm text-slate-800 px-3 py-2 rounded-lg transition-colors placeholder-slate-400 font-medium disabled:bg-slate-50 disabled:text-slate-805 disabled:opacity-100 disabled:border-slate-200"
-              />
-            </div>
-            <div className="md:col-span-3">
-              <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-                Company Address
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. 123 Tech Boulevard, Suite 500"
-                value={formCompanyAddress}
-                onChange={(e) => setFormCompanyAddress(e.target.value)}
-                className="w-76 bg-white border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-hidden text-sm text-slate-800 px-3 py-2 rounded-lg transition-colors placeholder-slate-400 font-medium disabled:bg-slate-50 disabled:text-slate-805 disabled:opacity-100 disabled:border-slate-200"
-              />
-            </div>
-          </div>
+     
         </div>
 
-        {/* POC Details Section */}
-        <div>
-          <div className="border-b border-slate-200 pb-2 mb-4">
-            <h3 className="text-lg font-bold text-gray-800">POC Details</h3>
-          </div>
-
           <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-4">
-            <div className="relative" ref={pocDropdownRef}>
-              <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-                First Name <span className="text-red-500">*</span>
+            <div>
+              <label className="text-[13px] text-gray-500 font-semibold block mb-1">
+                Lead Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 required
-                placeholder="e.g. Johnathan"
-                value={formFirstName}
-                onFocus={() => {
-                  setIsPocDropdownOpen(true);
-                  setPocSearchQuery('');
-                }}
-                onChange={(e) => {
-                  setFormFirstName(e.target.value);
-                  setPocSearchQuery(e.target.value);
-                  setIsPocDropdownOpen(true);
-                }}
-                className="w-full bg-white border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-hidden text-sm text-slate-800 px-3 py-2 rounded-lg transition-colors placeholder-slate-400 font-medium disabled:bg-slate-50 disabled:text-slate-805 disabled:opacity-100 disabled:border-slate-200"
-              />
-
-              {isPocDropdownOpen && filteredPocSuggestions.length > 0 && (
-                <div className="absolute z-30 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto py-1">
-                  {filteredPocSuggestions.map((poc, idx) => (
-                    <div
-                      key={idx}
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => {
-                        setFormFirstName(poc.firstName);
-                        setFormLastName(poc.lastName);
-                        setFormEmail(poc.email);
-                        setFormPhone(poc.phone);
-                        setFormPocDepartment(poc.pocDepartment);
-                        setIsPocDropdownOpen(false);
-                        setPocSearchQuery('');
-                      }}
-                      className="px-4 py-2 hover:bg-slate-50 text-sm font-semibold text-slate-755 cursor-pointer flex flex-col gap-0.5 border-b border-slate-50/50 last:border-b-0"
-                    >
-                      <span className="font-bold text-slate-700">{poc.name}</span>
-                      {(poc.email || poc.phone) && (
-                        <span className="text-[10px] text-slate-400 font-medium">
-                          {poc.email} {poc.email && poc.phone ? '•' : ''} {poc.phone}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div>
-              <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-                Last Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. Miller"
-                value={formLastName}
-                onChange={(e) => setFormLastName(e.target.value)}
-                className="w-full bg-white border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-hidden text-sm text-slate-805 px-3 py-2 rounded-lg transition-colors placeholder-slate-400 font-medium disabled:bg-slate-50 disabled:text-slate-805 disabled:opacity-100 disabled:border-slate-200"
+               
+                value={formLeadName}
+                onChange={(e) => setFormLeadName(e.target.value)}
+                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md text-[13px] text-gray-800 outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100 transition-all font-medium"
               />
             </div>
             <div>
-              <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-                Department
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. Procurement"
-                value={formPocDepartment}
-                onChange={(e) => setFormPocDepartment(e.target.value)}
-                className="w-full bg-white border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-hidden text-sm text-slate-800 px-3 py-2 rounded-lg transition-colors placeholder-slate-400 font-medium disabled:bg-slate-50 disabled:text-slate-805 disabled:opacity-100 disabled:border-slate-200"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+              <label className="text-[13px] text-gray-500 font-semibold block mb-1">
                 Phone Number <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 required
-                placeholder="e.g. 9876543210"
+              
                 value={formPhone}
                 maxLength={10}
                 pattern="\d{10}"
@@ -187,143 +113,133 @@ export default function CRMLeadModal(props) {
                   const val = e.target.value.replace(/\D/g, '');
                   setFormPhone(val);
                 }}
-                className="w-full bg-white border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-hidden text-sm text-slate-800 px-3 py-2 rounded-lg transition-colors placeholder-slate-400 font-medium disabled:bg-slate-50 disabled:text-slate-805 disabled:opacity-100 disabled:border-slate-200"
+                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md text-[13px] text-gray-800 outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100 transition-all font-medium"
               />
             </div>
-            <div className="md:col-span-2">
-              <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+             <div>
+              <label className="text-[13px] text-gray-500 font-semibold block mb-1">
+                WhatsApp Number
+              </label>
+              <input
+                type="text"
+                value={formLeadWhatsapp}
+                maxLength={10}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '');
+                  setFormLeadWhatsapp(val);
+                }}
+                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md text-[13px] text-gray-800 outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100 transition-all font-medium"
+              />
+            </div>
+           
+          
+           
+             <div>
+              <label className="text-[13px] text-gray-500 font-semibold block mb-1">
                 Email <span className="text-red-500">*</span>
               </label>
               <input
                 type="email"
                 required
-                placeholder="e.g. jm@acme.com"
+              
                 value={formEmail}
                 onChange={(e) => setFormEmail(e.target.value)}
-                className="w-76 bg-white border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-hidden text-sm text-slate-800 px-3 py-2 rounded-lg transition-colors placeholder-slate-400 font-medium disabled:bg-slate-50 disabled:text-slate-805 disabled:opacity-100 disabled:border-slate-200"
+                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md text-[13px] text-gray-800 outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100 transition-all font-medium"
               />
             </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[13px] text-gray-500 font-semibold block">
+                  LinkedIn URL
+                </label>
+                {modalMode === 'view' && formLeadLinkedin && (
+                  <a
+                    href={formLeadLinkedin.startsWith('http') ? formLeadLinkedin : `https://${formLeadLinkedin}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] font-semibold text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded flex items-center hover:bg-blue-100 transition-colors"
+                  >
+                    View LinkedIn <span className="ml-1">→</span>
+                  </a>
+                )}
+              </div>
+              <input
+                type="text"
+                value={formLeadLinkedin}
+                onChange={(e) => setFormLeadLinkedin(e.target.value)}
+                disabled={modalMode === 'view'}
+                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md text-[13px] text-gray-800 outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100 transition-all font-medium"
+              />
+            </div>
+              <div>
+              <label className="text-[13px] text-gray-500 font-semibold block mb-1">
+                Company Name
+              </label>
+              <input
+                type="text"
+                value={formCompany}
+                onChange={(e) => setFormCompany(e.target.value)}
+                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md text-[13px] text-gray-800 outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100 transition-all font-medium"
+              />
+            </div>
+            <div>
+              <label className="text-[13px] text-gray-500 font-semibold block mb-1">
+                Source
+              </label>
+              <select
+                value={formSource}
+                onChange={(e) => setFormSource?.(e.target.value)}
+                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md text-[13px] text-gray-800 outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100 transition-all font-medium"
+              >
+                <option value="">Select Source</option>
+                <option value="Website">Website</option>
+                <option value="LinkedIn">LinkedIn</option>
+                <option value="Email">Email</option>
+                <option value="WhatsApp">WhatsApp</option>
+              </select>
+            </div>
+     {authUser?.empId === 'Livik-DGL-0008' && (
+                <div>
+                  <label className="text-[13px] text-gray-500 font-semibold block mb-1">
+                    Visibility
+                  </label>
+                  <select
+                    value={formVisibility}
+                    onChange={(e) => setFormVisibility(e.target.value)}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md text-[13px] text-gray-800 outline-none focus:ring-2 focus:ring-blue-400 transition-all font-medium"
+                  >
+                    <option value="Everyone">Show for everyone</option>
+                    <option value="Show for me">Show for me</option>
+                  </select>
+                </div>
+              )}
+          
           </div>
-        </div>
+
+         
+        
 
         {/* Assigned Representative Section */}
         <div>
-          <div className="border-b border-slate-200 pb-2 mb-4">
-            <h3 className="text-lg font-bold text-gray-800">Representative Assignment</h3>
-          </div>
-          
           <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-4">
-            <div className="flex flex-col gap-4">
-              {/* Employee Type Radio Buttons */}
-              <div>
-                <span className="text-sm font-semibold text-slate-700 mb-2 block">
-                  Personnel Category
-                </span>
-                <div className="flex gap-4">
-                  <label className="flex items-center gap-2 text-sm font-medium text-slate-700 cursor-pointer select-none">
-                    <input
-                      type="radio"
-                      name="employeeType"
-                      value="employee"
-                      checked={formEmployeeType === 'employee'}
-                      onChange={() => setFormEmployeeType('employee')}
-                      className="w-4 h-4 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span>Employee</span>
-                  </label>
-                  <label className="flex items-center gap-2 text-sm font-medium text-slate-700 cursor-pointer select-none">
-                    <input
-                      type="radio"
-                      name="employeeType"
-                      value="contract"
-                      checked={formEmployeeType === 'contract'}
-                      onChange={() => setFormEmployeeType('contract')}
-                      className="w-4 h-4 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span>Contract Employee</span>
-                  </label>
-                </div>
-              </div>
-
-              {/* Dropdown list of personnel */}
-              <div className="relative" ref={representativeDropdownRef}>
-                <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-                  Select Representative <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Search by ID or name..."
-                  value={representativeSearch}
-                  onFocus={() => {
-                    setIsRepresentativeDropdownOpen(true);
-                    setRepresentativeSearch('');
-                  }}
-                  onChange={(e) => {
-                    setRepresentativeSearch(e.target.value);
-                    setIsRepresentativeDropdownOpen(true);
-                  }}
-                  className="w-full bg-white border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-hidden text-sm text-slate-800 px-3 py-2 rounded-lg transition-colors cursor-pointer font-medium disabled:bg-slate-50 disabled:text-slate-805 disabled:opacity-100 disabled:border-slate-200"
-                />
-
-                {isRepresentativeDropdownOpen && (
-                  <div className="absolute z-30 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto py-1">
-                    {filteredSuggestions.length > 0 ? (
-                      filteredSuggestions.map((emp) => (
-                        <div
-                          key={emp.id}
-                          onClick={() => {
-                            setFormEmployeeSelectedId(emp.id);
-                            setRepresentativeSearch(emp.name);
-                            setIsRepresentativeDropdownOpen(false);
-                          }}
-                          className={`px-4 py-2 hover:bg-slate-50 text-sm font-semibold text-slate-755 cursor-pointer flex flex-col gap-0.5 border-b border-slate-50/50 last:border-b-0 ${
-                            formEmployeeSelectedId === emp.id ? 'bg-[#004475]/5 text-[#004475]' : ''
-                          }`}
-                        >
-                          <span className="font-bold">
-                            {emp.name} {emp.empId ? `(${emp.empId})` : emp.contractEmpId ? `(${emp.contractEmpId})` : `(${emp.id})`}
-                          </span>
-                          <span className="text-[10px] text-slate-400 font-medium">
-                            {emp.role} • {emp.department}
-                          </span>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="px-4 py-2 text-sm text-slate-400 font-medium">
-                        No personnel found matching "{representativeSearch}"
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Textarea displaying employee details */}
-            <div className="md:col-span-2">
-              <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-                Selected Representative Profile (Auto-populated)
+            <div className="relative">
+              <label className="text-[13px] text-gray-500 font-semibold block mb-1">
+               Lead Owner <span className="text-red-500">*</span>
               </label>
-              <textarea
-                readOnly
-                rows={4}
-                value={formEmployeeDetailsText}
-                placeholder="Profile details will show here once selected..."
-                className="w-full bg-slate-50 border border-slate-300 text-sm font-mono text-slate-600 p-3 rounded-lg focus:outline-hidden resize-none cursor-not-allowed shadow-inner"
+              <input
+                type="text"
+                required
+             
+                value={representativeSearch}
+                onChange={(e) => {
+                  setRepresentativeSearch(e.target.value);
+                }}
+                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md text-[13px] text-gray-800 outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100 transition-all font-medium"
               />
             </div>
-          </div>
-        </div>
-
-        {/* Lead Date & Time Section */}
-        <div>
-          <div className="border-b border-slate-200 pb-2 mb-4">
-            <h3 className="text-lg font-bold text-gray-800">Lead Creation Date & Time</h3>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
             <div>
-              <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+              <label className="text-[13px] text-gray-500 font-semibold block mb-1">
                 Date <span className="text-red-500">*</span>
               </label>
               <input
@@ -336,7 +252,7 @@ export default function CRMLeadModal(props) {
               />
             </div>
             <div>
-              <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
+              <label className="text-[13px] text-gray-500 font-semibold block mb-1">
                 Time <span className="text-red-500">*</span>
               </label>
               <input
@@ -350,81 +266,176 @@ export default function CRMLeadModal(props) {
             </div>
           </div>
         </div>
-        {/* Reminder Section */}
-        <div className="mt-6">
-          <div className="border-b border-slate-200 pb-2 mb-4">
-            <h3 className="text-lg font-bold text-gray-800">Reminder</h3>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-            <div className="relative" ref={reminderDropdownRef}>
-              <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-                Name
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. Johnathan"
-                value={formReminderName}
-                onFocus={() => setIsReminderDropdownOpen(true)}
-                onChange={(e) => {
-                  setFormReminderName(e.target.value);
-                  setIsReminderDropdownOpen(true);
-                }}
-                className="w-full bg-white border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-hidden text-sm text-slate-800 px-3 py-2 rounded-lg transition-colors font-medium disabled:bg-slate-50 disabled:text-slate-805 disabled:opacity-100 disabled:border-slate-200"
-              />
-
-              {isReminderDropdownOpen && filteredReminderPocSuggestions.length > 0 && (
-                <div className="absolute z-30 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto py-1">
-                  {filteredReminderPocSuggestions.map((poc, idx) => (
-                    <div
-                      key={idx}
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => {
-                        setFormReminderName(poc.name);
-                        setIsReminderDropdownOpen(false);
-                      }}
-                      className="px-4 py-2 hover:bg-slate-50 text-sm font-semibold text-slate-755 cursor-pointer flex flex-col gap-0.5 border-b border-slate-50/50 last:border-b-0"
-                    >
-                      <span className="font-bold text-slate-700">{poc.name}</span>
-                      {(poc.email || poc.phone) && (
-                        <span className="text-[10px] text-slate-400 font-medium">
-                          {poc.email} {poc.email && poc.phone ? '•' : ''} {poc.phone}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div>
-              <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-                Date
-              </label>
-              <input
-                type="date"
-                value={formReminderDate}
-                onChange={(e) => setFormReminderDate(e.target.value)}
-                className="w-full bg-white border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-hidden text-sm text-slate-800 px-3 py-2 rounded-lg transition-colors cursor-pointer font-medium disabled:bg-slate-50 disabled:text-slate-805 disabled:opacity-100 disabled:border-slate-200"
-              />
-            </div>
-          </div>
-        </div>
+       
 
         {/* Activity Details / Notes Section */}
         <div>
-          <div className="border-b border-slate-200 pb-2 mb-4">
-            <h3 className="text-lg font-bold text-gray-800">Activity Details</h3>
-          </div>
+   
           <div>
-            <textarea
-              rows={3}
-              placeholder="Log activity details"
-              value={formNotes}
-              onChange={(e) => setFormNotes(e.target.value)}
-              className="w-full bg-white border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-hidden text-sm text-slate-805 p-3 rounded-lg transition-colors placeholder-slate-400 font-medium disabled:bg-slate-50 disabled:text-slate-805 disabled:opacity-100 disabled:border-slate-200"
-            />
+              <textarea
+                rows={3}
+               placeholder='Log activity details'
+                value={formNotes}
+                onChange={(e) => setFormNotes(e.target.value)}
+                disabled={modalMode === 'view'}
+                className="w-full bg-white border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-hidden text-sm text-slate-805 p-3 rounded-lg transition-colors placeholder-slate-400 font-medium disabled:bg-slate-50 disabled:text-slate-805 disabled:opacity-100 disabled:border-slate-200"
+              />
           </div>
         </div>
+          {modalMode && modalMode !== 'add' && (
+            <div className="mt-4 border-t border-slate-200 pt-4">
+              <h4 className="text-sm font-bold text-gray-900 mb-6 flex items-center gap-2">
+              Timeline History ({formFollowUps ? formFollowUps.length : 0})
+            </h4>
+
+            <div className="space-y-4 max-h-[152px] overflow-y-auto pr-2 relative before:absolute before:left-3.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-100 custom-scrollbar">
+              {!formFollowUps || formFollowUps.length === 0 ? (
+                <div className="text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                  <div className="text-gray-400 mb-2 flex justify-center animate-bounce">
+                    <History size={40} opacity={0.3} />
+                  </div>
+                  <p className="text-sm text-gray-500 font-bold">
+                    No follow-ups recorded yet.
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1 uppercase tracking-tight font-medium">
+                    Be the first to log a client interaction.
+                  </p>
+                </div>
+              ) : (
+                formFollowUps.map((log, index) => (
+                  <div
+                    key={index}
+                    className="relative pl-12 animate-in fade-in slide-in-from-left-4 duration-500"
+                  >
+                    {/* Timeline Dot */}
+                    <div className="absolute left-0 top-1.5 w-7 h-7 bg-white border-2 border-blue-500 rounded-full z-10 flex items-center justify-center shadow-sm">
+                      <div className="w-2.5 h-2.5 bg-blue-500 rounded-full" />
+                    </div>
+
+                    <div className="bg-white border border-gray-100 rounded-2xl p-2 shadow-sm hover:shadow-md transition-all duration-300 group relative overflow-hidden flex items-center">
+                      <div className="absolute top-0 left-0 w-1 h-full bg-blue-500" />
+                      <div className="flex justify-between items-center w-full pl-2">
+                        <div className="flex items-center gap-3 flex-1 min-w-0 pr-4">
+                          <span className="px-2 py-1 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-md uppercase tracking-wider flex items-center gap-1 border border-blue-100 shadow-xs whitespace-nowrap flex-shrink-0">
+                            <Calendar size={10} />{' '}
+                            {log.date ? new Date(log.date).toLocaleDateString('en-IN', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                            }) : 'N/A'}
+                          </span>
+                          <span className="px-2 py-1 bg-gray-50 text-gray-600 text-[10px] font-bold rounded-md uppercase tracking-wider flex items-center gap-1 border border-gray-100 shadow-xs whitespace-nowrap flex-shrink-0">
+                            <Clock size={10} /> {log.time || 'N/A'}
+                          </span>
+                          <p
+                            className="text-sm text-gray-700 font-semibold truncate"
+                            title={log.notes}
+                          >
+                            {log.notes || 'N/A'}
+                          </p>
+                        </div>
+                        {modalMode !== 'view' && (
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => handleEditFollowUp(index)}
+                              className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-all scale-95"
+                              title="Edit log"
+                            >
+                              <SquarePen size={15} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteFollowUp(index)}
+                              className="p-1.5 hover:bg-red-50 scale-95 text-red-500"
+                              title="Delete log"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+          )}
+
+          {showFollowUp && (
+            <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-800/50 backdrop-blur-md">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden border border-gray-100">
+                <div className="border-b border-gray-100 bg-gray-50/80 px-5 py-3.5 flex justify-between items-center">
+                  <h3 className="text-lg font-bold text-black">{editingFollowUpIndex >= 0 ? 'Edit Follow Up' : 'Add Next Follow Up'}</h3>
+                  <CloseButton
+                    onClick={() => {
+                      setShowFollowUp(false);
+                      setEditingFollowUpIndex(-1);
+                      setCurrentFollowUp({ date: '', time: '', notes: '' });
+                    }}
+                  />
+                </div>
+                
+                <div className="p-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mb-4">
+                    <div>
+                      <label className="text-[13px] text-gray-500 font-semibold block mb-1">
+                        Date <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="date"
+                        value={currentFollowUp.date}
+                        onChange={(e) => setCurrentFollowUp({...currentFollowUp, date: e.target.value})}
+                        className="w-full bg-white border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none text-sm text-slate-800 px-3 py-2 rounded-lg transition-colors cursor-pointer font-medium"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[13px] text-gray-500 font-semibold block mb-1">
+                        Time
+                      </label>
+                      <input
+                        type="time"
+                        value={currentFollowUp.time}
+                        onChange={(e) => setCurrentFollowUp({...currentFollowUp, time: e.target.value})}
+                        className="w-full bg-white border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none text-sm text-slate-800 px-3 py-2 rounded-lg transition-colors cursor-pointer font-medium"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[13px] text-gray-500 font-semibold block mb-1">
+                      Note
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={currentFollowUp.notes}
+                      onChange={(e) => setCurrentFollowUp({...currentFollowUp, notes: e.target.value})}
+                      placeholder="Follow up note..."
+                      className="w-full bg-white border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none text-sm text-slate-805 p-3 rounded-lg transition-colors placeholder-slate-400 font-medium"
+                    />
+                  </div>
+                </div>
+                
+                <div className="bg-gray-50 border-t border-gray-100 px-5 py-3.5 flex justify-end gap-3 items-center">
+                   <button 
+                     type="button" 
+                     onClick={() => { setShowFollowUp(false); setEditingFollowUpIndex(-1); setCurrentFollowUp({ date: '', time: '', notes: ''}); }} 
+                     className="px-5 py-2 border border-gray-800 hover:bg-slate-100 text-slate-705 font-bold text-sm rounded-lg transition-colors"
+                   >
+                     Close
+                   </button>
+                   <button 
+                     type="button" 
+                     onClick={handleSaveFollowUp} 
+                     disabled={!currentFollowUp.date} 
+                     className="px-5 py-2 bg-[#004475] text-white font-bold text-sm rounded-lg hover:bg-blue-800 transition-colors disabled:opacity-50 flex items-center gap-2"
+                   >
+                     {editingFollowUpIndex >= 0 ? 'Update' : 'Add'}
+                   </button>
+                </div>
+              </div>
+            </div>
+          )}
 
         </fieldset>
 
@@ -439,26 +450,43 @@ export default function CRMLeadModal(props) {
             <div />
           )}
           <div className="flex justify-end gap-3 shrink-0">
-            <button
+            {modalMode !== 'view' && (
+              <Button
+                type="button"
+                disabled={isSubmitting}
+                onClick={() => setShowFollowUp(!showFollowUp)}
+                className="px-5 py-2 bg-[#004475] text-white border-transparent font-bold text-sm rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
+                </svg>
+                Next Follow Up
+              </Button>
+            )}
+            <Button
               type="button"
               disabled={isSubmitting}
               onClick={() => setShowAddLeadModal(false)}
               className="px-5 py-2 border border-gray-800 hover:bg-slate-50 text-slate-705 font-bold text-sm rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {modalMode === 'view' ? 'Close' : 'Cancel'}
-            </button>
+            </Button>
+            {modalMode === 'view' && setModalMode && (
+              <PrimaryButton
+                type="button"
+                onClick={() => setModalMode('edit')}
+              >
+                Edit
+              </PrimaryButton>
+            )}
             {modalMode !== 'view' && (
-              <button
+              <PrimaryButton
                 type="submit"
                 disabled={isSubmitting}
-                className="px-5 py-2 bg-[#004475]  text-white font-bold text-sm rounded-lg transition-colors cursor-pointer shadow-sm flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-95 duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
                   <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
+                    <Loader2 className="animate-spin mr-2 inline" size={16} />
                     <span>{modalMode === 'edit' ? 'Updating...' : (modalMode === 'logActivity' || modalMode === 'editActivity') ? (modalMode === 'editActivity' ? 'Updating Activity...' : 'Logging...') : 'Creating...'}</span>
                   </>
                 ) : (
@@ -469,7 +497,7 @@ export default function CRMLeadModal(props) {
                     <span>{modalMode === 'edit' ? 'Update Lead' : modalMode === 'logActivity' ? 'Save Log Activity' : modalMode === 'editActivity' ? 'Update Activity' : 'Save Lead'}</span>
                   </>
                 )}
-              </button>
+              </PrimaryButton>
             )}
           </div>
         </div>

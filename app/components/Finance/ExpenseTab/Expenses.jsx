@@ -1,13 +1,15 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronDown, X } from 'lucide-react';
+import { ChevronDown, X, PieChart } from 'lucide-react';
 import Loader from '../../../components/Loader';
 import DashboardTab from '../ExpenseTab/DashboardTab';
 import AllExpenseTab from '../ExpenseTab/AllExpenseTab';
 import CashFlowTab from '../ExpenseTab/CashFlowTab';
+import ExpenseCategorySummaryModal from './ExpenseCategorySummaryModal';
 import FilterDropdown from '../../Buttons/FilterDropdown';
 import TabButton from '../../Buttons/TabButton';
+import Button from '../../Buttons/Button';
 
 const ExpensesTable = ({
   expenses: propExpenses = [],
@@ -23,16 +25,25 @@ const ExpensesTable = ({
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [expenses, setExpenses] = useState([]);
+  const [expenses, setExpenses] = useState(propExpenses || []);
   const [pettyCashFlows, setPettyCashFlows] = useState([]);
+  const [latestPettyCashDetail, setLatestPettyCashDetail] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('weekly');
   const [periodRange, setPeriodRange] = useState('weekly');
   const [yearRange, setYearRange] = useState('');
 
+  // Sync propExpenses if updated from parent
+  useEffect(() => {
+    if (propExpenses && propExpenses.length > 0) {
+      setExpenses(propExpenses);
+    }
+  }, [propExpenses]);
+
   const now = new Date();
   const [selectedMonthNum, setSelectedMonthNum] = useState('all'); // Default to all
   const [selectedYear, setSelectedYear] = useState('all'); // Default to all
+  const [isCategorySummaryOpen, setIsCategorySummaryOpen] = useState(false);
 
   const monthOptions = [
     { value: '01', label: 'January' },
@@ -83,9 +94,10 @@ const ExpensesTable = ({
       .padStart(2, '0');
     const expYear = expenseDate.getFullYear().toString();
 
+    const matchesYear = selectedYear === 'all' || expYear === selectedYear;
+
     const matchesMonth =
       selectedMonthNum === 'all' || expMonthNum === selectedMonthNum;
-    const matchesYear = selectedYear === 'all' || expYear === selectedYear;
 
     const searchLower = (searchQuery || '').toLowerCase();
     const matchesSearch =
@@ -122,7 +134,7 @@ const ExpensesTable = ({
     };
   }, []);
 
-  const fetchData = async () => {
+  const fetchData = async (savedExpense) => {
     setIsLoading(true);
     try {
       const [expRes, pcRes] = await Promise.all([
@@ -136,9 +148,35 @@ const ExpensesTable = ({
       const expData = await expRes.json();
       const pcData = await pcRes.json();
 
+      let latestDetail = null;
+      if (Array.isArray(pcData) && pcData.length > 0) {
+        const sorted = [...pcData].sort(
+          (a, b) => new Date(b.receiveDate) - new Date(a.receiveDate)
+        );
+        const latestId = sorted[0]?.id;
+        if (latestId) {
+          try {
+            const detailRes = await fetch(
+              `/api/expense/petty-cash?id=${latestId}`,
+              { cache: 'no-store' }
+            );
+            if (detailRes.ok) {
+              latestDetail = await detailRes.json();
+            }
+          } catch (detailErr) {
+            console.error('Failed to fetch latest petty cash detail:', detailErr);
+          }
+        }
+      }
+
       if (isMounted.current) {
-        setExpenses(Array.isArray(expData) ? expData : []);
+        let finalExpenses = Array.isArray(expData) ? expData : [];
+        if (savedExpense && !finalExpenses.some((e) => e.id === savedExpense.id)) {
+          finalExpenses = [savedExpense, ...finalExpenses];
+        }
+        setExpenses(finalExpenses);
         setPettyCashFlows(Array.isArray(pcData) ? pcData : []);
+        setLatestPettyCashDetail(latestDetail);
       }
     } catch (err) {
       console.error('Fetch data failed:', err);
@@ -268,6 +306,7 @@ const ExpensesTable = ({
             <AllExpenseTab
               expenses={filteredData}
               pettyCashFlows={pettyCashFlows}
+              latestPettyCashDetail={latestPettyCashDetail}
               isLoading={isLoading || propIsLoading || loading}
               onEdit={handleEditExpense}
               onDeleteSuccess={handleDeleteSuccess}
@@ -284,6 +323,7 @@ const ExpensesTable = ({
               monthOptions={filteredMonthOptions}
               yearOptions={yearOptions}
               availableCategories={availableCategories}
+              onOpenCategorySummary={() => setIsCategorySummaryOpen(true)}
             />
           )}
           {activeTab === 'cashflow' && (
@@ -302,6 +342,15 @@ const ExpensesTable = ({
             />
           )}
         </div>
+
+        {/* Expense Category Summary Modal */}
+        <ExpenseCategorySummaryModal
+          isOpen={isCategorySummaryOpen}
+          onClose={() => setIsCategorySummaryOpen(false)}
+          expenses={expenses}
+          monthOptions={filteredMonthOptions}
+          yearOptions={yearOptions}
+        />
       </div>
     </>
   );

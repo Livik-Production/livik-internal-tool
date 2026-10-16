@@ -3,82 +3,54 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { selectAuthUser } from '../../../store/slices/authSlice';
-import PrimaryButton from '../../components/Buttons/PrimaryButton';
-import IconButton from '../../components/Buttons/IconButton';
 import TabButton from '../../components/Buttons/TabButton';
-import NotificationBell from '../../components/NotificationBell';
-import CustomModalForm from '../../components/CustomModalForm';
 import CRMDashboardOverview from '../../components/CRM/CRMDashboardOverview';
-import CustomAlertForm from '../../components/CustomAlertForm';
 import Loader from '../../components/Loader';
 import CRMLeadsTab from '../../components/CRM/CRMLeadsTab';
-import CRMLeadDetail from '../../components/CRM/CRMLeadDetail';
+import CRMInterviewTab from '../../components/CRM/CRMInterviewTab';
+import CRMLocalLeadsTab from '../../components/CRM/CRMLocalLeadsTab';
+
 import CRMHeader from '../../components/CRM/CRMHeader';
 import CRMLeadModal from '../../components/CRM/CRMLeadModal';
+import CRMCompanyModal from '../../components/CRM/CRMCompanyModal';
+import CRMCompaniesTab from '../../components/CRM/CRMCompaniesTab';
+import CRMPlaceholderTab from '../../components/CRM/CRMPlaceholderTab';
+import CRMMoveCustomerModal from '../../components/CRM/CRMMoveCustomerModal';
+import CRMDeleteModals from '../../components/CRM/CRMDeleteModals';
 import { showSuccessToast, showErrorToast } from '../../components/Toast';
 import {
-  Search,
-  Plus,
-  Users,
-  CheckCircle,
-  Handshake,
-  TrendingUp,
-  TrendingDown,
-  CalendarCheck,
-  Mail,
-  Phone,
   XCircle,
-  ArrowRight,
   Sparkles,
-  DollarSign,
-  ChevronDown,
-  AlertCircle,
-  SquarePen,
-  Trash,
-  X,
-  ArrowUpDown,
-  Building2,
-  User,
-  LogOut,
-  MapPin,
-  Globe,
-  UsersRound
 } from 'lucide-react';
-
-const formatTime24Hours = (timeStr) => {
-  if (!timeStr) return '';
-
-  const [hourStr, minStr] = timeStr.split(':');
-  const hours = parseInt(hourStr, 10);
-  const minutes = parseInt(minStr, 10);
-
-  if (isNaN(hours) || isNaN(minutes)) return timeStr;
-
-  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-};
-const formatDateTime = (dateVal) => {
-  if (!dateVal) return 'N/A';
-  const d = new Date(dateVal);
-  if (isNaN(d.getTime())) return 'N/A';
-  return d.toLocaleString('en-IN', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true,
-  });
-};
+import {
+  SOURCE_KEYS,
+  formatDateTime,
+  getLeadDesign,
+  CRM_CHART_DATA,
+} from '../../components/CRM/crmUtils';
 
 export default function CRMDashboard() {
   const authUser = useSelector(selectAuthUser);
 
   // ── Rights computation ──────────────────────────────────────────────────────
-  const { canViewCrm, canControlCrm } = useMemo(() => {
+  const { 
+    canViewCrm, canControlCrm, 
+    canViewDashboard, canControlDashboard, 
+    canViewLeads, canControlLeads, 
+    canViewCompanies, canControlCompanies, 
+    canViewInterview, canControlInterview, 
+    canViewContacted, canControlContacted,
+    canViewLocalLead, canControlLocalLead
+  } = useMemo(() => {
     if (!authUser)
       return {
-        canViewCrm: false,
-        canControlCrm: false,
+        canViewCrm: false, canControlCrm: false,
+        canViewDashboard: false, canControlDashboard: false,
+        canViewLeads: false, canControlLeads: false,
+        canViewCompanies: false, canControlCompanies: false,
+        canViewInterview: false, canControlInterview: false,
+        canViewContacted: false, canControlContacted: false,
+        canViewLocalLead: false, canControlLocalLead: false,
       };
 
     const rawRights = authUser.rights || [];
@@ -95,18 +67,54 @@ export default function CRMDashboard() {
     const checkRight = (r) => normalizedRights.includes(r.toLowerCase());
 
     return {
-      canViewCrm: isSuperAdmin || checkRight('crm_module_view'),
+      canViewCrm: isSuperAdmin || normalizedRights.some(r => r.includes('crm')),
       canControlCrm: isSuperAdmin || checkRight('crm_module_control'),
+      canViewDashboard: isSuperAdmin || checkRight('crm_dashboard_view') || checkRight('crm_dashboard_control'),
+      canControlDashboard: isSuperAdmin || checkRight('crm_dashboard_control'),
+      canViewLeads: isSuperAdmin || checkRight('crm_leads_view') || checkRight('crm_leads_control'),
+      canControlLeads: isSuperAdmin || checkRight('crm_leads_control'),
+      canViewCompanies: isSuperAdmin || checkRight('crm_companies_view') || checkRight('crm_companies_control'),
+      canControlCompanies: isSuperAdmin || checkRight('crm_companies_control'),
+      canViewInterview: isSuperAdmin || checkRight('crm_interview_view') || checkRight('crm_interview_control'),
+      canControlInterview: isSuperAdmin || checkRight('crm_interview_control'),
+      canViewContacted: isSuperAdmin || checkRight('crm_contacted_view') || checkRight('crm_contacted_control'),
+      canControlContacted: isSuperAdmin || checkRight('crm_contacted_control'),
+      canViewLocalLead: isSuperAdmin || checkRight('crm_localleads_view') || checkRight('crm_localleads_control') || checkRight('crm_leads_view') || checkRight('crm_leads_control'),
+      canControlLocalLead: isSuperAdmin || checkRight('crm_localleads_control') || checkRight('crm_leads_control'),
     };
   }, [authUser]);
+  
   const [pageLoading, setPageLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('Dashboard');
+  
+  useEffect(() => {
+    const tabs = ['Dashboard', 'Leads', 'Companies', 'Contacted', 'Local Lead', 'Interview'].filter((tab) => {
+      if (tab === 'Dashboard') return canViewDashboard;
+      if (tab === 'Leads') return canViewLeads;
+      if (tab === 'Companies') return canViewCompanies;
+      if (tab === 'Contacted') return canViewContacted;
+      if (tab === 'Local Lead') return canViewLocalLead;
+      if (tab === 'Interview') return canViewInterview;
+      return true;
+    });
+    if (tabs.length > 0 && !tabs.includes(activeTab)) {
+      setActiveTab(tabs[0]);
+    }
+  }, [canViewDashboard, canViewLeads, canViewCompanies, canViewContacted, canViewLocalLead, canViewInterview, activeTab]);
+  
   const [showAddLeadModal, setShowAddLeadModal] = useState(false);
+  const [showCompanyModal, setShowCompanyModal] = useState(false);
   const [modalMode, setModalMode] = useState('add'); // 'add' | 'edit'
   const [editingLeadId, setEditingLeadId] = useState(null);
 
   // Search input state for Leads tab
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearchQuery(searchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Lead Detail View State
   const [selectedLeadDetail, setSelectedLeadDetail] = useState(null);
@@ -120,7 +128,44 @@ export default function CRMDashboard() {
 
   // Detailed leads list with job roles, geography, scores and revenues
   const [leadsList, setLeadsList] = useState([]);
+  const [companiesList, setCompaniesList] = useState([]);
+  const [interviewsList, setInterviewsList] = useState([]);
+  const [companySearchQuery, setCompanySearchQuery] = useState('');
+  const [debouncedCompanySearchQuery, setDebouncedCompanySearchQuery] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedCompanySearchQuery(companySearchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [companySearchQuery]);
+
+  const [companySourceFilter, setCompanySourceFilter] = useState([]);
+  
+  const filteredCompanies = useMemo(() => {
+    let result = companiesList;
+    if (companySourceFilter.length > 0) {
+      result = result.filter(company => {
+        const rawSource = company.source || 'No Source';
+        const normalizedSource = SOURCE_KEYS.find(s => s.toLowerCase() === rawSource.toLowerCase()) || rawSource;
+        return companySourceFilter.includes(normalizedSource);
+      });
+    }
+    if (!debouncedCompanySearchQuery.trim()) return result;
+    const q = debouncedCompanySearchQuery.toLowerCase().trim();
+    return result.filter(company => 
+      (company.name && company.name.toLowerCase().includes(q)) ||
+      (company.companyId && company.companyId.toLowerCase().includes(q)) ||
+      (company.contactName && company.contactName.toLowerCase().includes(q)) ||
+      (company.email && company.email.toLowerCase().includes(q)) ||
+      (company.industry && company.industry.toLowerCase().includes(q))
+    );
+  }, [companiesList, debouncedCompanySearchQuery, companySourceFilter]);
+
   const currentEditingLead = leadsList.find((l) => l.id === editingLeadId);
+  const [editingCompanyId, setEditingCompanyId] = useState(null);
+  const [showCompanyDeleteConfirm, setShowCompanyDeleteConfirm] = useState(false);
+  const [companyToDelete, setCompanyToDelete] = useState(null);
+  const [isDeletingCompany, setIsDeletingCompany] = useState(false);
+  const [isDeletingActivity, setIsDeletingActivity] = useState(false);
 
   // Stage counts for Leads tab stats
   const [counts, setCounts] = useState({
@@ -135,21 +180,35 @@ export default function CRMDashboard() {
   const [upcomingTasks, setUpcomingTasks] = useState([]);
 
   // Form Field States
-  const [formFirstName, setFormFirstName] = useState('');
-  const [formLastName, setFormLastName] = useState('');
+  const [formLeadName, setFormLeadName] = useState('');
+  const [formLeadWhatsapp, setFormLeadWhatsapp] = useState('');
+  const [formLeadLinkedin, setFormLeadLinkedin] = useState('');
   const [formCompany, setFormCompany] = useState('');
   const [formEmail, setFormEmail] = useState('');
   const [formPhone, setFormPhone] = useState('');
   const [formSource, setFormSource] = useState('Referral');
   const [formIndustry, setFormIndustry] = useState('SaaS & Technology');
-  const [formStatus, setFormStatus] = useState('New');
+  const [formStage, setFormStage] = useState('New');
   const [formAssignedTo, setFormAssignedTo] = useState('');
   const [formNotes, setFormNotes] = useState('');
+  const [formExpectedRevenue, setFormExpectedRevenue] = useState('');
+  const [formVisibility, setFormVisibility] = useState('Everyone');
 
   // New Form Field States for Company details
   const [formCompanyAddress, setFormCompanyAddress] = useState('');
   const [formCompanyEmail, setFormCompanyEmail] = useState('');
   const [formCompanyWebsite, setFormCompanyWebsite] = useState('');
+  const [formCompanyLinkedin, setFormCompanyLinkedin] = useState('');
+  
+  // New Form Field States for Companies Tab
+  const [formCompanyIndustry, setFormCompanyIndustry] = useState('');
+  const [formCompanyCity, setFormCompanyCity] = useState('');
+  const [formCompanyState, setFormCompanyState] = useState('');
+  const [formCompanyCountry, setFormCompanyCountry] = useState('');
+  const [formCompanyContactName, setFormCompanyContactName] = useState('');
+  const [formCompanyContactPhone, setFormCompanyContactPhone] = useState('');
+  const [formCompanyDocumentUrl, setFormCompanyDocumentUrl] = useState('');
+  const [formCompanySource, setFormCompanySource] = useState('');
 
   // New Form Field States for POC details
   const [formPocDepartment, setFormPocDepartment] = useState('');
@@ -158,31 +217,8 @@ export default function CRMDashboard() {
   const [formDate, setFormDate] = useState('');
   const [formTime, setFormTime] = useState('');
 
-  // New Form Field States for Reminder
-  const [formReminderName, setFormReminderName] = useState('');
-  const [formReminderDate, setFormReminderDate] = useState('');
-  const [formReminderTime, setFormReminderTime] = useState('');
-
-  const formatTime24Hours = (timeStr) => {
-    if (!timeStr) return '';
-    const [hourStr, minStr] = timeStr.split(':');
-    const hours = parseInt(hourStr, 10);
-    const minutes = parseInt(minStr, 10);
-    if (isNaN(hours) || isNaN(minutes)) return timeStr;
-    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-  };
-
-  const formatTimeAMPM = (timeStr) => {
-    if (!timeStr) return '';
-    const [hourStr, minStr] = timeStr.split(':');
-    let hours = parseInt(hourStr, 10);
-    const minutes = parseInt(minStr, 10);
-    if (isNaN(hours) || isNaN(minutes)) return timeStr;
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12;
-    hours = hours ? hours : 12; // the hour '0' should be '12'
-    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')} ${ampm}`;
-  };
+  // New Form Field States for Follow Ups
+  const [formFollowUps, setFormFollowUps] = useState([]);
 
   const [dbEmployees, setDbEmployees] = useState([]);
 
@@ -267,18 +303,13 @@ export default function CRMDashboard() {
   const [isPocDropdownOpen, setIsPocDropdownOpen] = useState(false);
   const pocDropdownRef = useRef(null);
 
-  // Reminder autocomplete state
-  const [isReminderDropdownOpen, setIsReminderDropdownOpen] = useState(false);
-  const reminderDropdownRef = useRef(null);
+
 
   // Close POC and Reminder suggestions dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (pocDropdownRef.current && !pocDropdownRef.current.contains(event.target)) {
         setIsPocDropdownOpen(false);
-      }
-      if (reminderDropdownRef.current && !reminderDropdownRef.current.contains(event.target)) {
-        setIsReminderDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -349,33 +380,9 @@ export default function CRMDashboard() {
     );
   }, [uniquePocs, pocSearchQuery, formCompany]);
 
-  // Filter Reminder POC suggestions based on selected company and user search text (external POCs)
-  const filteredReminderPocSuggestions = useMemo(() => {
-    let filtered = uniquePocs;
-    if (formCompany) {
-      const companyLower = formCompany.toLowerCase().trim();
-      filtered = filtered.filter(poc => poc.company.toLowerCase().trim() === companyLower);
-    }
-    
-    const query = formReminderName.toLowerCase().trim();
-    if (!query) return filtered;
-    return filtered.filter(poc => 
-      poc.name.toLowerCase().includes(query) ||
-      (poc.email && poc.email.toLowerCase().includes(query)) ||
-      (poc.phone && poc.phone.includes(query))
-    );
-  }, [uniquePocs, formReminderName, formCompany]);
 
-  // Sync search input when selection changes
-  useEffect(() => {
-    const list = formEmployeeType === 'employee' ? displayedEmployees : displayedContractEmployees;
-    const selected = list.find(emp => emp.id === formEmployeeSelectedId);
-    if (selected) {
-      setRepresentativeSearch(selected.name);
-    } else {
-      setRepresentativeSearch('');
-    }
-  }, [formEmployeeSelectedId, formEmployeeType, displayedEmployees, displayedContractEmployees]);
+
+
 
   // Click outside to dismiss the search suggestions list
   useEffect(() => {
@@ -432,10 +439,47 @@ export default function CRMDashboard() {
     }
   }, [formEmployeeType, formEmployeeSelectedId, displayedEmployees, displayedContractEmployees]);
 
-  // Load employees & leads from DB on mount
+  const fetchInterviewsData = async () => {
+    try {
+      const res = await fetch('/api/crm?type=interview');
+      if (res.ok) {
+        const data = await res.json();
+        
+        // Group by base interviewId if available, fallback to candidateName + title + companyName
+        const groups = {};
+        data.forEach(interview => {
+          let key;
+          if (interview.interviewId && interview.interviewId.startsWith('LK-CRM-INT-')) {
+            key = interview.interviewId.split('-R')[0];
+          } else {
+            const candidate = (interview.candidateName || '').toLowerCase().trim();
+            const title = (interview.title || '').toLowerCase().trim();
+            const company = (interview.companyName || '').toLowerCase().trim();
+            key = `${candidate}||${title}||${company}`;
+          }
+          if (!groups[key]) groups[key] = [];
+          groups[key].push(interview);
+        });
+        
+        // Sort each group by createdAt ascending so index 0 is Round 1
+        const groupedArray = Object.values(groups).map(group => {
+           return group.sort((a,b) => new Date(a.createdAt) - new Date(b.createdAt));
+        });
+        
+        // Sort the entire array by the most recent round's createdAt descending
+        groupedArray.sort((a,b) => new Date(b[b.length-1].createdAt) - new Date(a[a.length-1].createdAt));
+        
+        setInterviewsList(groupedArray);
+      }
+    } catch (err) {
+      console.error('Failed to fetch interviews:', err);
+    }
+  };
+
   // Load employees & leads from DB on mount
   useEffect(() => {
     const loadAllData = async () => {
+      fetchInterviewsData();
       try {
         setPageLoading(true);
         let currentDbEmployees = [];
@@ -445,38 +489,64 @@ export default function CRMDashboard() {
           setDbEmployees(currentDbEmployees);
         }
 
-        const res = await fetch('/api/crm');
+        const res = await fetch('/api/crm', { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
           const dbLeads = data.filter(d => d.companyName !== 'ACTIVITY_LOG');
           const dbActivities = data.filter(d => d.companyName === 'ACTIVITY_LOG');
+            
+          const companiesRes = await fetch('/api/crm?type=company', { cache: 'no-store' });
+          if (companiesRes.ok) {
+            const companiesData = await companiesRes.json();
+            setCompaniesList(companiesData.map(c => ({
+              id: c.id,
+              companyId: c.companyId,
+              name: c.companyName,
+              email: c.email || '',
+              website: c.websiteUrl || '',
+              linkedin: c.linkedinUrl || '',
+              address: c.address || '',
+              expectedRevenue: c.expectedRevenue || '',
+              industry: c.industry || '',
+              city: c.city || '',
+              state: c.state || '',
+              country: c.country || '',
+              contactName: c.contactName || '',
+              contactPhone: c.contactPhone || '',
+              source: c.source || '',
+              documentUrl: c.documentUrl || '',
+            })));
+          }
 
           const mappedLeads = dbLeads.map((lead) => {
-            const dbEmp = lead.assigneeId ? currentDbEmployees.find(e => e.id === lead.assigneeId) : null;
+            const dbEmp = lead.leadOwnerId ? currentDbEmployees.find(e => e.id === lead.leadOwnerId) : null;
             return {
               id: lead.id,
-              firstName: lead.pocName.split(' ')[0] || '',
-              lastName: lead.pocName.split(' ').slice(1).join(' ') || '',
-              name: lead.pocName,
+              firstName: lead.leadName ? lead.leadName.split(' ')[0] : '',
+              lastName: lead.leadName ? lead.leadName.split(' ').slice(1).join(' ') : '',
+              name: lead.leadName,
               company: lead.companyName,
-              email: lead.pocEmail || '',
-              phone: lead.pocMobile || '',
-              source: 'Referral',
+              email: lead.email || '',
+              phone: lead.phoneNumber || '',
+              whatsapp: lead.whatsapp || '',
+              source: lead.source || 'Referral',
+              expectedRevenue: lead.expectedRevenue || '',
               industry: 'SaaS & Technology',
-              status: lead.status || 'New',
-              assignedTo: dbEmp ? `${dbEmp.firstName} ${dbEmp.lastName}` : 'Unassigned',
-              notes: lead.notes || '',
+              status: lead.leadStage || 'New',
+              assignedTo: dbEmp ? `${dbEmp.firstName} ${dbEmp.lastName}` : lead.leadOwnerName || 'Unassigned',
+              notes: lead.activityDetails || '',
               companyAddress: lead.companyAddress || '',
               companyEmail: lead.companyEmail || '',
-              companyWebsite: lead.companyWebsite || '',
-              pocDepartment: lead.pocDepartment || '',
-              employeeType: lead.assigneeType.toLowerCase() === 'employee' ? 'employee' : 'contract',
-              employeeSelectedId: lead.assigneeId || '',
+              companyWebsite: lead.websiteUrl || '',
+              companyLinkedin: lead.linkedinUrl || '',
+              pocDepartment: lead.department || '',
+              employeeType: lead.leadOwnerType?.toLowerCase() === 'employee' ? 'employee' : 'contract',
+              employeeSelectedId: lead.leadOwnerId || '',
               employeeDetailsText: dbEmp ? 
                 `Name: ${dbEmp.firstName} ${dbEmp.lastName}\nDepartment: ${dbEmp.department || 'N/A'}\nRole: ${dbEmp.designation || 'N/A'}\nPhone: ${dbEmp.phoneNumber || 'N/A'}\nEmail: ${dbEmp.email || 'N/A'}` : '',
               title: 'Project Lead',
               location: lead.companyAddress || 'San Francisco, CA',
-              leadId: `${String(lead.id).slice(-5)}`,
+              leadId: lead.leadId,
               leadScore: 75,
               annualRevenue: '$10M - $25M',
               date: lead.date,
@@ -485,29 +555,30 @@ export default function CRMDashboard() {
               updatedAt: lead.updatedAt,
               createdBy: lead.createdBy,
               updatedBy: lead.updatedBy,
+              followUps: lead.followUps || [],
+              visibility: lead.visibility || 'Everyone',
             };
           });
 
           const mappedActivities = dbActivities.map((act) => {
-            const repEmp = act.assigneeId ? currentDbEmployees.find(e => e.id === act.assigneeId) : null;
+            const repEmp = act.leadOwnerId ? currentDbEmployees.find(e => e.id === act.leadOwnerId) : null;
             return {
               id: act.id,
               leadId: act.companyAddress, // Parent lead ID stored in companyAddress
-              data: act.notes || '',
+              data: act.activityDetails || '',
               date: act.date ? new Date(act.date).toISOString().slice(0, 10) : '',
               time: act.time || '',
-              pocName: act.pocName || '',
-              pocEmail: act.pocEmail || '',
-              pocPhone: act.pocMobile || '',
-              pocDept: act.pocDepartment || '',
+              pocName: act.leadName || '',
+              pocEmail: act.email || '',
+              pocPhone: act.phoneNumber || '',
+              pocDept: act.department || '',
               repName: repEmp ? `${repEmp.firstName} ${repEmp.lastName}` : 'Unassigned',
-              repType: act.assigneeType === 'EMPLOYEE' ? 'Employee' : 'Contract',
+              repType: act.leadOwnerType === 'EMPLOYEE' ? 'Employee' : 'Contract',
               repDept: repEmp?.department || 'N/A',
               repRole: repEmp?.designation || 'N/A',
               repPhone: repEmp?.phoneNumber || 'N/A',
               repEmail: repEmp?.email || 'N/A',
-              reminderName: act.reminderName || null,
-              reminderDate: act.reminderDate ? new Date(act.reminderDate).toISOString().slice(0, 10) : null,
+              followUps: act.followUps || [],
             };
           });
 
@@ -537,28 +608,33 @@ export default function CRMDashboard() {
 
 
   // Add Button Click Handler
-  const handleAddLeadClick = () => {
+  const handleAddLeadClick = (defaultStageOrEvent) => {
+    const stage = typeof defaultStageOrEvent === 'string' ? defaultStageOrEvent : 'New';
     setModalMode('add');
     setEditingLeadId(null);
-    setFormFirstName('');
-    setFormLastName('');
+    setFormLeadName('');
+    setFormLeadWhatsapp('');
+    setFormLeadLinkedin('');
     setFormCompany('');
+    setFormExpectedRevenue('');
     setFormEmail('');
     setFormPhone('');
-    setFormSource('Referral');
+    setFormSource('');
     setFormIndustry('SaaS & Technology');
-    setFormStatus('New');
+    setFormStage(stage);
+    setFormVisibility('Everyone');
     setFormAssignedTo('');
     setFormNotes('');
     setFormCompanyAddress('');
     setFormCompanyEmail('');
     setFormCompanyWebsite('');
+    setFormCompanyLinkedin('');
     setFormPocDepartment('');
     setFormEmployeeType('employee');
     setFormEmployeeSelectedId('');
     setFormEmployeeDetailsText('');
-    setFormReminderName('');
-    setFormReminderDate('');
+    setRepresentativeSearch('');
+    setFormFollowUps([]);
     
     // Set date and time
     const now = new Date();
@@ -570,33 +646,124 @@ export default function CRMDashboard() {
     setShowAddLeadModal(true);
   };
 
+  const handleAddCompanyClick = () => {
+    setModalMode('add');
+    setFormCompany('');
+    setFormCompanyEmail('');
+    setFormCompanyWebsite('');
+    setFormCompanyLinkedin('');
+    setFormCompanyAddress('');
+    setFormExpectedRevenue('');
+    setFormCompanyIndustry('');
+    setFormCompanyCity('');
+    setFormCompanyState('');
+    setFormCompanyCountry('');
+    setFormCompanyContactName('');
+    setFormCompanyContactPhone('');
+    setFormCompanyDocumentUrl('');
+    setFormCompanySource('');
+    setShowCompanyModal(true);
+  };
+
+  const handleViewCompanyClick = (company) => {
+    setModalMode('view');
+    setFormCompany(company.name || '');
+    setFormCompanyEmail(company.email || '');
+    setFormCompanyWebsite(company.website || '');
+    setFormCompanyLinkedin(company.linkedin || '');
+    setFormCompanyAddress(company.address || '');
+    setFormExpectedRevenue(company.expectedRevenue || '');
+    setFormCompanyIndustry(company.industry || '');
+    setFormCompanyCity(company.city || '');
+    setFormCompanyState(company.state || '');
+    setFormCompanyCountry(company.country || '');
+    setFormCompanyContactName(company.contactName || '');
+    setFormCompanyContactPhone(company.contactPhone || '');
+    setFormCompanyDocumentUrl(company.documentUrl || '');
+    setFormCompanySource(company.source || '');
+    setShowCompanyModal(true);
+  };
+
+  const handleEditCompanyClick = (company) => {
+    setModalMode('edit');
+    setEditingCompanyId(company.id);
+    setFormCompany(company.name || '');
+    setFormCompanyEmail(company.email || '');
+    setFormCompanyWebsite(company.website || '');
+    setFormCompanyLinkedin(company.linkedin || '');
+    setFormCompanyAddress(company.address || '');
+    setFormExpectedRevenue(company.expectedRevenue || '');
+    setFormCompanyIndustry(company.industry || '');
+    setFormCompanyCity(company.city || '');
+    setFormCompanyState(company.state || '');
+    setFormCompanyCountry(company.country || '');
+    setFormCompanyContactName(company.contactName || '');
+    setFormCompanyContactPhone(company.contactPhone || '');
+    setFormCompanyDocumentUrl(company.documentUrl || '');
+    setFormCompanySource(company.source || '');
+    setShowCompanyModal(true);
+  };
+
+  const handleDeleteCompanyClick = (company) => {
+    setCompanyToDelete(company);
+    setShowCompanyDeleteConfirm(true);
+  };
+
+  const confirmDeleteCompany = async () => {
+    if (companyToDelete) {
+      setIsDeletingCompany(true);
+      try {
+        const res = await fetch(`/api/crm/${companyToDelete.id}?type=company`, { method: 'DELETE' });
+        if (res.ok) {
+          setCompaniesList(prev => prev.filter(c => c.id !== companyToDelete.id));
+          showSuccessToast('Company deleted successfully!');
+        } else {
+          showErrorToast('Failed to delete company');
+        }
+      } catch (err) {
+        console.error(err);
+        showErrorToast('An error occurred');
+      } finally {
+        setIsDeletingCompany(false);
+        setShowCompanyDeleteConfirm(false);
+        setCompanyToDelete(null);
+      }
+    }
+  };
+
+
   // Edit Button Click Handler
   const handleEditLeadClick = (lead) => {
     setModalMode('edit');
     setEditingLeadId(lead.id);
-    setFormFirstName(lead.firstName || lead.name.split(' ')[0] || '');
-    setFormLastName(lead.lastName || lead.name.split(' ').slice(1).join(' ') || '');
+    setFormLeadName(lead.name || '');
+    setFormLeadWhatsapp(lead.whatsapp || '');
+    setFormLeadLinkedin(lead.companyLinkedin || lead.linkedin || '');
     setFormCompany(lead.company || '');
+    setFormExpectedRevenue(lead.expectedRevenue || '');
     setFormEmail(lead.email || '');
     setFormPhone(lead.phone || '');
-    setFormSource(lead.source || 'Referral');
+    setFormSource(lead.source || '');
     setFormIndustry(lead.industry || 'SaaS & Technology');
-    setFormStatus(lead.status || 'New');
+    setFormStage(lead.status || 'New');
+    setFormVisibility(lead.visibility || 'Everyone');
     setFormAssignedTo(lead.assignedTo || '');
+    setRepresentativeSearch(lead.assignedTo || '');
     setFormNotes(lead.notes || '');
     setFormCompanyAddress(lead.companyAddress || '');
     setFormCompanyEmail(lead.companyEmail || '');
     setFormCompanyWebsite(lead.companyWebsite || '');
+    setFormCompanyLinkedin(lead.companyLinkedin || '');
     setFormPocDepartment(lead.pocDepartment || '');
     setFormEmployeeType(lead.employeeType || 'employee');
     setFormEmployeeSelectedId(lead.employeeSelectedId || '');
-    setFormReminderName(lead.reminderName || '');
-    if (lead.reminderDate) {
-      const rd = new Date(lead.reminderDate);
-      const tzOffset = rd.getTimezoneOffset() * 60000;
-      setFormReminderDate((new Date(rd - tzOffset)).toISOString().slice(0, 10));
+    if (lead.followUps && Array.isArray(lead.followUps)) {
+      setFormFollowUps(lead.followUps.map(fu => ({
+        ...fu,
+        date: fu.date ? new Date(new Date(fu.date).getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 10) : ''
+      })));
     } else {
-      setFormReminderDate('');
+      setFormFollowUps([]);
     }
 
     // Set date and time from lead.date and lead.time
@@ -621,29 +788,33 @@ export default function CRMDashboard() {
   const handleViewLeadClick = (lead) => {
     setModalMode('view');
     setEditingLeadId(lead.id);
-    setFormFirstName(lead.firstName || lead.name.split(' ')[0] || '');
-    setFormLastName(lead.lastName || lead.name.split(' ').slice(1).join(' ') || '');
+    setFormLeadName(lead.name || '');
+    setFormLeadWhatsapp(lead.whatsapp || '');
+    setFormLeadLinkedin(lead.companyLinkedin || lead.linkedin || '');
     setFormCompany(lead.company || '');
+    setFormExpectedRevenue(lead.expectedRevenue || '');
     setFormEmail(lead.email || '');
     setFormPhone(lead.phone || '');
-    setFormSource(lead.source || 'Referral');
+    setFormSource(lead.source || '');
     setFormIndustry(lead.industry || 'SaaS & Technology');
-    setFormStatus(lead.status || 'New');
+    setFormStage(lead.status || 'New');
+    setFormVisibility(lead.visibility || 'Everyone');
     setFormAssignedTo(lead.assignedTo || '');
     setFormNotes(lead.notes || '');
     setFormCompanyAddress(lead.companyAddress || '');
     setFormCompanyEmail(lead.companyEmail || '');
     setFormCompanyWebsite(lead.companyWebsite || '');
+    setFormCompanyLinkedin(lead.companyLinkedin || '');
     setFormPocDepartment(lead.pocDepartment || '');
     setFormEmployeeType(lead.employeeType || 'employee');
     setFormEmployeeSelectedId(lead.employeeSelectedId || '');
-    setFormReminderName(lead.reminderName || '');
-    if (lead.reminderDate) {
-      const rd = new Date(lead.reminderDate);
-      const tzOffset = rd.getTimezoneOffset() * 60000;
-      setFormReminderDate((new Date(rd - tzOffset)).toISOString().slice(0, 10));
+    if (lead.followUps && Array.isArray(lead.followUps)) {
+      setFormFollowUps(lead.followUps.map(fu => ({
+        ...fu,
+        date: fu.date ? new Date(new Date(fu.date).getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 10) : ''
+      })));
     } else {
-      setFormReminderDate('');
+      setFormFollowUps([]);
     }
 
     // Set date and time from lead.date and lead.time
@@ -671,21 +842,21 @@ export default function CRMDashboard() {
     
     // Reset all form fields
     setEditingLeadId(null);
-    setFormFirstName('');
-    setFormLastName('');
+    setFormLeadName('');
+    setFormCompany('');
     setFormEmail('');
     setFormPhone('');
-    setFormSource('Referral');
+    setFormSource('');
     setFormIndustry('SaaS & Technology');
-    setFormStatus('New');
+    setFormStage('New');
+    setFormVisibility('Everyone');
     setFormAssignedTo('');
     setFormNotes('');
     setFormPocDepartment('');
     setFormEmployeeType('employee');
     setFormEmployeeSelectedId('');
     setFormEmployeeDetailsText('');
-    setFormReminderName('');
-    setFormReminderDate('');
+    setFormFollowUps([]);
 
     setModalMode('logActivity');
     
@@ -693,6 +864,7 @@ export default function CRMDashboard() {
     if (targetLead) {
       setEditingLeadId(targetLead.id);
       setFormCompany(targetLead.company || '');
+      setFormExpectedRevenue(targetLead.expectedRevenue || '');
       setFormCompanyAddress(targetLead.companyAddress || '');
       setFormCompanyEmail(targetLead.companyEmail || '');
       setFormCompanyWebsite(targetLead.companyWebsite || '');
@@ -815,8 +987,7 @@ export default function CRMDashboard() {
     
     // Parse pocName
     const pocNameParts = (activity.pocName || '').split(' ');
-    setFormFirstName(pocNameParts[0] || '');
-    setFormLastName(pocNameParts.slice(1).join(' ') || '');
+    setFormLeadName(pocNameParts.join(' ') || '');
     
     setFormEmail(activity.pocEmail || '');
     setFormPhone(activity.pocPhone || '');
@@ -830,8 +1001,7 @@ export default function CRMDashboard() {
     const repEmp = dbEmployees.find(e => `${e.firstName} ${e.lastName}` === activity.repName);
     setFormEmployeeSelectedId(repEmp ? repEmp.id : '');
     
-    setFormReminderName(activity.reminderName || '');
-    setFormReminderDate(activity.reminderDate || '');
+    setFormFollowUps([]);
     
     if (selectedLeadDetail) {
       setFormCompany(selectedLeadDetail.company || '');
@@ -850,6 +1020,7 @@ export default function CRMDashboard() {
 
   const confirmDeleteActivity = async () => {
     if (!activityToDelete) return;
+    setIsDeletingActivity(true);
     try {
       const res = await fetch(`/api/crm/${activityToDelete.id}`, { method: 'DELETE' });
       if (res.ok) {
@@ -862,6 +1033,7 @@ export default function CRMDashboard() {
       console.error(err);
       showErrorToast('Failed to delete activity.');
     } finally {
+      setIsDeletingActivity(false);
       setShowActivityDeleteConfirm(false);
       setActivityToDelete(null);
     }
@@ -919,37 +1091,46 @@ export default function CRMDashboard() {
       }
     } catch (err) {
       console.error(err);
-      showErrorToast('Error occurred updating lead status.');
+      showErrorToast('Failed to update lead status.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const handleMoveToContacted = (lead) => {
+    setSelectedLeadDetail(lead);
+    setFormMoveStatus('Contacted');
+    setShowMoveCustomerModal(true);
+  };
+
   const handleAddLead = async (e) => {
     e.preventDefault();
-    if (!formFirstName || !formLastName) return;
+    if (!formLeadName) return;
 
-    const fullName = `${formFirstName} ${formLastName}`;
-
-    // Filter out mock employee/contract IDs so they don't trigger foreign key constraint errors
-    const isMockAssignee = ['e1', 'e2', 'e3', 'c1', 'c2'].includes(formEmployeeSelectedId);
+    const fullName = formLeadName;
 
     const leadPayload = {
       companyName: formCompany,
+      expectedRevenue: formExpectedRevenue,
       companyAddress: formCompanyAddress,
       companyEmail: formCompanyEmail,
-      companyWebsite: formCompanyWebsite,
-      pocName: fullName,
-      pocDepartment: formPocDepartment,
-      pocMobile: formPhone,
-      pocEmail: formEmail,
-      assigneeType: formEmployeeType === 'employee' ? 'EMPLOYEE' : 'CONTRACT_EMPLOYEE',
-      assigneeId: isMockAssignee ? null : formEmployeeSelectedId,
+      websiteUrl: formCompanyWebsite,
+      linkedinUrl: formLeadLinkedin,
+      source: formSource,
+      leadStage: formStage,
+      visibility: formVisibility,
+      leadName: fullName,
+      department: formPocDepartment,
+      phoneNumber: formPhone,
+      whatsapp: formLeadWhatsapp,
+      email: formEmail,
+      leadOwnerType: 'EMPLOYEE',
+      leadOwnerId: null,
+      leadOwnerName: representativeSearch,
       date: formDate ? new Date(formDate).toISOString() : null,
       time: formTime || null,
-      notes: formNotes,
-      reminderName: formReminderName || null,
-      reminderDate: formReminderDate ? new Date(formReminderDate).toISOString() : null,
+      activityDetails: formNotes,
+      followUps: formFollowUps,
     };
 
     if (modalMode === 'edit') {
@@ -968,31 +1149,34 @@ export default function CRMDashboard() {
 
           const updatedLead = {
             id: updatedLeadFromDb.id,
-            firstName: formFirstName,
-            lastName: formLastName,
+            firstName: formLeadName.split(' ')[0] || '',
+            lastName: formLeadName.split(' ').slice(1).join(' ') || '',
             name: fullName,
             company: formCompany,
+            expectedRevenue: formExpectedRevenue,
             email: formEmail,
             phone: formPhone,
             source: formSource,
             industry: formIndustry,
-            status: formStatus,
-            assignedTo: formAssignedTo,
+            status: formStage,
+            visibility: formVisibility,
+            assignedTo: representativeSearch || 'Unassigned',
             notes: formNotes,
             title: oldLead?.title || 'Senior Consultant',
             location: oldLead?.location || 'San Francisco, CA',
-            leadId: oldLead?.leadId || `${String(editingLeadId).slice(-5)}`,
+            leadId: updatedLeadFromDb.leadId || oldLead?.leadId,
             leadScore: oldLead?.leadScore || 70,
             annualRevenue: oldLead?.annualRevenue || '$5M - $10M',
             companyAddress: formCompanyAddress,
             companyEmail: formCompanyEmail,
             companyWebsite: formCompanyWebsite,
+            companyLinkedin: formLeadLinkedin,
+            whatsapp: formLeadWhatsapp,
             pocDepartment: formPocDepartment,
             employeeType: formEmployeeType,
             employeeSelectedId: formEmployeeSelectedId,
             employeeDetailsText: formEmployeeDetailsText,
-            reminderName: updatedLeadFromDb.reminderName || formReminderName || '',
-            reminderDate: updatedLeadFromDb.reminderDate || formReminderDate || '',
+            followUps: updatedLeadFromDb.followUps || formFollowUps || [],
             date: updatedLeadFromDb.date,
             time: updatedLeadFromDb.time,
             createdAt: updatedLeadFromDb.createdAt,
@@ -1012,10 +1196,10 @@ export default function CRMDashboard() {
           }
 
           // Adjust counts if status changed
-          if (oldStatus !== formStatus) {
+          if (oldStatus !== formStage) {
             setCounts((prev) => {
               const prevKey = oldStatus === 'Lead' ? 'New' : oldStatus;
-              const newKey = formStatus === 'Lead' ? 'New' : formStatus;
+              const newKey = formStage === 'Lead' ? 'New' : formStage;
               return {
                 ...prev,
                 [prevKey]: Math.max(0, (prev[prevKey] || 1) - 1),
@@ -1025,14 +1209,14 @@ export default function CRMDashboard() {
 
             // Adjust main dashboard overview stats
             if (oldStatus === 'Qualified') setQualifiedCount((prev) => Math.max(0, prev - 1));
-            if (formStatus === 'Qualified') setQualifiedCount((prev) => prev + 1);
+            if (formStage === 'Qualified') setQualifiedCount((prev) => prev + 1);
           }
 
           // Add to activity feed
           const editAct = {
             id: Date.now(),
             type: 'lead_edit',
-            text: `Lead details updated: ${fullName} (${formCompany}) - Status: ${formStatus}`,
+            text: `Lead details updated: ${fullName} (${formCompany}) - Status: ${formStage}`,
             time: 'Just now',
             icon: <Sparkles size={16} className="text-[#004475]" />,
             bg: 'bg-[#004475]/10',
@@ -1067,8 +1251,7 @@ export default function CRMDashboard() {
         notes: formNotes,
         date: formDate ? new Date(formDate).toISOString() : null,
         time: formTime,
-        reminderName: formReminderName || null,
-        reminderDate: formReminderDate ? new Date(formReminderDate).toISOString() : null,
+        followUps: formFollowUps,
         createdBy: authUser?.name || 'User'
       };
 
@@ -1084,6 +1267,7 @@ export default function CRMDashboard() {
 
         if (res.ok) {
           // Update local state
+          const updatedAct = await res.json();
           setActivitiesList((prev) =>
             prev.map((act) =>
               act.id === editingActivityId
@@ -1097,13 +1281,12 @@ export default function CRMDashboard() {
                     pocPhone: formPhone,
                     pocDept: formPocDepartment,
                     repName: formAssignedTo,
-                    repType: formEmployeeType === 'contract' ? 'Contract' : 'Employee',
+                    repType: formEmployeeType === 'Contract' ? 'Contract' : 'Employee',
                     repDept: repEmp ? (repEmp.department || 'N/A') : 'N/A',
                     repRole: repEmp ? (repEmp.designation || 'N/A') : 'N/A',
                     repPhone: repEmp ? (repEmp.phoneNumber || 'N/A') : 'N/A',
                     repEmail: repEmp ? (repEmp.email || 'N/A') : 'N/A',
-                    reminderName: formReminderName || null,
-                    reminderDate: formReminderDate || null,
+                    followUps: updatedAct.followUps || formFollowUps || [],
                   }
                 : act
             )
@@ -1138,8 +1321,7 @@ export default function CRMDashboard() {
         notes: formNotes,
         date: formDate ? new Date(formDate).toISOString() : null,
         time: formTime,
-        reminderName: formReminderName || null,
-        reminderDate: formReminderDate ? new Date(formReminderDate).toISOString() : null,
+        followUps: formFollowUps,
         createdBy: authUser?.name || 'User'
       };
 
@@ -1171,8 +1353,7 @@ export default function CRMDashboard() {
             repRole: repEmp ? (repEmp.designation || 'N/A') : 'N/A',
             repPhone: repEmp ? (repEmp.phoneNumber || 'N/A') : 'N/A',
             repEmail: repEmp ? (repEmp.email || 'N/A') : 'N/A',
-            reminderName: formReminderName || null,
-            reminderDate: formReminderDate || null,
+            followUps: savedAct.followUps || formFollowUps || [],
           };
 
           setActivitiesList((prev) => [newAct, ...prev]);
@@ -1193,45 +1374,49 @@ export default function CRMDashboard() {
       setIsSubmitting(true);
       setSubmitLabel('Creating lead...');
       try {
+        const payloadWithId = { ...leadPayload, createdBy: authUser?.name || 'User' };
         const res = await fetch('/api/crm', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...leadPayload, createdBy: authUser?.name || 'User' }),
+          body: JSON.stringify(payloadWithId),
         });
         if (res.ok) {
           const newLeadFromDb = await res.json();
           setLeadsCount((prev) => prev + 1);
-          if (formStatus === 'Qualified') setQualifiedCount((prev) => prev + 1);
-          if (formStatus === 'Proposal' || formStatus === 'Negotiation') setOppCount((prev) => prev + 1);
+          if (formStage === 'Qualified') setQualifiedCount((prev) => prev + 1);
+          if (formStage === 'Proposal' || formStage === 'Negotiation') setOppCount((prev) => prev + 1);
 
-          const stageKey = formStatus === 'Lead' ? 'New' : formStatus;
+          const stageKey = formStage === 'Lead' ? 'New' : formStage;
           const newLead = {
             id: newLeadFromDb.id,
-            firstName: formFirstName,
-            lastName: formLastName,
+            firstName: formLeadName.split(' ')[0] || '',
+            lastName: formLeadName.split(' ').slice(1).join(' ') || '',
             name: fullName,
             company: formCompany,
+            expectedRevenue: formExpectedRevenue,
             email: formEmail,
             phone: formPhone,
             source: formSource,
             industry: formIndustry,
-            status: formStatus === 'Lead' ? 'New' : formStatus,
-            assignedTo: formAssignedTo,
+            status: formStage === 'Lead' ? 'New' : formStage,
+            visibility: formVisibility,
+            assignedTo: representativeSearch || 'Unassigned',
             notes: formNotes,
             title: 'Project Lead',
             location: 'San Francisco, CA',
-            leadId: `${newLeadFromDb.id.slice(-5)}`,
+            leadId: newLeadFromDb.leadId,
             leadScore: 75,
             annualRevenue: '$10M - $25M',
             companyAddress: formCompanyAddress,
             companyEmail: formCompanyEmail,
             companyWebsite: formCompanyWebsite,
+            companyLinkedin: formLeadLinkedin,
+            whatsapp: formLeadWhatsapp,
             pocDepartment: formPocDepartment,
             employeeType: formEmployeeType,
             employeeSelectedId: formEmployeeSelectedId,
             employeeDetailsText: formEmployeeDetailsText,
-            reminderName: newLeadFromDb.reminderName || formReminderName || '',
-            reminderDate: newLeadFromDb.reminderDate || formReminderDate || '',
+            followUps: newLeadFromDb.followUps || formFollowUps || [],
             date: newLeadFromDb.date,
             time: newLeadFromDb.time,
             createdAt: newLeadFromDb.createdAt,
@@ -1250,7 +1435,7 @@ export default function CRMDashboard() {
           const newAct = {
             id: Date.now(),
             type: 'lead_add',
-            text: `New lead added: ${fullName} (${formCompany}) - Status: ${formStatus}`,
+            text: `New lead added: ${fullName} (${formCompany}) - Status: ${formStage}`,
             time: 'Just now',
             icon: <Sparkles size={16} className="text-[#004475]" />,
             bg: 'bg-[#004475]/10',
@@ -1270,15 +1455,118 @@ export default function CRMDashboard() {
     }
   };
 
+  const handleSaveCompany = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    const fileInput = document.getElementById('company-document-upload');
+    const file = fileInput?.files?.[0];
+
+    const formData = new FormData();
+    formData.append('type', 'company');
+    formData.append('companyName', formCompany);
+    formData.append('email', formCompanyEmail);
+    formData.append('websiteUrl', formCompanyWebsite);
+    formData.append('linkedinUrl', formCompanyLinkedin);
+    formData.append('address', formCompanyAddress);
+    formData.append('expectedRevenue', formExpectedRevenue);
+    formData.append('industry', formCompanyIndustry);
+    formData.append('city', formCompanyCity);
+    formData.append('state', formCompanyState);
+    formData.append('country', formCompanyCountry);
+    formData.append('contactName', formCompanyContactName);
+    formData.append('contactPhone', formCompanyContactPhone);
+    formData.append('source', formCompanySource);
+
+    if (file) {
+      formData.append('document', file);
+    } else if (formCompanyDocumentUrl && !formCompanyDocumentUrl.startsWith('blob:')) {
+      formData.append('documentUrl', formCompanyDocumentUrl);
+    }
+
+    try {
+      if (modalMode === 'edit') {
+        const res = await fetch(`/api/crm/${editingCompanyId}?type=company`, {
+          method: 'PUT',
+          body: formData,
+        });
+        if (res.ok) {
+          const updated = await res.json();
+          setCompaniesList(prev => prev.map(c => c.id === editingCompanyId ? {
+            ...c,
+            companyId: updated.companyId,
+            name: updated.companyName,
+            email: updated.email || '',
+            website: updated.websiteUrl || '',
+            linkedin: updated.linkedinUrl || '',
+            address: updated.address || '',
+            expectedRevenue: updated.expectedRevenue || '',
+            industry: updated.industry || '',
+            city: updated.city || '',
+            state: updated.state || '',
+            country: updated.country || '',
+            contactName: updated.contactName || '',
+            contactPhone: updated.contactPhone || '',
+            source: updated.source || '',
+            documentUrl: updated.documentUrl || '',
+          } : c));
+          showSuccessToast('Company updated successfully!');
+        } else {
+          showErrorToast('Failed to update company');
+        }
+      } else {
+        const res = await fetch('/api/crm', {
+          method: 'POST',
+          body: formData,
+        });
+        if (res.ok) {
+          const created = await res.json();
+          const newCompany = {
+            id: created.id,
+            companyId: created.companyId,
+            name: created.companyName,
+            email: created.email || '',
+            website: created.websiteUrl || '',
+            linkedin: created.linkedinUrl || '',
+            address: created.address || '',
+            expectedRevenue: created.expectedRevenue || '',
+            industry: created.industry || '',
+            city: created.city || '',
+            state: created.state || '',
+            country: created.country || '',
+            contactName: created.contactName || '',
+            contactPhone: created.contactPhone || '',
+            source: created.source || '',
+            documentUrl: created.documentUrl || '',
+          };
+          setCompaniesList(prev => [newCompany, ...prev]);
+          showSuccessToast('Company added successfully!');
+        } else {
+          showErrorToast('Failed to add company');
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      showErrorToast('An error occurred');
+    } finally {
+      setIsSubmitting(false);
+      setShowCompanyModal(false);
+    }
+  };
+
+
   const resetFormState = () => {
-    setFormFirstName('');
-    setFormLastName('');
+    setFormLeadName('');
+    setFormLeadWhatsapp('');
+    setFormLeadLinkedin('');
     setFormCompany('');
+    setFormExpectedRevenue('');
     setFormEmail('');
     setFormPhone('');
     setFormSource('Referral');
     setFormIndustry('SaaS & Technology');
-    setFormStatus('New');
+    setFormStage('New');
+    setFormVisibility('Everyone');
     setFormAssignedTo('');
     setFormNotes('');
     setFormCompanyAddress('');
@@ -1293,59 +1581,25 @@ export default function CRMDashboard() {
     setShowAddLeadModal(false);
   };
 
-  const chartData = [
-    { month: 'Jan', percentage: 20, revenue: '₹2.4L' },
-    { month: 'Feb', percentage: 45, revenue: '₹5.4L' },
-    { month: 'Mar', percentage: 35, revenue: '₹4.2L' },
-    { month: 'Apr', percentage: 70, revenue: '₹8.4L' },
-    { month: 'May', percentage: 85, revenue: '₹10.2L' },
-    { month: 'Jun', percentage: 100, revenue: '₹12.0L' },
-  ];
-
-  // Lead status styling mapper
-  const getLeadDesign = (status) => {
-    switch (status?.toLowerCase()) {
-      case 'qualified':
-        return {
-          barBg: 'bg-blue-500',
-          badgeBg: 'bg-blue-50',
-          badgeText: 'text-blue-600',
-        };
-      case 'contacted':
-        return {
-          barBg: 'bg-orange-500',
-          badgeBg: 'bg-orange-50',
-          badgeText: 'text-orange-600',
-        };
-      case 'won':
-        return {
-          barBg: 'bg-emerald-500',
-          badgeBg: 'bg-emerald-50',
-          badgeText: 'text-emerald-600',
-        };
-      case 'new':
-      case 'lead':
-      default:
-        return {
-          barBg: 'bg-gray-400',
-          badgeBg: 'bg-gray-100',
-          badgeText: 'text-gray-600',
-        };
-    }
-  };
+  const chartData = CRM_CHART_DATA;
 
   // Filtered list of leads for search queries
   const filteredLeads = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-    if (!query) return leadsList;
-    return leadsList.filter((lead) => {
+    let visibleLeads = leadsList;
+    if (authUser?.empId !== 'Livik-DGL-0008') {
+      visibleLeads = leadsList.filter((lead) => lead.visibility !== 'Show for me');
+    }
+
+    const query = debouncedSearchQuery.trim().toLowerCase();
+    if (!query) return visibleLeads;
+    return visibleLeads.filter((lead) => {
       return (
         lead.name.toLowerCase().includes(query) ||
         lead.company.toLowerCase().includes(query) ||
         lead.status.toLowerCase().includes(query)
       );
     });
-  }, [leadsList, searchQuery]);
+  }, [leadsList, debouncedSearchQuery, authUser]);
 
   // Filtered list of logged activities for the selected lead
   const leadActivities = useMemo(() => {
@@ -1384,8 +1638,7 @@ export default function CRMDashboard() {
       repRole: repEmp ? (repEmp.designation || 'N/A') : 'N/A',
       repPhone: repEmp ? (repEmp.phoneNumber || 'N/A') : 'N/A',
       repEmail: repEmp ? (repEmp.email || 'N/A') : 'N/A',
-      reminderName: selectedLeadDetail.reminderName || null,
-      reminderDate: selectedLeadDetail.reminderDate ? new Date(selectedLeadDetail.reminderDate).toISOString().slice(0, 10) : null,
+      followUps: selectedLeadDetail.followUps || [],
       isInitial: true // flag to disable Edit/Delete actions in the table
     };
 
@@ -1438,47 +1691,25 @@ export default function CRMDashboard() {
     <>
       <div className="text-left h-full flex flex-col min-h-0 bg-[#f8fafc] p-1">
       
-      {/* Dynamic View: Lead Detail Sub-page */}
-      {selectedLeadDetail ? (
-        <CRMLeadDetail
-          selectedLeadDetail={selectedLeadDetail}
-          setSelectedLeadDetail={setSelectedLeadDetail}
-          canControlCrm={canControlCrm}
-          setFormMoveStatus={setFormMoveStatus}
-          setShowMoveCustomerModal={setShowMoveCustomerModal}
-          detailTab={detailTab}
-          setDetailTab={setDetailTab}
-          formatTime24Hours={formatTime24Hours}
-          formatTimeAMPM={formatTimeAMPM}
-          activitySearchTerm={activitySearchTerm}
-          setActivitySearchTerm={setActivitySearchTerm}
-          activitySortOrder={activitySortOrder}
-          setActivitySortOrder={setActivitySortOrder}
-          handleLogNewActivityLeadClick={handleLogNewActivityLeadClick}
-          leadActivities={leadActivities}
-          handleViewLeadClick={handleViewLeadClick}
-          handleEditActivityClick={handleEditActivityClick}
-          handleDeleteActivity={handleDeleteActivity}
-          handleEditLeadClick={handleEditLeadClick}
-          handleDeleteLead={handleDeleteLead}
-        />
-
-
-
-
-
-
-      ) : (
-        <>
-        
-          <CRMHeader />
+      {/* Main Content */}
+      <CRMHeader handleAddLeadClick={handleAddLeadClick} />
 
           {/* 2. Main Content Card - Matching Finance content wrapper */}
-          <div className="flex-1 flex flex-col bg-white rounded-2xl shadow-sm p-4 m-0.5 mt-1.5 min-h-0">
+          <div className="flex-1 flex flex-col bg-white rounded-2xl shadow-sm p-2 m-0.5 mt-1.5 min-h-0">
             {/* Tabs switcher */}
             <div className="flex shrink-0 flex-col md:flex-row md:items-center justify-between gap-4 mb-3 border-b border-gray-300 w-full">
               <div className="flex items-center overflow-x-auto gap-1.5">
-                {['Dashboard', 'Leads'].map((tab) => (
+                {['Dashboard', 'Leads', 'Companies', 'Contacted', 'Local Lead', 'Interview']
+                  .filter((tab) => {
+                    if (tab === 'Dashboard') return canViewDashboard;
+                    if (tab === 'Leads') return canViewLeads;
+                    if (tab === 'Companies') return canViewCompanies;
+                    if (tab === 'Contacted') return canViewContacted;
+                    if (tab === 'Local Lead') return canViewLocalLead;
+                    if (tab === 'Interview') return canViewInterview;
+                    return true;
+                  })
+                  .map((tab) => (
                   <TabButton
                     key={tab}
                     isActive={activeTab === tab}
@@ -1512,7 +1743,7 @@ export default function CRMDashboard() {
                   leadsList={leadsList}
                   searchQuery={searchQuery}
                   setSearchQuery={setSearchQuery}
-                  canControlCrm={canControlCrm}
+                  canControlCrm={canControlLeads}
                   handleAddLeadClick={handleAddLeadClick}
                   counts={counts}
                   filteredLeads={filteredLeads}
@@ -1520,46 +1751,94 @@ export default function CRMDashboard() {
                   setSelectedLeadDetail={setSelectedLeadDetail}
                   handleLogNewActivityLeadClick={handleLogNewActivityLeadClick}
                   handleEditLeadClick={handleEditLeadClick}
+                  handleViewLeadClick={handleViewLeadClick}
+                  handleDeleteLead={handleDeleteLead}
+                  formatDateTime={formatDateTime}
+                  handleMoveToContacted={handleMoveToContacted}
+                />
+              )}
+
+              {/* Contacted Tab */}
+              {activeTab === 'Contacted' && (
+                <CRMLeadsTab
+                  tabType="Contacted"
+                  addLabel="Add Contacted Lead"
+                  leadsList={leadsList.filter(l => l.status === 'Contacted' || l.status?.toLowerCase() === 'contacted')}
+                  searchQuery={searchQuery}
+                  setSearchQuery={setSearchQuery}
+                  canControlCrm={canControlContacted}
+                  handleAddLeadClick={() => handleAddLeadClick('Contacted')}
+                  counts={counts}
+                  filteredLeads={filteredLeads.filter(l => l.status === 'Contacted' || l.status?.toLowerCase() === 'contacted')}
+                  getLeadDesign={getLeadDesign}
+                  setSelectedLeadDetail={setSelectedLeadDetail}
+                  handleLogNewActivityLeadClick={handleLogNewActivityLeadClick}
+                  handleEditLeadClick={handleEditLeadClick}
+                  handleViewLeadClick={handleViewLeadClick}
                   handleDeleteLead={handleDeleteLead}
                   formatDateTime={formatDateTime}
                 />
               )}
 
+              {/* Companies Tab */}
+              {activeTab === 'Companies' && (
+                <CRMCompaniesTab
+                  companySearchQuery={companySearchQuery}
+                  setCompanySearchQuery={setCompanySearchQuery}
+                  canControlCompanies={canControlCompanies}
+                  handleAddCompanyClick={handleAddCompanyClick}
+                  handleViewCompanyClick={handleViewCompanyClick}
+                  handleEditCompanyClick={handleEditCompanyClick}
+                  handleDeleteCompanyClick={handleDeleteCompanyClick}
+                  filteredCompanies={filteredCompanies}
+                />
+              )}
+
+              {/* Local Lead Tab */}
+              {activeTab === 'Local Lead' && (
+                <CRMLocalLeadsTab
+                  canControl={canControlLocalLead}
+                  authUser={authUser}
+                  dbEmployees={dbEmployees}
+                />
+              )}
+
+              {/* Interview Tab */}
+              {activeTab === 'Interview' && (
+                <CRMInterviewTab
+                  interviewsList={interviewsList}
+                  refreshInterviews={fetchInterviewsData}
+                  isLoading={pageLoading}
+                  canControlInterview={canControlInterview}
+                />
+              )}
+
               {/* Placeholder views for other tabs */}
-              {activeTab !== 'Dashboard' && activeTab !== 'Leads' && (
-                <div className="h-full flex flex-col items-center justify-center text-center">
-                  <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center text-[#004475] mb-4 shadow-inner">
-                    <Sparkles size={28} />
-                  </div>
-                  <h3 className="text-lg font-black text-slate-950">{activeTab} tab is ready!</h3>
-                  <p className="text-sm font-semibold text-slate-500 max-w-sm mt-1">
-                    We've set up the routing for this section. Fully custom controls and dynamic forms will render here.
-                  </p>
-                  <button
-                    onClick={() => setActiveTab('Dashboard')}
-                    className="mt-6 px-4 py-2 bg-[#004475] hover:bg-[#33a8d9] text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer"
-                  >
-                    Back to Dashboard
-                  </button>
-                </div>
+              {activeTab !== 'Dashboard' && activeTab !== 'Leads' && activeTab !== 'Contacted' && activeTab !== 'Companies' && activeTab !== 'Local Lead' && activeTab !== 'Interview' && (
+                <CRMPlaceholderTab
+                  activeTab={activeTab}
+                  setActiveTab={setActiveTab}
+                  handleAddLeadClick={handleAddLeadClick}
+                />
               )}
             </div>
           </div>
 
         
-        </>
-      )}
-        
       <CRMLeadModal
         showAddLeadModal={showAddLeadModal} setShowAddLeadModal={setShowAddLeadModal}
-        modalMode={modalMode} handleAddLead={handleAddLead}
+        modalMode={modalMode} setModalMode={setModalMode} handleAddLead={handleAddLead}
         formCompany={formCompany} setFormCompany={setFormCompany}
         formCompanyEmail={formCompanyEmail} setFormCompanyEmail={setFormCompanyEmail}
         formCompanyWebsite={formCompanyWebsite} setFormCompanyWebsite={setFormCompanyWebsite}
+        formCompanyLinkedin={formCompanyLinkedin} setFormCompanyLinkedin={setFormCompanyLinkedin}
         formCompanyAddress={formCompanyAddress} setFormCompanyAddress={setFormCompanyAddress}
-        formFirstName={formFirstName} setFormFirstName={setFormFirstName}
-        formLastName={formLastName} setFormLastName={setFormLastName}
+        formLeadName={formLeadName} setFormLeadName={setFormLeadName}
+        formLeadWhatsapp={formLeadWhatsapp} setFormLeadWhatsapp={setFormLeadWhatsapp}
+        formLeadLinkedin={formLeadLinkedin} setFormLeadLinkedin={setFormLeadLinkedin}
         formPocDepartment={formPocDepartment} setFormPocDepartment={setFormPocDepartment}
+        formSource={formSource} setFormSource={setFormSource}
+        formStage={formStage} setFormStage={setFormStage}
         formPhone={formPhone} setFormPhone={setFormPhone}
         formEmail={formEmail} setFormEmail={setFormEmail}
         pocDropdownRef={pocDropdownRef} isPocDropdownOpen={isPocDropdownOpen} setIsPocDropdownOpen={setIsPocDropdownOpen}
@@ -1568,85 +1847,60 @@ export default function CRMDashboard() {
         representativeSearch={representativeSearch} setRepresentativeSearch={setRepresentativeSearch} isRepresentativeDropdownOpen={isRepresentativeDropdownOpen}
         setIsRepresentativeDropdownOpen={setIsRepresentativeDropdownOpen} formEmployeeSelectedId={formEmployeeSelectedId} setFormEmployeeSelectedId={setFormEmployeeSelectedId}
         formEmployeeDetailsText={formEmployeeDetailsText} filteredSuggestions={filteredSuggestions}
-        formDate={formDate} setFormDate={setFormDate} formTime={formTime} setFormTime={setFormTime} reminderDropdownRef={reminderDropdownRef}
-        formReminderName={formReminderName} setFormReminderName={setFormReminderName} isReminderDropdownOpen={isReminderDropdownOpen}
-        setIsReminderDropdownOpen={setIsReminderDropdownOpen} filteredReminderPocSuggestions={filteredReminderPocSuggestions} formReminderDate={formReminderDate}
-        setFormReminderDate={setFormReminderDate} formNotes={formNotes} setFormNotes={setFormNotes} currentEditingLead={currentEditingLead}
+        formDate={formDate} setFormDate={setFormDate} formTime={formTime} setFormTime={setFormTime}
+        formFollowUps={formFollowUps} setFormFollowUps={setFormFollowUps} formNotes={formNotes} setFormNotes={setFormNotes} currentEditingLead={currentEditingLead}
         formatDateTime={formatDateTime} isSubmitting={isSubmitting}
+        formExpectedRevenue={formExpectedRevenue} setFormExpectedRevenue={setFormExpectedRevenue}
+        formVisibility={formVisibility} setFormVisibility={setFormVisibility}
+        authUser={authUser}
       />
 
-
-
-      <CustomModalForm
-        open={showMoveCustomerModal}
-        onClose={() => setShowMoveCustomerModal(false)}
-        title="Move Customer Status"
-        widthClass="max-w-sm"
-      >
-        <form onSubmit={handleSaveMoveCustomer} className="space-y-4 p-6">
-          <div>
-            <label className="text-sm font-semibold text-slate-700 mb-1.5 block">
-              Target Status / Stage
-            </label>
-            <select
-              value={formMoveStatus}
-              onChange={(e) => setFormMoveStatus(e.target.value)}
-              className="w-full bg-white border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-hidden text-sm text-slate-805 px-3 py-2 rounded-lg transition-colors cursor-pointer font-semibold"
-            >
-              <option value="New">New</option>
-              <option value="Contacted">Contacted</option>
-              <option value="Qualified">Qualified</option>
-              <option value="Won">Won (Customer)</option>
-            </select>
-          </div>
-
-          <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-200">
-            <button
-              type="button"
-              onClick={() => setShowMoveCustomerModal(false)}
-              className="px-5 py-2 border border-slate-300 hover:bg-slate-50 text-slate-705 font-bold text-sm rounded-lg transition-colors cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-5 py-2 bg-[#004475] hover:bg-[#33a8d9] text-white font-bold text-sm rounded-lg transition-colors cursor-pointer shadow-sm flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-95 duration-200"
-            >
-              <span>Save Status</span>
-            </button>
-          </div>
-        </form>
-      </CustomModalForm>
-
-      <CustomAlertForm
-        isOpen={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
-        onConfirm={confirmDeleteLead}
-        title="Delete Lead"
-        message={`Are you sure you want to delete lead "${leadToDelete?.name}"? This action cannot be undone.`}
-        type="danger"
-        confirmText="Delete"
-        cancelText="Cancel"
+      <CRMCompanyModal
+        showModal={showCompanyModal} setShowModal={setShowCompanyModal}
+        modalMode={modalMode} handleSave={handleSaveCompany}
+        formCompany={formCompany} setFormCompany={setFormCompany}
+        formCompanyEmail={formCompanyEmail} setFormCompanyEmail={setFormCompanyEmail}
+        formCompanyWebsite={formCompanyWebsite} setFormCompanyWebsite={setFormCompanyWebsite}
+        formCompanyLinkedin={formCompanyLinkedin} setFormCompanyLinkedin={setFormCompanyLinkedin}
+        formCompanyAddress={formCompanyAddress} setFormCompanyAddress={setFormCompanyAddress}
+        formExpectedRevenue={formExpectedRevenue} setFormExpectedRevenue={setFormExpectedRevenue}
+        formCompanyIndustry={formCompanyIndustry} setFormCompanyIndustry={setFormCompanyIndustry}
+        formCompanyCity={formCompanyCity} setFormCompanyCity={setFormCompanyCity}
+        formCompanyState={formCompanyState} setFormCompanyState={setFormCompanyState}
+        formCompanyCountry={formCompanyCountry} setFormCompanyCountry={setFormCompanyCountry}
+        formCompanyContactName={formCompanyContactName} setFormCompanyContactName={setFormCompanyContactName}
+        formCompanyContactPhone={formCompanyContactPhone} setFormCompanyContactPhone={setFormCompanyContactPhone}
+        formCompanyDocumentUrl={formCompanyDocumentUrl} setFormCompanyDocumentUrl={setFormCompanyDocumentUrl}
+        formCompanySource={formCompanySource} setFormCompanySource={setFormCompanySource}
         isSubmitting={isSubmitting}
-        details={
-          leadToDelete && (
-            <div className="text-sm">
-              <p className="font-bold">{leadToDelete.company}</p>
-              <p className="text-gray-500">ID: {leadToDelete.id}</p>
-            </div>
-          )
-        }
       />
 
-      <CustomAlertForm
-        isOpen={showActivityDeleteConfirm}
-        onClose={() => setShowActivityDeleteConfirm(false)}
-        onConfirm={confirmDeleteActivity}
-        title="Delete Logged Activity"
-        message="Are you sure you want to delete this logged activity? This action cannot be undone."
-        type="danger"
-        confirmText="Delete"
-        cancelText="Cancel"
+
+
+      <CRMMoveCustomerModal
+        showMoveCustomerModal={showMoveCustomerModal}
+        setShowMoveCustomerModal={setShowMoveCustomerModal}
+        formMoveStatus={formMoveStatus}
+        setFormMoveStatus={setFormMoveStatus}
+        handleSaveMoveCustomer={handleSaveMoveCustomer}
+        isSubmitting={isSubmitting}
+      />
+
+      <CRMDeleteModals
+        showDeleteConfirm={showDeleteConfirm}
+        setShowDeleteConfirm={setShowDeleteConfirm}
+        confirmDeleteLead={confirmDeleteLead}
+        leadToDelete={leadToDelete}
+        isSubmitting={isSubmitting}
+        showCompanyDeleteConfirm={showCompanyDeleteConfirm}
+        setShowCompanyDeleteConfirm={setShowCompanyDeleteConfirm}
+        confirmDeleteCompany={confirmDeleteCompany}
+        companyToDelete={companyToDelete}
+        isDeletingCompany={isDeletingCompany}
+        showActivityDeleteConfirm={showActivityDeleteConfirm}
+        setShowActivityDeleteConfirm={setShowActivityDeleteConfirm}
+        confirmDeleteActivity={confirmDeleteActivity}
+        isDeletingActivity={isDeletingActivity}
       />
     </div>
     </>
