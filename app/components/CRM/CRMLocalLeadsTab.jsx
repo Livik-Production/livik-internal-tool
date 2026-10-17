@@ -16,7 +16,7 @@ import {
   X,
   LogOut,
 } from 'lucide-react';
-import { getLeadDesign, formatDateTime } from './crmUtils';
+import { getLeadDesign, formatDateTime } from '../../../utils/crmUtils';
 import { showSuccessToast, showErrorToast } from '../Toast';
 
 const SOURCE_BADGES = {
@@ -136,8 +136,14 @@ export default function CRMLocalLeadsTab({
 
   // Filtered Leads based on search bar (supports comma-separated multi-token search e.g. "google, usa")
   const filteredLeads = useMemo(() => {
+    // "Show for me" leads are only visible to LK005
+    const visibleLeads =
+      authUser?.empId === 'LK005'
+        ? localLeads
+        : localLeads.filter((lead) => lead.visibility !== 'Show for me');
+
     const query = debouncedSearchQuery.trim().toLowerCase();
-    if (!query) return localLeads;
+    if (!query) return visibleLeads;
 
     // Split search query by comma to allow searches like: "google, usa"
     const searchTokens = query
@@ -145,9 +151,9 @@ export default function CRMLocalLeadsTab({
       .map((t) => t.trim())
       .filter(Boolean);
 
-    if (searchTokens.length === 0) return localLeads;
+    if (searchTokens.length === 0) return visibleLeads;
 
-    return localLeads.filter((lead) => {
+    return visibleLeads.filter((lead) => {
       const name = (lead.leadName || '').toLowerCase();
       const phone = (lead.phoneNumber || '').toLowerCase();
       const whatsapp = (lead.whatsapp || '').toLowerCase();
@@ -177,7 +183,7 @@ export default function CRMLocalLeadsTab({
         );
       });
     });
-  }, [localLeads, debouncedSearchQuery]);
+  }, [localLeads, debouncedSearchQuery, authUser]);
 
   useEffect(() => {
     setCurrentPage(1);

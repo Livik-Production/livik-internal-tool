@@ -93,8 +93,8 @@ export default function CRMLeadDetail({
                    
                   
                     {selectedLeadDetail.companyWebsite ? (
-                      <a href={selectedLeadDetail.companyWebsite} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                        {selectedLeadDetail.companyWebsite}
+                      <a href={selectedLeadDetail.companyWebsite.startsWith('http') ? selectedLeadDetail.companyWebsite : `https://${selectedLeadDetail.companyWebsite}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 border border-blue-200 text-blue-600 text-xs font-bold rounded-md hover:bg-blue-100 transition-colors">
+                        View Website &rarr;
                       </a>
                     ) : (
                       <span>No Website</span>
@@ -125,6 +125,8 @@ export default function CRMLeadDetail({
                     Move Customer
                   </button>
                 )}
+                
+
 
                 <div className="flex flex-wrap items-center justify-end gap-2 ">
                   <button className="bg-white hover:bg-gray-50 border border-gray-200 px-4 py-1.5 rounded-lg flex items-center justify-center gap-2 cursor-pointer transition-all shadow-sm">
@@ -165,50 +167,8 @@ export default function CRMLeadDetail({
         {/* Left-Right Info Grid */}
         {detailTab === 'Company Details' && (
           <div className="space-y-6 animate-fadeIn">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Company Profile Card */}
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 flex flex-col gap-4">
-                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-50 pb-2 flex items-center gap-1.5">
-                  <svg className="w-3.5 h-3.5 text-[#33a8d9]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
-                  Company Profile
-                </h3>
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 block">Company Name</span>
-                  <span className="text-sm font-bold text-slate-800 mt-1 block">
-                    {selectedLeadDetail.company}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 block">Company Address</span>
-                  <span className="text-sm font-bold text-slate-800 mt-1 block">
-                    {selectedLeadDetail.companyAddress || 'N/A'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 block">Company Email</span>
-                  <span className="text-sm font-bold text-slate-800 mt-1 block">
-                    {selectedLeadDetail.companyEmail || 'N/A'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 block">Website URL</span>
-                  {selectedLeadDetail.companyWebsite ? (
-                    <a
-                      href={selectedLeadDetail.companyWebsite}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm font-bold text-blue-600 hover:underline mt-1 block w-max"
-                    >
-                      {selectedLeadDetail.companyWebsite}
-                    </a>
-                  ) : (
-                    <span className="text-sm font-bold text-slate-800 mt-1 block">N/A</span>
-                  )}
-                </div>
-              </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Lead Acquisition & Metadata Card */}
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 flex flex-col gap-4">
                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-50 pb-2 flex items-center gap-1.5">
@@ -219,20 +179,8 @@ export default function CRMLeadDetail({
                 </h3>
                 <div>
                   <span className="text-[10px] font-bold text-slate-400 block">Source</span>
-                  <span className="text-sm font-bold text-slate-800 mt-1 block">
+                  <span className="text-sm font-bold text-slate-800 mt-1 block capitalize">
                     {selectedLeadDetail.source || 'Referral'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 block">Industry</span>
-                  <span className="text-sm font-bold text-slate-800 mt-1 block">
-                    {selectedLeadDetail.industry || 'SaaS & Technology'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 block">Annual Revenue</span>
-                  <span className="text-sm font-bold text-slate-800 mt-1 block">
-                    {selectedLeadDetail.annualRevenue || '$10M - $25M'}
                   </span>
                 </div>
                 <div>
@@ -447,8 +395,8 @@ export default function CRMLeadDetail({
                          
                             </td>
                             <td className="px-5 py-4 text-sm text-gray-700 whitespace-normal break-words text-center max-w-xs">
-                              <span className="font-bold text-gray-900 block">{row.reminderName || 'N/A'}</span>
-                              <span className="text-xs text-gray-500 block">Date: {row.reminderDate || 'N/A'}</span>
+                              <span className="font-bold text-gray-900 block">{(row.followUps && row.followUps.length > 0 && row.followUps[0].notes) || 'N/A'}</span>
+                              <span className="text-xs text-gray-500 block">Date: {(row.followUps && row.followUps.length > 0 && row.followUps[0].date) ? new Date(row.followUps[0].date).toISOString().slice(0, 10) : 'N/A'}</span>
                             </td>
                              <td className="px-5 py-4 text-sm text-gray-700 whitespace-normal break-words text-center max-w-md">
                               {row.data}

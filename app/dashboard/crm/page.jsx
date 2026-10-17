@@ -27,7 +27,7 @@ import {
   formatDateTime,
   getLeadDesign,
   CRM_CHART_DATA,
-} from '../../components/CRM/crmUtils';
+} from '../../../utils/crmUtils';
 
 export default function CRMDashboard() {
   const authUser = useSelector(selectAuthUser);
@@ -387,7 +387,7 @@ export default function CRMDashboard() {
   // Click outside to dismiss the search suggestions list
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (representativeDropdownRef.current && !representativeDropdownRef.current.contains(event.target)) {
+      if (isRepresentativeDropdownOpen && representativeDropdownRef.current && !representativeDropdownRef.current.contains(event.target)) {
         setIsRepresentativeDropdownOpen(false);
         // Restore currently selected name
         const list = formEmployeeType === 'employee' ? displayedEmployees : displayedContractEmployees;
@@ -395,7 +395,7 @@ export default function CRMDashboard() {
         if (selected) {
           setRepresentativeSearch(selected.name);
         } else {
-          setRepresentativeSearch('');
+          setRepresentativeSearch(formAssignedTo || '');
         }
       }
     };
@@ -403,7 +403,7 @@ export default function CRMDashboard() {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [formEmployeeSelectedId, formEmployeeType, displayedEmployees, displayedContractEmployees]);
+  }, [isRepresentativeDropdownOpen, formAssignedTo, formEmployeeSelectedId, formEmployeeType, displayedEmployees, displayedContractEmployees]);
 
   // Filter suggestion list based on search text (querying name, id, or empId/contractEmpId)
   const filteredSuggestions = useMemo(() => {
@@ -800,6 +800,7 @@ export default function CRMDashboard() {
     setFormStage(lead.status || 'New');
     setFormVisibility(lead.visibility || 'Everyone');
     setFormAssignedTo(lead.assignedTo || '');
+    setRepresentativeSearch(lead.assignedTo || '');
     setFormNotes(lead.notes || '');
     setFormCompanyAddress(lead.companyAddress || '');
     setFormCompanyEmail(lead.companyEmail || '');
@@ -1586,7 +1587,7 @@ export default function CRMDashboard() {
   // Filtered list of leads for search queries
   const filteredLeads = useMemo(() => {
     let visibleLeads = leadsList;
-    if (authUser?.empId !== 'Livik-DGL-0008') {
+    if (authUser?.empId !== 'LK005') {
       visibleLeads = leadsList.filter((lead) => lead.visibility !== 'Show for me');
     }
 

@@ -199,19 +199,21 @@ export default function CRMLocalLeadModal(props) {
             </div>
 
             {/* Visibility (Everyone / Show for me) */}
-            <div>
-              <label className="text-[13px] text-gray-500 font-semibold block mb-1">
-                Visibility
-              </label>
-              <select
-                value={formData.visibility || 'Everyone'}
-                onChange={(e) => setFormData({ ...formData, visibility: e.target.value })}
-                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md text-[13px] text-gray-800 outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100 transition-all font-medium"
-              >
-                <option value="Everyone">Show for everyone</option>
-                <option value="Show for me">Show for me</option>
-              </select>
-            </div>
+            {authUser?.empId === 'LK0001' && (
+                <div>
+                  <label className="text-[13px] text-gray-500 font-semibold block mb-1">
+                    Visibility
+                  </label>
+                  <select
+                    value={formData.visibility || 'Everyone'}
+                    onChange={(e) => setFormData({ ...formData, visibility: e.target.value })}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md text-[13px] text-gray-800 outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100 transition-all font-medium"
+                  >
+                    <option value="Everyone">Show for everyone</option>
+                    <option value="Show for me">Show for me</option>
+                  </select>
+                </div>
+            )}
 
             {/* Keywords */}
             <div>

@@ -1,7 +1,212 @@
-import React from 'react';
-import { Search, Plus, Building2, User, Mail, Phone, MapPin, Globe, Trash, SquarePen, X } from 'lucide-react';
+'use client';
+import CustomTable from '../CustomTable';
+import Pagination from '../Pagination';
+
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { FaWhatsapp } from 'react-icons/fa';
+import StatCard from '../StatCard';
 import PrimaryButton from '../Buttons/PrimaryButton';
+import {
+  Search,
+  Star,
+  Filter,
+  Target,
+  IndianRupee,
+  TrendingUp,
+  Bookmark,
+  List,
+  Download,
+  Phone,
+  Mail,
+  MoreHorizontal,
+  Linkedin,
+  Globe,
+  UsersRound,
+  MessageCircle,
+  Presentation,
+  X,
+  SquarePen,
+  Trash,
+  PlusCircle,
+  Upload,
+  Send,
+  UserPlus2,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  CalendarClock,
+  ArrowRight,
+  LogOut,
+} from 'lucide-react';
+import FilterDropdown from '../Buttons/FilterDropdown';
 import IconButton from '../Buttons/IconButton';
+import { showInfoToast, showSuccessToast } from '../Toast';
+
+// ── Sub-tab (stage) definitions ─────────────────────────────────────────────
+const STAGE_TABS = ['All Leads', 'New', 'Contacted', 'Qualified', 'Proposal', 'Negotiation', 'Won', 'Lost'];
+
+const STAGE_COLORS = {
+  New: '#8b5cf6',
+  Contacted: '#f59e0b',
+  Qualified: '#14b8a6',
+  Proposal: '#ec4899',
+  Negotiation: '#3b82f6',
+  Won: '#10b981',
+  Lost: '#ef4444',
+};
+
+const EXTRA_STAGE_BADGES = {
+  Proposal: { badgeBg: 'bg-pink-50', badgeText: 'text-pink-600' },
+  Negotiation: { badgeBg: 'bg-sky-50', badgeText: 'text-sky-600' },
+  Lost: { badgeBg: 'bg-red-50', badgeText: 'text-red-600' },
+};
+
+// ── Presentational demo data used only where the schema has no real field yet ──
+const SOURCE_META = {
+  LinkedIn: { icon: Linkedin, color: 'text-[#0a66c2]' },
+  Website: { icon: Globe, color: 'text-emerald-600' },
+  'Email': { icon: Mail, color: 'text-orange-500' },
+  WhatsApp: { icon: FaWhatsapp, color: 'text-[#25D366]' },
+};
+const SOURCE_KEYS = Object.keys(SOURCE_META);
+
+const INDUSTRY_POOL = ['SaaS & Technology', 'Healthcare', 'Finance & Banking', 'E-commerce', 'Manufacturing', 'Education', 'Real Estate'];
+const COUNTRY_POOL = ['India', 'USA', 'UK', 'UAE', 'Singapore', 'Australia'];
+const FOLLOW_UP_TYPES = ['Call', 'Demo', 'Proposal', 'Final Discussion', 'Meeting'];
+const AVATAR_COLORS = ['bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-purple-500', 'bg-pink-500', 'bg-cyan-600', 'bg-rose-500', 'bg-indigo-500'];
+
+function hashStr(str) {
+  let h = 0;
+  const s = String(str ?? '');
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return h;
+}
+
+function getInitials(name) {
+  if (!name) return 'NA';
+  const parts = name.trim().split(' ').filter(Boolean);
+  const initials = `${parts[0]?.[0] || ''}${parts[1]?.[0] || ''}`.toUpperCase();
+  return initials || name.slice(0, 2).toUpperCase();
+}
+
+function formatShortDate(dateVal) {
+  if (!dateVal) return null;
+  const d = new Date(dateVal);
+  if (isNaN(d.getTime())) return null;
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function formatValue(value) {
+  const num = Number(value) || 0;
+  if (num >= 10000000) return `₹${(num / 10000000).toFixed(2)} Cr`;
+  if (num >= 100000) return `₹${(num / 100000).toFixed(2)} L`;
+  if (num > 0) return `₹${num.toFixed(2)}`;
+  return '₹0.00';
+}
+
+// Derives presentational-only fields for columns/filters not yet backed by the database
+function augmentLead(lead, index) {
+  const h = hashStr(lead.id ?? index);
+  
+  // Normalize status case
+  let rawStatus = lead.status || 'New';
+  if (rawStatus.toLowerCase() === 'lead') rawStatus = 'New';
+  const status = STAGE_TABS.find(s => s.toLowerCase() === rawStatus.toLowerCase()) || 'New';
+
+  // Normalize source case
+  let rawSource = lead.source || 'Referral';
+  const source = SOURCE_KEYS.find(s => s.toLowerCase() === rawSource.toLowerCase()) || rawSource;
+
+  let followUpDate = null;
+  let followUpType = 'Follow-up';
+  let lastContactedDate = lead.updatedAt;
+  
+  if (lead.followUps && lead.followUps.length > 0) {
+    const nextFollowUp = lead.followUps[lead.followUps.length - 1];
+    if (nextFollowUp.date) followUpDate = new Date(nextFollowUp.date);
+    if (nextFollowUp.notes) followUpType = nextFollowUp.notes;
+    
+    if (lead.followUps.length > 1) {
+      const prevFollowUp = lead.followUps[lead.followUps.length - 2];
+      if (prevFollowUp.date) lastContactedDate = new Date(prevFollowUp.date);
+    }
+  }
+
+  return {
+    ...lead,
+    _status: status,
+    _jobTitle: lead.pocDepartment || 'N/A',
+    _source: source,
+    _owner: lead.assignedTo && lead.assignedTo !== 'Unassigned' ? lead.assignedTo : 'Unassigned',
+    _value: Number(lead.expectedRevenue) || 0,
+    _followUpDate: followUpDate,
+    _followUpType: followUpType,
+    _lastContactedDate: lastContactedDate,
+    _country: COUNTRY_POOL[(h >> 5) % COUNTRY_POOL.length],
+    _industry: lead.industry || INDUSTRY_POOL[(h >> 7) % INDUSTRY_POOL.length],
+    _avatarColor: AVATAR_COLORS[hashStr(lead.name || lead.id) % AVATAR_COLORS.length],
+    _ownerAvatarColor: AVATAR_COLORS[hashStr(lead.assignedTo || 'Unassigned') % AVATAR_COLORS.length],
+  };
+}
+
+
+
+function MultiSelectDropdown({ label, options, selected, onChange, className = 'w-40' }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const toggleOption = (val) => {
+    onChange(selected.includes(val) ? selected.filter((v) => v !== val) : [...selected, val]);
+  };
+
+  const displayLabel = selected.length === 0 ? label : selected.length === 1 ? selected[0] : `${selected.length} selected`;
+
+  return (
+    <div className={`relative ${className}`} ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center justify-between w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm font-semibold text-gray-900 bg-white hover:border-gray-400 shadow-sm transition-colors"
+      >
+        <span className="truncate">{displayLabel}</span>
+        <ChevronDown size={14} className={`ml-2 text-gray-900 transition-transform duration-200 shrink-0 ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="absolute z-30 mt-1 w-full min-w-45 bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden">
+          <div className="max-h-48 overflow-y-auto py-1">
+            {options.map((opt) => (
+              <label key={opt} className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selected.includes(opt)}
+                  onChange={() => toggleOption(opt)}
+                  className="w-3.5 h-3.5 rounded border-gray-300 accent-[#004475] cursor-pointer"
+                />
+                <span className="truncate">{opt}</span>
+              </label>
+            ))}
+          </div>
+          {selected.length > 0 && (
+            <button
+              onClick={() => onChange([])}
+              className="w-full text-xs font-bold text-red-500 hover:bg-red-50 py-2 border-t border-gray-100 transition-colors"
+            >
+              Clear selection
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function CRMLeadsTab({
   leadsList,
@@ -12,211 +217,415 @@ export default function CRMLeadsTab({
   counts,
   filteredLeads,
   getLeadDesign,
-  setSelectedLeadDetail,
+  handleViewLeadClick,
   handleLogNewActivityLeadClick,
   handleEditLeadClick,
   handleDeleteLead,
-  formatDateTime
+  formatDateTime,
+  handleMoveToContacted,
+  tabType = 'Leads',
+  addLabel = 'Add Lead',
 }) {
-  return (
-    <div className="space-y-6 [animation-delay:100ms] animate-dashboard-reveal text-left px-4">
-      {/* Header Bar */}
-      <div className="flex items-center justify-between">
-        {/* Left */}
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">
-            Leads Management
-          </h2>
-          <p className="text-sm text-gray-500 mt-1">
-            Total {leadsList.length} Active Prospects
-          </p>
-        </div>
+  const [stageFilter, setStageFilter] = useState([]);
+  const [ownerFilter, setOwnerFilter] = useState([]);
+  const [sourceFilter, setSourceFilter] = useState([]);
+  const [industryFilter, setIndustryFilter] = useState('all');
+  const [countryFilter, setCountryFilter] = useState('all');
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [starredIds, setStarredIds] = useState(new Set());
+  const [openActionMenuId, setOpenActionMenuId] = useState(null);
+  const [denseView, setDenseView] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const menuRef = useRef(null);
 
-        {/* Right */}
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
-              <Search size={16} />
-            </span>
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setOpenActionMenuId(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
-            <input
-              type="text"
-              placeholder="Search by name, company..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-72 bg-slate-50 hover:bg-slate-100/80 focus:bg-white text-sm font-semibold text-gray-700 placeholder-gray-400 pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:border-blue-300 focus:outline-hidden transition-all"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2 top-2 text-gray-400 hover:text-gray-600 p-0.5 rounded-md focus:outline-none focus:ring-1 focus:ring-[#004475]/20"
-              >
-                <X size={16} />
-              </button>
-            )}
-          </div>
+  // Full augmented dataset (independent of active filters) — used for overview stats & sidebar
+  const augmentedAll = useMemo(() => leadsList.map((l, i) => augmentLead(l, i)), [leadsList]);
 
-          {canControlCrm && (
-            <PrimaryButton onClick={handleAddLeadClick}>
-              <Plus size={16} />
-              Add Lead
-            </PrimaryButton>
-          )}
-        </div>
-      </div>
+  // Search-filtered (from parent) + presentational fields
+  const augmented = useMemo(() => filteredLeads.map((l, i) => augmentLead(l, i)), [filteredLeads]);
 
-      {/* Search & Filter Row */}
-      <div className="flex gap-3">
-        
-      </div>
+  const stageCounts = useMemo(() => {
+    const c = { 'All Leads': leadsList.length };
+    STAGE_TABS.slice(1).forEach((stage) => {
+      c[stage] = augmentedAll.filter((l) => l._status === stage).length;
+    });
+    return c;
+  }, [leadsList.length, augmentedAll]);
 
-      {/* Status Stats Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="relative overflow-hidden bg-white p-4 rounded-[18px] border-t-4 border-[#33a8d9] shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between cursor-pointer group">
-          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-[#33a8d9]/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none" />
-          <span className="text-xs font-bold text-[#004475] uppercase tracking-wider">New</span>
-          <span className="text-2xl font-black text-[#004475] mt-2 transition-transform group-hover:scale-105">{counts.New || 0}</span>
-        </div>
-        <div className="relative overflow-hidden bg-white p-4 rounded-[18px] border-t-4 border-[#33a8d9] shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between cursor-pointer group">
-          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-[#33a8d9]/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none" />
-          <span className="text-xs font-bold text-[#004475] uppercase tracking-wider">Contacted</span>
-          <span className="text-2xl font-black text-[#004475] mt-2 transition-transform group-hover:scale-105">{counts.Contacted || 0}</span>
-        </div>
-        <div className="relative overflow-hidden bg-white p-4 rounded-[18px] border-t-4 border-[#33a8d9] shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between cursor-pointer group">
-          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-[#33a8d9]/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none" />
-          <span className="text-xs font-bold text-[#004475] uppercase tracking-wider">Qualified</span>
-          <span className="text-2xl font-black text-[#004475] mt-2 transition-transform group-hover:scale-105">{counts.Qualified || 0}</span>
-        </div>
-        <div className="relative overflow-hidden bg-white p-4 rounded-[18px] border-t-4 border-[#33a8d9] shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between cursor-pointer group">
-          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-[#33a8d9]/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none" />
-          <span className="text-xs font-bold text-[#004475] uppercase tracking-wider">Won</span>
-          <span className="text-2xl font-black text-blue-600 mt-2 transition-transform group-hover:scale-105">{counts.Won || 0}</span>
-        </div>
-      </div>
+  const ownerOptions = useMemo(() => {
+    const owners = new Set(augmentedAll.map((l) => l._owner));
+    return Array.from(owners).sort();
+  }, [augmentedAll]);
 
-      {/* Leads List */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-4">
-        {filteredLeads.map((lead) => {
-          const design = getLeadDesign(lead.status);
-          return (
-            <div
-              key={lead.id}
-              onClick={() => setSelectedLeadDetail(lead)}
-              className="bg-white p-6 rounded-[18px] border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-[#004475]/5 hover:-translate-y-1 transition-all duration-300 cursor-pointer group flex flex-col gap-4 relative overflow-hidden"
+  const fullyFiltered = useMemo(() => {
+    return augmented.filter((l) => {
+      if (stageFilter.length && !stageFilter.includes(l._status)) return false;
+      if (ownerFilter.length && !ownerFilter.includes(l._owner)) return false;
+      if (sourceFilter.length && !sourceFilter.includes(l._source)) return false;
+      if (industryFilter !== 'all' && l._industry !== industryFilter) return false;
+      if (countryFilter !== 'all' && l._country !== countryFilter) return false;
+      return true;
+    });
+  }, [augmented, stageFilter, ownerFilter, sourceFilter, industryFilter, countryFilter]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, stageFilter, ownerFilter, sourceFilter, industryFilter, countryFilter, pageSize]);
+
+  const totalPages = Math.max(1, Math.ceil(fullyFiltered.length / pageSize));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedLeads = fullyFiltered.slice((safePage - 1) * pageSize, safePage * pageSize);
+
+  const clearAllFilters = () => {
+    setSearchQuery('');
+    setStageFilter([]);
+    setOwnerFilter([]);
+    setSourceFilter([]);
+    setIndustryFilter('all');
+    setCountryFilter('all');
+  };
+
+  const activeChips = [];
+  if (stageFilter.length) activeChips.push({ key: 'stage', label: `Stage: ${stageFilter.join(', ')}`, clear: () => setStageFilter([]) });
+  if (ownerFilter.length) activeChips.push({ key: 'owner', label: `Owner: ${ownerFilter.join(', ')}`, clear: () => setOwnerFilter([]) });
+  if (sourceFilter.length) activeChips.push({ key: 'source', label: `Source: ${sourceFilter.join(', ')}`, clear: () => setSourceFilter([]) });
+  if (industryFilter !== 'all') activeChips.push({ key: 'industry', label: `Industry: ${industryFilter}`, clear: () => setIndustryFilter('all') });
+  if (countryFilter !== 'all') activeChips.push({ key: 'country', label: `Country: ${countryFilter}`, clear: () => setCountryFilter('all') });
+  if (searchQuery) activeChips.push({ key: 'search', label: `Search: "${searchQuery}"`, clear: () => setSearchQuery('') });
+
+  const toggleSelectAll = () => {
+    setSelectedIds((prev) => {
+      if (prev.size === fullyFiltered.length && fullyFiltered.length > 0) return new Set();
+      return new Set(fullyFiltered.map((l) => l.id));
+    });
+  };
+
+  const toggleSelectOne = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleStar = (id) => {
+    setStarredIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const resolveStageDesign = (status) => EXTRA_STAGE_BADGES[status] || getLeadDesign(status);
+
+  const totalValue = useMemo(() => augmentedAll.reduce((sum, l) => sum + l._value, 0), [augmentedAll]);
+  const conversionRate = leadsList.length ? (((stageCounts['Won'] || 0) / leadsList.length) * 100).toFixed(2) : '0.00';
+
+  const leadSourceBreakdown = useMemo(() => {
+    const defs = [
+      { label: 'Website', pct: 35 },
+      { label: 'LinkedIn', pct: 25 },
+      { label: 'Referral', pct: 15 },
+      { label: 'Email', pct: 10 },
+      { label: 'Conference', pct: 8 },
+      { label: 'WhatsApp', pct: 5 },
+      { label: 'Others', pct: 2 },
+    ];
+    return defs.map((d) => ({ ...d, count: Math.round((leadsList.length * d.pct) / 100) }));
+  }, [leadsList.length]);
+
+  const donutStops = useMemo(() => {
+    const total = leadsList.length || 1;
+    let cum = 0;
+    return STAGE_TABS.slice(1).map((stage) => {
+      const count = stageCounts[stage] || 0;
+      const pct = (count / total) * 100;
+      const start = cum;
+      cum += pct;
+      return { stage, count, pct, start, end: cum, color: STAGE_COLORS[stage] };
+    });
+  }, [stageCounts, leadsList.length]);
+
+  const conicGradient = leadsList.length
+    ? `conic-gradient(${donutStops.map((s) => `${s.color} ${s.start}% ${s.end}%`).join(', ')})`
+    : '#e5e7eb';
+
+  const handleExportCsv = () => {
+    if (!fullyFiltered.length) {
+      showInfoToast('No leads to export.');
+      return;
+    }
+    const headers = ['Name', 'Company', 'Job Title', 'Email', 'Phone', 'Source', 'Stage', 'Owner', 'Value (INR L)', 'Next Follow-up', 'Last Contacted'];
+    const escapeCell = (val) => `"${String(val ?? '').replace(/"/g, '""')}"`;
+    const csvRows = fullyFiltered.map((l) => [
+      l.name,
+      l.company,
+      l._jobTitle,
+      l.email,
+      l.phone,
+      l._source,
+      l._status,
+      l._owner,
+      l._value.toFixed(2),
+      l._followUpDate ? formatShortDate(l._followUpDate) : '',
+      formatShortDate(l.updatedAt) || '',
+    ]);
+    const csvContent = [headers, ...csvRows].map((r) => r.map(escapeCell).join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `leads-export-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    showSuccessToast('Leads exported successfully!');
+  };
+
+  const columns = [
+    {
+      key: 'name',
+      label: 'Lead Name',
+      render: (lead) => {
+        const isStarred = starredIds.has(lead.id);
+        return (
+          <div className="flex items-center gap-2 min-w-0 justify-center">    
+            <span 
+              className="font-bold text-[#004475] hover:underline cursor-pointer truncate"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleViewLeadClick(lead);
+              }}
             >
-              {/* Header: Icon, Company Name, Status Badge, Actions */}
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-4">
-                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center bg-[#f0f4f8] text-[#004475] group-hover:bg-[#004475] group-hover:text-white transition-colors`}>
-                    <Building2 size={28} />
-                  </div>
-                  <div>
-                    <h4 className="text-lg font-bold text-[#004475] transition-colors">{lead.company}</h4>
-                    <span className={`inline-block mt-1 px-1 ${design.bg} ${design.text} text-[10px] font-bold uppercase tracking-wider rounded-md`}>
-                      {lead.status}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1">
-                  {canControlCrm && (
-                    <>
-                      <IconButton
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleLogNewActivityLeadClick(lead);
-                        }}
-                        className="text-[#004475] hover:text-[#33a8d9] hover:bg-[#33a8d9]/10 transition-all p-2 rounded-lg"
-                        title="Log Activity"
-                      >
-                        <Plus size={16} />
-                      </IconButton>
-                      <IconButton
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditLeadClick(lead);
-                        }}
-                        className="text-[#004475] hover:text-[#33a8d9] hover:bg-[#33a8d9]/10 transition-all p-2 rounded-lg"
-                        title="Edit Lead"
-                      >
-                        <SquarePen size={16} />
-                      </IconButton>
-                      <IconButton
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteLead(lead.id);
-                        }}
-                        className="text-[#004475] hover:text-[#33a8d9] hover:bg-[#33a8d9]/10 transition-all p-2 rounded-lg"
-                        title="Delete Lead"
-                      >
-                        <Trash size={16} />
-                      </IconButton>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              <div className="h-px w-full bg-[#f0f4f8] my-1" />
-
-              {/* Details: Contact Person, Email, Mobile */}
-              <div className="grid grid-cols-3 gap-4">
-                <div className="flex flex-col min-w-0">
-                  <div className="flex items-center gap-2 text-[#004475] mb-1">
-                    <User size={14} className="shrink-0" />
-                    <span className="text-sm font-bold truncate">{lead.name || 'N/A'}</span>
-                  </div>
-                  <span className="text-[11px] text-gray-500 font-medium pl-6 truncate">{lead.title || 'Project Lead'}</span>
-                </div>
-                <div className="flex flex-col min-w-0">
-                  <div className="flex items-center gap-2 text-[#004475] mb-1">
-                    <Mail size={14} className="shrink-0" />
-                    <span className="text-sm font-bold truncate">{lead.email || 'N/A'}</span>
-                  </div>
-                  <span className="text-[11px] text-gray-500 font-medium pl-6">Email</span>
-                </div>
-                <div className="flex flex-col min-w-0">
-                  <div className="flex items-center gap-2 text-[#004475] mb-1">
-                    <Phone size={14} className="shrink-0" />
-                    <span className="text-sm font-bold truncate">{lead.phone || 'N/A'}</span>
-                  </div>
-                  <span className="text-[11px] text-gray-500 font-medium pl-6">Mobile</span>
-                </div>
-              </div>
-              
-              <div className="h-px w-full bg-[#f0f4f8] my-1" />
-
-              {/* Address & Website */}
-              <div className="grid grid-cols-2 gap-4 pb-2">
-                <div className="flex flex-col min-w-0">
-                  <div className="flex items-start gap-2 text-[#004475] mb-1">
-                    <span className="mt-0.5 shrink-0"><MapPin size={14} /></span>
-                    <span className="text-sm font-bold leading-tight line-clamp-2">{lead.companyAddress || lead.location || 'N/A'}</span>
-                  </div>
-                </div>
-                <div className="flex flex-col min-w-0">
-                  <div className="flex items-center gap-2 text-[#004475] mb-1">
-                    <span className="shrink-0"><Globe size={14} /></span>
-                    <span className="text-sm font-bold truncate text-[#33a8d9] hover:underline">{lead.companyWebsite || 'N/A'}</span>
-                  </div>
-                  <span className="text-[11px] text-gray-500 font-medium pl-6">Website</span>
-                </div>
-              </div>
-
-              {/* Last Contacted */}
-              <div className="absolute bottom-4 left-6">
-                <span className="inline-flex items-center px-2.5 py-1 bg-[#f0f4f8] text-[#004475] text-[10px] font-bold rounded border border-[#33a8d9]/20">
-                  Last Contacted: {formatDateTime(lead.updatedAt) || 'N/A'}
-                </span>
-              </div>
-              <div className="h-4" /> {/* Padding bottom hack for absolutely positioned elements */}
+              {lead.name || 'N/A'}
+            </span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleStar(lead.id);
+              }}
+              className={`shrink-0 transition-opacity ${isStarred ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+            >
+             </button>
+          </div>
+        );
+      },
+    },
+    {
+      key: 'source',
+      label: 'Source',
+      render: (lead) => {
+        const sourceMeta = SOURCE_META[lead._source];
+        if (sourceMeta && sourceMeta.icon) {
+          const SourceIcon = sourceMeta.icon;
+          return (
+            <div className="flex items-center gap-1.5 justify-center" title={lead._source}>
+              <span className={`inline-flex items-center justify-center ${sourceMeta.color}`}>
+               <SourceIcon size={18} />
+              </span>
             </div>
           );
-        })}
-        {filteredLeads.length === 0 && (
-          <div className="col-span-1 xl:col-span-2 text-center py-12 text-gray-500 border border-dashed border-[#33a8d9]/30 rounded-[18px]">
-            No leads found matching your search.
+        }
+        return (
+          <div className="flex items-center justify-center text-gray-500 text-xs font-semibold" title="No Source">
+            N/A
           </div>
-        )}
+        );
+      },
+    },
+    {
+      key: 'stage',
+      label: 'Stage',
+      render: (lead) => {
+        const design = resolveStageDesign(lead._status);
+        return (
+          <span className={`inline-block px-2 py-1 ${design.badgeBg} ${design.badgeText} text-[10px] font-bold uppercase tracking-wider rounded-md whitespace-nowrap`}>
+            {lead._status}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'owner',
+      label: 'Lead Owner',
+      render: (lead) => (
+        <div className="flex items-center gap-2 min-w-0 justify-center">
+          <span className="text-gray-700 font-semibold truncate max-w-25">{lead._owner}</span>
+        </div>
+      ),
+    },
+   
+    {
+      key: 'followUp',
+      label: 'Next Follow-up',
+      className: 'whitespace-nowrap',
+      render: (lead) => lead._followUpDate ? (
+        <div className="flex flex-col">
+          <span className="text-gray-800 font-bold text-sm">
+           
+            {formatShortDate(lead._followUpDate)}
+          </span>
+        </div>
+      ) : (
+        <span className="text-gray-300">—</span>
+      ),
+    },
+    {
+      key: 'lastContacted',
+      label: 'Last Contacted',
+      className: 'text-gray-500 font-medium whitespace-nowrap',
+      render: (lead) => (
+        <span title={formatDateTime(lead._lastContactedDate)}>
+          {formatShortDate(lead._lastContactedDate) || 'N/A'}
+        </span>
+      ),
+    }
+  ];
+
+  const renderActions = (lead) => (
+    <div className="flex items-center justify-center gap-1 relative">
+      {canControlCrm && (
+        <>
+          {tabType !== 'Contacted' && (
+            <IconButton 
+              onClick={(e) => { e.stopPropagation(); handleMoveToContacted(lead); }} 
+              title="Move to Contacted" 
+              className="text-[#004475] hover:text-[#33a8d9]"
+            >
+              <LogOut size={15} />
+            </IconButton>
+          )}
+          <IconButton 
+            onClick={(e) => { e.stopPropagation(); handleEditLeadClick(lead); }} 
+            title="Edit Lead" 
+            className="text-[#004475] hover:text-[#33a8d9]"
+          >
+            <SquarePen size={15} />
+          </IconButton>
+          <IconButton 
+            onClick={(e) => { e.stopPropagation(); handleDeleteLead(lead.id); }} 
+            title="Delete Lead" 
+            className="text-[#004475] hover:text-[#33a8d9]"
+          >
+            <Trash size={15} />
+          </IconButton>
+        </>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="space-y-5 [animation-delay:100ms] animate-dashboard-reveal text-left">
+
+      <div className="flex flex-col gap-3 px-1">
+        {/* ── Main Column ─────────────────────────────────────────────── */}
+        <div className="space-y-5 min-w-0">
+          <div>
+            <div className="flex flex-col md:flex-row items-center gap-3 justify-end">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search leads by name, company..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 text-sm pr-10 py-2 border border-gray-300 rounded-lg w-full md:w-80 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all duration-200"
+                />
+                {searchQuery && (
+                  <div className="absolute right-1 top-0.5">
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="p-1.5 rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                      title="Clear search"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <MultiSelectDropdown label="All Sources" className="w-36" selected={sourceFilter} onChange={setSourceFilter} options={SOURCE_KEYS} />
+                <PrimaryButton onClick={handleAddLeadClick}>
+                  <span className="text-xl mr-1 leading-none">+</span>
+                  {addLabel}
+                </PrimaryButton>
+              </div>
+            </div>
+
+          
+          </div>
+
+          {/* Leads Table */}
+          <div className="bg-white border border-gray-100 rounded-[18px] shadow-sm overflow-hidden">
+            <CustomTable
+              columns={columns}
+              data={paginatedLeads}
+              rowKey="id"
+              actions={renderActions}
+              actionsHeader="Actions"
+              actionsAlign="center"
+              headerAlignment={{ name: 'center', source: 'center', owner: 'center' }}
+              cellAlignment={{ name: 'center', source: 'center', owner: 'center' }}
+              rowClassName={(lead) => `group hover:bg-[#f8fafc] transition-colors ${denseView ? 'h-10' : 'h-14'}`}
+            />
+
+            {/* Pagination Footer */}
+            <div>
+              <Pagination
+                currentPage={safePage}
+                totalItems={fullyFiltered.length}
+                itemsPerPage={pageSize}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={setPageSize}
+                rowsPerPageOptions={[10, 20, 50, 100]}
+              />
+            </div>
+          </div>
+        </div>
+
+
       </div>
     </div>
   );
+}
+
+function getPageNumbers(currentPage, totalPages) {
+  const pageNumbers = [];
+  const maxPagesToShow = 5;
+
+  if (totalPages <= maxPagesToShow) {
+    for (let i = 1; i <= totalPages; i++) pageNumbers.push(i);
+  } else if (currentPage <= 3) {
+    for (let i = 1; i <= 4; i++) pageNumbers.push(i);
+    pageNumbers.push('...');
+    pageNumbers.push(totalPages);
+  } else if (currentPage >= totalPages - 2) {
+    pageNumbers.push(1);
+    pageNumbers.push('...');
+    for (let i = totalPages - 3; i <= totalPages; i++) pageNumbers.push(i);
+  } else {
+    pageNumbers.push(1);
+    pageNumbers.push('...');
+    for (let i = currentPage - 1; i <= currentPage + 1; i++) pageNumbers.push(i);
+    pageNumbers.push('...');
+    pageNumbers.push(totalPages);
+  }
+  return pageNumbers;
 }

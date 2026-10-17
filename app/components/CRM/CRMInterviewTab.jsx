@@ -382,6 +382,7 @@ export default function CRMInterviewTab({ interviewsList, refreshInterviews, isL
       >
         <form onSubmit={handleSave} className="p-6 flex flex-col gap-4 bg-white text-left">
             {renderTabs()}
+            <fieldset disabled={modalMode === 'view'} className="contents">
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
               <div>
@@ -503,6 +504,8 @@ export default function CRMInterviewTab({ interviewsList, refreshInterviews, isL
               <textarea rows={3} value={formData.description || ''} onChange={e => setFormData({...formData, description: e.target.value})} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md text-[13px] text-gray-800 outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100 transition-all font-medium" />
             </div>
           
+            </fieldset>
+
           <div className="flex justify-end items-center gap-4 pt-4 border-t border-gray-200 mt-2">
             <div>
               {modalMode !== 'add' && activeGroup.length > 0 && activeRoundIndex === activeGroup.length - 1 && (
@@ -520,6 +523,11 @@ export default function CRMInterviewTab({ interviewsList, refreshInterviews, isL
               <Button type="button" onClick={() => setShowModal(false)} className="px-5 py-2 border border-gray-800 hover:bg-slate-50 text-slate-705 font-bold text-sm rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                 Close
               </Button>
+              {modalMode === 'view' && (
+                <PrimaryButton type="button" onClick={() => setModalMode('edit')}>
+                  Edit
+                </PrimaryButton>
+              )}
               {modalMode !== 'view' && (
                 <PrimaryButton type="submit" disabled={isSaving}>
                   {isSaving && <Loader2 className="animate-spin mr-2 inline" size={16} />}
