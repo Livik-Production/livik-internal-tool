@@ -61,6 +61,8 @@ export default function CompanyDetailsTab() {
               lutBondNo: data.lutBondNo || '',
               lutValidFrom: data.lutValidFrom ? data.lutValidFrom.split('T')[0] : '',
               lutValidTo: data.lutValidTo ? data.lutValidTo.split('T')[0] : '',
+              companyName: data.companyName || '',
+              cinNumber: data.cinNumber || '',
             });
           }
         }
