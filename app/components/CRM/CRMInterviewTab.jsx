@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import CustomTable from '../CustomTable';
+import Pagination from '../Pagination';
 import PrimaryButton from '../Buttons/PrimaryButton';
 import IconButton from '../Buttons/IconButton';
 import CustomModalForm from '../CustomModalForm';
@@ -238,6 +239,20 @@ export default function CRMInterviewTab({ interviewsList, refreshInterviews, isL
     return matchesSearch && matchesResult;
   });
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchQuery, resultFilter, pageSize]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredGroups.length / pageSize));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedGroups = filteredGroups.slice(
+    (safePage - 1) * pageSize,
+    safePage * pageSize
+  );
+
   const columns = [
     { key: 'title', label: 'Interview Title', render: (group) => (
       <span 
@@ -306,72 +321,126 @@ export default function CRMInterviewTab({ interviewsList, refreshInterviews, isL
   };
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="flex flex-col md:flex-row justify-end items-center gap-3 mb-6">
-        <div className="relative w-full md:w-80">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-4 w-4 text-gray-400" />
-          </div>
-          <input
-            type="text"
-            placeholder="Search interview title, job description, candidate..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 text-sm pr-10 py-2 border border-gray-300 rounded-lg w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all duration-200"
-          />
-            {searchQuery && (
+    <div className="space-y-5 [animation-delay:100ms] animate-dashboard-reveal text-left">
+      <div className="flex flex-col gap-3 px-1">
+        {/* Main Column */}
+        <div className="space-y-5 min-w-0">
+          {/* Top Bar matching CRMLeadsTab */}
+          <div>
+            <div className="flex flex-col md:flex-row items-center gap-3 justify-end">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search interview title, job description, candidate..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 text-sm pr-10 py-2 border border-gray-300 rounded-lg w-full md:w-80 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all duration-200"
+                />
+                {searchQuery && (
                   <div className="absolute right-1 top-0.5">
                     <button
                       onClick={() => setSearchQuery('')}
-                      className="p-1.5 rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                      className="p-1.5 rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors cursor-pointer"
                       title="Clear search"
                     >
                       <X size={16} />
                     </button>
                   </div>
                 )}
-        </div>
-        
-        <FilterDropdown
-          options={[
-            { label: 'All Results', value: 'All' },
-            { label: 'Pending', value: 'Pending' },
-            { label: 'Passed', value: 'Passed' },
-            { label: 'Failed', value: 'Failed' }
-          ]}
-          value={resultFilter}
-          onChange={setResultFilter}
-          className="w-full md:w-40 z-50"
-        />
-
-        <PrimaryButton onClick={() => handleOpenModal('add')}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Interview
-        </PrimaryButton>
-      </div>
-
-      <div className="flex-1 overflow-y-auto pr-2 pb-10">
-        {(isLoading || isRefreshing) ? (
-          <div className="flex flex-col items-center justify-center h-64">
-            <Loader label="Loading Interviews..." />
-          </div>
-        ) : (
-          <CustomTable
-            columns={columns}
-            data={filteredGroups}
-            actions={(group) => (
-              <div className="flex items-center justify-end gap-2">
-                <IconButton title="Edit" className="text-[#004475] hover:text-[#33a8d9]" onClick={() => handleOpenModal('edit', group)}>
-                  <SquarePen size={16} />
-                </IconButton>
-                <IconButton title="Delete" className="text-[#004475] hover:text-red-700" onClick={() => handleDeleteClick(group)}>
-                  <Trash size={16} />
-                </IconButton>
               </div>
+
+              <div className="flex items-center gap-2">
+                <FilterDropdown
+                  options={[
+                    { label: 'All Results', value: 'All' },
+                    { label: 'Pending', value: 'Pending' },
+                    { label: 'Passed', value: 'Passed' },
+                    { label: 'Failed', value: 'Failed' },
+                  ]}
+                  value={resultFilter}
+                  onChange={setResultFilter}
+                  className="w-full md:w-40 z-50"
+                />
+
+                <PrimaryButton onClick={() => handleOpenModal('add')}>
+                  <Plus className="h-4 w-4 mr-1 leading-none" />
+                  Add Interview
+                </PrimaryButton>
+              </div>
+            </div>
+          </div>
+
+          {/* Interviews Table matching CRMLeadsTab */}
+          <div className="bg-white border border-gray-100 rounded-[18px] shadow-sm overflow-hidden">
+            {(isLoading || isRefreshing) ? (
+              <div className="flex flex-col items-center justify-center py-24 my-auto">
+                <Loader label="Loading Interviews..." />
+              </div>
+            ) : (
+              <>
+                <CustomTable
+                  columns={columns}
+                  data={paginatedGroups}
+                  rowKey="id"
+                  actions={(group) => (
+                    <div className="flex items-center justify-end gap-2">
+                      <IconButton
+                        title="Edit"
+                        className="text-[#004475] hover:text-[#33a8d9]"
+                        onClick={() => handleOpenModal('edit', group)}
+                      >
+                        <SquarePen size={16} />
+                      </IconButton>
+                      <IconButton
+                        title="Delete"
+                        className="text-[#004475] hover:text-red-700"
+                        onClick={() => handleDeleteClick(group)}
+                      >
+                        <Trash size={16} />
+                      </IconButton>
+                    </div>
+                  )}
+                  actionsHeader="Actions"
+                  actionsAlign="center"
+                  headerAlignment={{
+                    title: 'center',
+                    jobDescription: 'center',
+                    candidateName: 'center',
+                    companyName: 'center',
+                    round: 'center',
+                    dateTime: 'center',
+                    result: 'center',
+                  }}
+                  cellAlignment={{
+                    title: 'center',
+                    jobDescription: 'center',
+                    candidateName: 'center',
+                    companyName: 'center',
+                    round: 'center',
+                    dateTime: 'center',
+                    result: 'center',
+                  }}
+                  rowClassName={() => 'group hover:bg-[#f8fafc] transition-colors h-14'}
+                />
+
+                {/* Pagination Footer */}
+                <div>
+                  <Pagination
+                    currentPage={safePage}
+                    totalItems={filteredGroups.length}
+                    itemsPerPage={pageSize}
+                    onPageChange={setCurrentPage}
+                    onItemsPerPageChange={setPageSize}
+                    rowsPerPageOptions={[10, 20, 50, 100]}
+                  />
+                </div>
+              </>
             )}
-            actionsHeader="Actions"
-          />
-        )}
+          </div>
+        </div>
       </div>
 
       <CustomModalForm

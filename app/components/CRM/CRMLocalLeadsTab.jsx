@@ -541,9 +541,9 @@ export default function CRMLocalLeadsTab({
           </div>
 
           {/* Leads Table matching CRMLeadsTab */}
-          <div className="bg-white border border-gray-100 rounded-[18px] shadow-sm overflow-hidden min-h-[350px] flex flex-col justify-between">
+          <div className="bg-white border border-gray-100 rounded-[18px] shadow-sm overflow-hidden">
             {isLoading ? (
-              <div className="flex flex-col items-center justify-center py-24 my-auto">
+              <div className="flex flex-col items-center justify-center py-24">
                 <Loader label="Loading Local Leads..." />
               </div>
             ) : (
