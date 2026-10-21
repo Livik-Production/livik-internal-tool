@@ -513,11 +513,17 @@ export default function AttendanceTab({
 
   // Employees matching the selected Work Type (used for Mark Attendance)
   const employeesByWorkType = useMemo(() => {
-    return employees.filter(
-      (e) =>
+    return employees.filter((e) => {
+      const isInactive =
+        (e.status || e.__raw?.status || '').toUpperCase() === 'INACTIVE' ||
+        e.__raw?.isActive === false ||
+        e.isActive === false;
+      return (
+        !isInactive &&
         (e.workType || e.__raw?.workType || '').toUpperCase() ===
-        workTypeFilter
-    );
+          workTypeFilter
+      );
+    });
   }, [employees, workTypeFilter]);
 
   const columns = [
