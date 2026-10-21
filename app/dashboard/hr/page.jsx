@@ -1528,7 +1528,10 @@ function HRPageContent() {
                           ).toUpperCase();
                           return (
                             statusUpper !== 'PENDING' &&
-                            statusUpper !== 'PENDING_ADMIN'
+                            statusUpper !== 'PENDING_ADMIN' &&
+                            statusUpper !== 'INACTIVE' &&
+                            e.isActive !== false &&
+                            e.__raw?.isActive !== false
                           );
                         })}
                         authUser={authUser}

@@ -485,7 +485,11 @@ export default function CRMDashboard() {
         let currentDbEmployees = [];
         const empRes = await fetch('/api/employees');
         if (empRes.ok) {
-          currentDbEmployees = await empRes.json();
+          currentDbEmployees = (await empRes.json()).filter(
+            (e) =>
+              (e.status || '').toUpperCase() !== 'INACTIVE' &&
+              e.isActive !== false
+          );
           setDbEmployees(currentDbEmployees);
         }
 

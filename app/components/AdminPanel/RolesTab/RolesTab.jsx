@@ -68,7 +68,9 @@ export default function RolesTab() {
       if (!response.ok) throw new Error('Failed to fetch employees');
       const data = await response.json();
 
-      const mapped = data.map((emp) => ({
+      const mapped = data
+        .filter((emp) => (emp.status || '').toUpperCase() !== 'INACTIVE' && emp.isActive !== false)
+        .map((emp) => ({
         id: emp.empId || emp.employeeId,
         dbId: emp.id,
         name:
