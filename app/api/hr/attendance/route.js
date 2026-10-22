@@ -43,8 +43,10 @@ export async function GET(req) {
     if (employeeId) {
       summary = summaryAll;
     } else if (workType) {
-      summary = summaryAll.filter(
-        (emp) => (emp.workType || '').toUpperCase() === workType.toUpperCase()
+      // workType may be a comma-separated list, e.g. "REGULAR,CONTRACT"
+      const types = workType.toUpperCase().split(',');
+      summary = summaryAll.filter((emp) =>
+        types.includes((emp.workType || '').toUpperCase())
       );
     } else {
       summary = summaryAll.filter(

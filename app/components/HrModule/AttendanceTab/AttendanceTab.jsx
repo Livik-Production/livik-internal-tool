@@ -24,6 +24,7 @@ import ConfirmDialog from '../../ConfirmDialog';
 import FilterDropdown from '../../Buttons/FilterDropdown';
 
 const WORK_TYPE_OPTIONS = [
+  { value: 'REGULAR,CONTRACT', label: 'Regular + Contract' },
   { value: 'REGULAR', label: 'Regular' },
   { value: 'MANAGEMENT', label: 'Management' },
   { value: 'CONTRACT', label: 'Contract' },
@@ -35,7 +36,7 @@ export default function AttendanceTab({
   isAdmin = false,
 }) {
   const [data, setData] = useState([]);
-  const [workTypeFilter, setWorkTypeFilter] = useState('REGULAR');
+  const [workTypeFilter, setWorkTypeFilter] = useState('REGULAR,CONTRACT');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -520,8 +521,9 @@ export default function AttendanceTab({
         e.isActive === false;
       return (
         !isInactive &&
-        (e.workType || e.__raw?.workType || '').toUpperCase() ===
-          workTypeFilter
+        workTypeFilter
+          .split(',')
+          .includes((e.workType || e.__raw?.workType || '').toUpperCase())
       );
     });
   }, [employees, workTypeFilter]);
