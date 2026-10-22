@@ -5,7 +5,7 @@ import IconButton from '../../Buttons/IconButton';
 import CloseButton from '../../Buttons/CloseButton';
 
 import { useState, useEffect } from 'react';
-import { Search, ChevronDown, Loader2 } from 'lucide-react';
+import { Search, ChevronDown, Loader2, X } from 'lucide-react';
 import CustomModalForm from '../../CustomModalForm';
 
 export default function MarkAttendanceModal({

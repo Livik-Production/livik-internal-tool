@@ -211,6 +211,7 @@ function HRPageContent() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmTargetId, setConfirmTargetId] = useState(null);
   const [confirmMessage, setConfirmMessage] = useState('');
+  const [confirmAction, setConfirmAction] = useState(null); // 'deactivate' | 'hardDelete'
 
   // employees from redux
   const employees = useSelector(selectEmployeesItems);
@@ -767,6 +768,7 @@ function HRPageContent() {
   };
 
   // button handlers with permission check
+  // Soft delete: from the Active tab, Delete just moves the employee to INACTIVE status.
   const handleDeleteEmployee = (id) => {
     if (!canControlAllEmployees) return; // HR Executive cannot delete
     const row = employees.find((r) => r.id === id);
@@ -777,18 +779,39 @@ function HRPageContent() {
       id;
 
     setConfirmMessage(
-      `Delete employee ${displayName} (${id})? This action cannot be undone.`
+      `Move employee ${displayName} (${id}) to Inactive? They will no longer appear in the active list.`
     );
     setConfirmTargetId(id);
+    setConfirmAction('deactivate');
+    setConfirmOpen(true);
+  };
+
+  // Hard delete: only available from the Inactive tab, permanently removes the record from the DB.
+  const handleHardDeleteEmployee = (id) => {
+    if (!canControlAllEmployees) return;
+    const row = employees.find((r) => r.id === id);
+    const displayName =
+      (row?.name ??
+        `${row?.__raw?.firstName ?? ''} ${row?.__raw?.lastName ?? ''
+          }`.trim()) ||
+      id;
+
+    setConfirmMessage(
+      `Permanently delete employee ${displayName} (${id})? This action cannot be undone.`
+    );
+    setConfirmTargetId(id);
+    setConfirmAction('hardDelete');
     setConfirmOpen(true);
   };
 
   const performDeleteEmployee = async () => {
     const id = confirmTargetId;
+    const action = confirmAction;
 
     if (!id) {
       setConfirmOpen(false);
       setConfirmTargetId(null);
+      setConfirmAction(null);
       return;
     }
 
@@ -796,18 +819,44 @@ function HRPageContent() {
       setIsDeletingEmployee(true);
       const row = employees.find((r) => r.id === id);
       const serverId = row?.__raw?.id ?? id;
-      const res = await fetch(`/api/employees/${serverId}`, {
-        method: 'DELETE',
-      });
 
-      if (!res.ok) {
-        const txt = await res.text().catch(() => null);
-        console.warn('Server delete returned non-OK:', txt);
-        throw new Error(txt || 'Server delete failed');
+      if (action === 'hardDelete') {
+        const res = await fetch(`/api/employees/${serverId}`, {
+          method: 'DELETE',
+        });
+
+        if (!res.ok) {
+          const txt = await res.text().catch(() => null);
+          console.warn('Server delete returned non-OK:', txt);
+          throw new Error(txt || 'Server delete failed');
+        }
+
+        dispatch(deleteEmployeeAction(id));
+        showSuccessToast('Employee deleted successfully');
+      } else {
+        // deactivate -> move to INACTIVE instead of removing from DB
+        const res = await fetch(`/api/employees/${serverId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'INACTIVE' }),
+        });
+
+        if (!res.ok) {
+          const txt = await res.text().catch(() => null);
+          console.warn('Server deactivate returned non-OK:', txt);
+          throw new Error(txt || 'Failed to deactivate employee');
+        }
+
+        const updated = await res.json();
+        const uiRow = {
+          ...row,
+          status: updated.status ?? 'INACTIVE',
+          __raw: { ...(row?.__raw ?? {}), ...updated },
+        };
+        dispatch(updateEmployeeAction(uiRow));
+        showSuccessToast('Employee moved to Inactive');
       }
 
-      dispatch(deleteEmployeeAction(id));
-      showSuccessToast('Employee deleted successfully');
       setConfirmOpen(false);
     } catch (err) {
       console.error('Delete failed:', err);
@@ -815,6 +864,7 @@ function HRPageContent() {
     } finally {
       setIsDeletingEmployee(false);
       setConfirmTargetId(null);
+      setConfirmAction(null);
     }
   };
 
@@ -1090,21 +1140,27 @@ function HRPageContent() {
           <SquarePen size={16} />
         </IconButton>
         {statusFilter === 'INACTIVE' ? (
-          <IconButton
-            onClick={() => router.push(`/dashboard/hr/exit/${row.id}`)}
-            title="Exit Employee Clearance"
-            disabled={!canEdit}
-          >
-            <FileCheck size={18} className="text-[#004475]" />
-          </IconButton>
+          <>
+            <IconButton
+              onClick={() => router.push(`/dashboard/hr/exit/${row.id}`)}
+              title="Exit Employee Clearance"
+              disabled={!canEdit}
+            >
+              <FileCheck size={18} className="text-[#004475]" />
+            </IconButton>
+            <IconButton
+              onClick={() => handleHardDeleteEmployee(row.id)}
+              disabled={!canDelete}
+              title={!canDelete ? 'Delete access restricted' : 'Permanently Delete Employee'}
+            >
+              <Trash size={16} />
+            </IconButton>
+          </>
         ) : (
           <IconButton
             onClick={() => handleDeleteEmployee(row.id)}
-            // className={`transition-transform hover:scale-110 ${
-            //   !canDelete ? "text-gray-400 cursor-not-allowed" : "text-[#002e5b]"
-            // }`}
             disabled={!canDelete}
-            title={!canDelete ? 'Delete access restricted' : 'Delete Employee'}
+            title={!canDelete ? 'Delete access restricted' : 'Move to Inactive'}
           >
             <Trash size={16} />
           </IconButton>
@@ -1472,7 +1528,10 @@ function HRPageContent() {
                           ).toUpperCase();
                           return (
                             statusUpper !== 'PENDING' &&
-                            statusUpper !== 'PENDING_ADMIN'
+                            statusUpper !== 'PENDING_ADMIN' &&
+                            statusUpper !== 'INACTIVE' &&
+                            e.isActive !== false &&
+                            e.__raw?.isActive !== false
                           );
                         })}
                         authUser={authUser}

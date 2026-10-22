@@ -49,7 +49,9 @@ const SalarySetupTab = ({ isViewOnly = false }) => {
         const response = await fetch('/api/payroll/salary-setup');
         if (response.ok) {
           const data = await response.json();
-          setEmployees(data);
+          setEmployees(
+            data.filter((e) => (e.workType || '').toUpperCase() !== 'MANAGEMENT')
+          );
         } else {
           console.error('Failed to fetch salary data');
           // Fallback or error handling could go here

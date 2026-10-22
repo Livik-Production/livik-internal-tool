@@ -6,15 +6,12 @@ import IconButton from '../../Buttons/IconButton';
 import Loader from '../../Loader';
 import {
   SquarePen,
-  Trash,
-  Eye,
-  X,
+  Trash, X,
   Search,
   SortAsc,
   SortDesc,
   PieChart,
-  BarChart2,
-  TrendingUp,
+  BarChart2
 } from 'lucide-react';
 import CustomAlertForm from '../../../components/CustomAlertForm';
 import Pagination from '../../../components/Pagination';
@@ -190,6 +187,8 @@ const AllExpenseTab = ({
   monthOptions = [],
   yearOptions = [],
   availableCategories = [],
+  onOpenCategorySummary,
+  latestPettyCashDetail: propLatestPettyCashDetail = null,
 }) => {
   const [expenseToDelete, setExpenseToDelete] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -205,16 +204,24 @@ const AllExpenseTab = ({
     return [...pettyCashFlows].sort((a, b) => new Date(b.receiveDate) - new Date(a.receiveDate))[0];
   }, [pettyCashFlows]);
 
-  const [latestPettyCashDetail, setLatestPettyCashDetail] = useState(null);
+  const [latestPettyCashDetail, setLatestPettyCashDetail] = useState(
+    propLatestPettyCashDetail
+  );
+
+  React.useEffect(() => {
+    if (propLatestPettyCashDetail) {
+      setLatestPettyCashDetail(propLatestPettyCashDetail);
+    }
+  }, [propLatestPettyCashDetail]);
 
   React.useEffect(() => {
     if (latestPettyCash?.id) {
-      fetch(`/api/expense/petty-cash?id=${latestPettyCash.id}`)
-        .then(res => res.json())
-        .then(data => setLatestPettyCashDetail(data))
-        .catch(err => console.error(err));
+      fetch(`/api/expense/petty-cash?id=${latestPettyCash.id}`, { cache: 'no-store' })
+        .then((res) => res.json())
+        .then((data) => setLatestPettyCashDetail(data))
+        .catch((err) => console.error(err));
     }
-  }, [latestPettyCash?.id]);
+  }, [latestPettyCash?.id, expenses]);
 
   const chartCategories = React.useMemo(() => {
     const categoriesMap = {};
@@ -489,7 +496,7 @@ const AllExpenseTab = ({
       {/* Search and Filters Bar - All unified in one flex container with consistent gaps */}
       <div className="flex flex-wrap items-center justify-end mt-2 w-full gap-2">
         {latestPettyCashDetail && (
-          <div className="mr-auto animate-dashboard-reveal">
+          <div className="mr-auto">
             <div className="bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100 shadow-sm flex items-center gap-3">
               <p className="text-[10px] text-indigo-600 font-bold uppercase tracking-wider mb-0">
                 Balance in Hand
@@ -527,7 +534,7 @@ const AllExpenseTab = ({
           )}
         </div>
 
-        {/* Filters */}
+        {/* Month Filter */}
         <FilterDropdown
           options={[{ value: 'all', label: 'All Months' }, ...monthOptions]}
           value={selectedMonthNum}
@@ -558,6 +565,20 @@ const AllExpenseTab = ({
           placeholder="Category"
           className="w-full md:w-38"
         />
+
+        {/* Category Summary Button */}
+        {onOpenCategorySummary && (
+          <Button
+            onClick={onOpenCategorySummary}
+            className="px-3.5 py-2 bg-[#004475] hover:bg-[#00335a] text-white font-medium rounded-xl shadow-xs flex items-center gap-1.5 transition-all cursor-pointer w-full md:w-auto justify-center"
+            title="Open Category Expense Summary View"
+          >
+            <PieChart size={16} />
+            <span className="text-sm font-semibold whitespace-nowrap">
+              Summary
+            </span>
+          </Button>
+        )}
 
         {/* Sort Button */}
         <Button

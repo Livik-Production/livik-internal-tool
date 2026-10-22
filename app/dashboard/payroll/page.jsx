@@ -143,7 +143,9 @@ function PayrollContent() {
         const response = await fetch('/api/payroll/salary-setup');
         if (response.ok) {
           const data = await response.json();
-          setEmployees(data);
+          setEmployees(
+            data.filter((e) => (e.workType || '').toUpperCase() !== 'MANAGEMENT')
+          );
         }
       } catch (error) {
         console.error('Failed to fetch employees:', error);

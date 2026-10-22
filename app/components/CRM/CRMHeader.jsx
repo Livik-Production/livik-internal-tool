@@ -1,8 +1,9 @@
 import React from 'react';
 import { UsersRound } from 'lucide-react';
 import NotificationBell from '../NotificationBell';
+import PrimaryButton from '../Buttons/PrimaryButton';
 
-export default function CRMHeader() {
+export default function CRMHeader({ handleAddLeadClick }) {
   return (
     <div className="bg-white rounded-2xl shadow-sm p-3 m-0.5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
       <div className="flex items-center gap-3">
@@ -18,10 +19,6 @@ export default function CRMHeader() {
         </div>
       </div>
       <div className="flex items-center gap-4">
-        {/* <PrimaryButton onClick={handleAddLeadClick}>
-          <span className="text-xl mr-1">+</span>
-          Add Lead
-        </PrimaryButton> */}
         <NotificationBell />
       </div>
     </div>

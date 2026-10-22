@@ -7,7 +7,15 @@ import { useSelector } from 'react-redux';
 import Loader from '../../Loader';
 import Pagination from '../../Pagination';
 import { showSuccessToast, showErrorToast } from '../../Toast';
-import { Search, SquarePen, Trash, CalendarCheck, Loader2, X, ChevronDown } from 'lucide-react';
+import {
+  Search,
+  SquarePen,
+  Trash,
+  CalendarCheck,
+  Loader2,
+  X,
+  ChevronDown,
+} from 'lucide-react';
 import BalanceDetailModal from './BalanceDetailModal';
 import FilterDropdown from '../../Buttons/FilterDropdown';
 import IconButton from '../../Buttons/IconButton';
@@ -15,7 +23,6 @@ import CustomModalForm from '../../CustomModalForm';
 
 const WORK_TYPE_OPTIONS = [
   { value: 'REGULAR', label: 'Regular' },
-  { value: 'MANAGEMENT', label: 'Management' },
   { value: 'CONTRACT', label: 'Contract' },
 ];
 
@@ -46,7 +53,6 @@ const UpdateLeaveRequestTab = ({
   const [balanceHistory, setBalanceHistory] = useState([]);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [workTypeFilter, setWorkTypeFilter] = useState('REGULAR');
   const [companyHolidays, setCompanyHolidays] = useState([]);
   const [isMonthDropdownOpen, setIsMonthDropdownOpen] = useState(false);
 
@@ -466,8 +472,10 @@ const UpdateLeaveRequestTab = ({
                     const monthIndex = i + 1;
                     const isDisabled = selectedYear === 2025 && monthIndex < 9;
                     const date = new Date(2000, i, 1);
-                    const monthName = date.toLocaleString('default', { month: 'long' });
-                    
+                    const monthName = date.toLocaleString('default', {
+                      month: 'long',
+                    });
+
                     return (
                       <div
                         key={monthIndex}

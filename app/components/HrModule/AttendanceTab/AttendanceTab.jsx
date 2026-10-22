@@ -24,6 +24,7 @@ import ConfirmDialog from '../../ConfirmDialog';
 import FilterDropdown from '../../Buttons/FilterDropdown';
 
 const WORK_TYPE_OPTIONS = [
+  { value: 'REGULAR,CONTRACT', label: 'Regular + Contract' },
   { value: 'REGULAR', label: 'Regular' },
   { value: 'MANAGEMENT', label: 'Management' },
   { value: 'CONTRACT', label: 'Contract' },
@@ -35,7 +36,7 @@ export default function AttendanceTab({
   isAdmin = false,
 }) {
   const [data, setData] = useState([]);
-  const [workTypeFilter, setWorkTypeFilter] = useState('REGULAR');
+  const [workTypeFilter, setWorkTypeFilter] = useState('REGULAR,CONTRACT');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -513,11 +514,18 @@ export default function AttendanceTab({
 
   // Employees matching the selected Work Type (used for Mark Attendance)
   const employeesByWorkType = useMemo(() => {
-    return employees.filter(
-      (e) =>
-        (e.workType || e.__raw?.workType || '').toUpperCase() ===
+    return employees.filter((e) => {
+      const isInactive =
+        (e.status || e.__raw?.status || '').toUpperCase() === 'INACTIVE' ||
+        e.__raw?.isActive === false ||
+        e.isActive === false;
+      return (
+        !isInactive &&
         workTypeFilter
-    );
+          .split(',')
+          .includes((e.workType || e.__raw?.workType || '').toUpperCase())
+      );
+    });
   }, [employees, workTypeFilter]);
 
   const columns = [

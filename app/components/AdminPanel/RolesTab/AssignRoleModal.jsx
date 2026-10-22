@@ -50,9 +50,24 @@ export default function AssignRoleModal({
     return employees.filter((emp) => {
       const statusUpper = (emp.status || emp.__raw?.status || '').toUpperCase();
       const isPending = statusUpper === 'PENDING' || statusUpper === 'PENDING_ADMIN';
-      return !isPending;
+      if (isPending) return false;
+
+      // Hide employees who already have the selected role
+      if (formData.role) {
+        const selected = String(formData.role).toLowerCase();
+        const empRole = emp.role;
+        const empRoleKeys = (
+          empRole && typeof empRole === 'object'
+            ? [empRole.id, empRole.roleName, empRole.displayName, empRole.name]
+            : [empRole]
+        )
+          .filter(Boolean)
+          .map((v) => String(v).toLowerCase());
+        if (empRoleKeys.includes(selected)) return false;
+      }
+      return true;
     });
-  }, [employees]);
+  }, [employees, formData.role]);
 
   const filteredEmployees = useMemo(() => {
     const query = (formData.employeeId || '').trim().toLowerCase();

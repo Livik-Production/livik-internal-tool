@@ -133,6 +133,9 @@ export default function EmployeeView({
         ? new Date(initialData.dateOfJoining).toISOString().slice(0, 10)
         : '',
     workLocation: initialData.workLocation ?? '',
+    workMode: initialData.workMode ?? '',
+    wfoOffice: initialData.wfoOffice ?? '',
+    workType: initialData.workType ?? '',
     bankName: initialData.bankName ?? '',
     accountNumber: initialData.accountNumber ?? '',
     ifscCode: initialData.ifscCode ?? '',
