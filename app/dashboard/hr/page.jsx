@@ -1214,12 +1214,14 @@ function HRPageContent() {
               >
                 Salary Details
               </TabButton>
-              <TabButton
-                isActive={viewingEmployeeTab === 'leave'}
-                onClick={() => setViewingEmployeeTab('leave')}
-              >
-                Leave/Permission History
-              </TabButton>
+              {activeMainTab !== 'pendingEmployees' && (
+                <TabButton
+                  isActive={viewingEmployeeTab === 'leave'}
+                  onClick={() => setViewingEmployeeTab('leave')}
+                >
+                  Leave/Permission History
+                </TabButton>
+              )}
             </nav>
 
             <div className="flex-1 overflow-hidden min-h-0 flex flex-col relative">
