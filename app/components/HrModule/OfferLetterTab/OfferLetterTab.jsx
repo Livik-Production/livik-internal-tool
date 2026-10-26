@@ -151,7 +151,11 @@ const OfferLetterTab = ({ isViewOnly = false }) => {
   const employees =
     employeesFromRedux && employeesFromRedux.length > 0
       ? employeesFromRedux
-        .filter((emp) => emp.status?.toUpperCase() === 'ACTIVE')
+        .filter(
+          (emp) =>
+            emp.status?.toUpperCase() === 'ACTIVE' &&
+            (emp.workType || emp.__raw?.workType || '').toUpperCase() !== 'MANAGEMENT'
+        )
         .map((emp) => ({
           id: emp.id || '',
           empId: emp.empId || emp.__raw?.empId || '',

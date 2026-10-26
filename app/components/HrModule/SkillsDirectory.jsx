@@ -96,7 +96,14 @@ const SkillsDirectory = ({ isTab = false, isViewOnly = false }) => {
       const res = await fetch('/api/employees');
       if (!res.ok) throw new Error('Failed to fetch employees');
       const data = await res.json();
-      setEmployees(data);
+      setEmployees(
+        data.filter(
+          (e) =>
+            (e.status || '').toUpperCase() !== 'INACTIVE' &&
+            e.isActive !== false &&
+            (e.workType || '').toUpperCase() !== 'MANAGEMENT'
+        )
+      );
     } catch (error) {
       console.error('Fetch employees error:', error);
       toast.error('Failed to load employee directory');

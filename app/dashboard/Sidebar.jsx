@@ -183,6 +183,8 @@ const hasModuleRight = (itemId, userRights) => {
           r.includes('site_operations') ||
           r.includes('livik_site')
       );
+    case 'crm':
+      return lowerRights.some((r) => r.includes('crm'));
     case 'admin-panel':
       return lowerRights.some((r) => r.includes('admin'));
     case 'livik site operations':

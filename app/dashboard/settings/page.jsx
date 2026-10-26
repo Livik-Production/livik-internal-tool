@@ -13,6 +13,7 @@ import HrModuleSettingsTab from '../../components/Settings/HrModuleSettingsTab';
 import LookupDataTab from '../../components/Settings/LookupDataTab';
 import PayrollSettingsTab from '../../components/Settings/PayrollSettingsTab';
 import NumberFormatsTab from '../../components/Settings/NumberFormatsTab';
+import SequencesTab from '../../components/Settings/SequencesTab';
 import TabButton from '../../components/Buttons/TabButton';
 
 export default function SettingsPage() {
@@ -107,6 +108,12 @@ export default function SettingsPage() {
             >
               Number Formats
             </TabButton>
+            <TabButton
+              isActive={activeTab === 'sequences'}
+              onClick={() => setActiveTab('sequences')}
+            >
+              Sequences
+            </TabButton>
           </div>
 
           {/* Tab Content */}
@@ -117,6 +124,7 @@ export default function SettingsPage() {
             {activeTab === 'lookup' && <LookupDataTab />}
             {activeTab === 'payroll_new' && <PayrollSettingsTab />}
             {activeTab === 'numberFormats' && <NumberFormatsTab />}
+            {activeTab === 'sequences' && <SequencesTab />}
           </div>
         </div>
       </div>

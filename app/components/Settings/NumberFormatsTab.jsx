@@ -45,6 +45,10 @@ export default function NumberFormatsTab() {
     suffix: '',
   });
 
+  // State for CRM ID formats
+  const [selectedCrmType, setSelectedCrmType] = useState('Lead');
+  const [crmConfigs, setCrmConfigs] = useState({});
+
   // Asset category and format mapping states
   const [assetCategories, setAssetCategories] = useState([]);
   const [selectedAssetType, setSelectedAssetType] = useState('Other');
@@ -74,6 +78,11 @@ export default function NumberFormatsTab() {
           if (data.quotation) setQuotationConfig(data.quotation);
           if (data.employee) setEmployeeConfig(data.employee);
           if (data.contract_employee) setContractEmployeeConfig(data.contract_employee);
+          const newCrmConfigs = {};
+          if (data.crm_lead) newCrmConfigs['Lead'] = data.crm_lead;
+          if (data.crm_company) newCrmConfigs['Company'] = data.crm_company;
+          if (data.crm_interview) newCrmConfigs['Interview'] = data.crm_interview;
+          setCrmConfigs(newCrmConfigs);
           
           const newAssetConfigs = {};
           Object.keys(data).forEach(key => {
@@ -131,6 +140,24 @@ export default function NumberFormatsTab() {
     }));
   };
 
+  const handleCrmChange = (field, value) => {
+    setCrmConfigs((prev) => ({
+      ...prev,
+      [selectedCrmType]: {
+        ...(prev[selectedCrmType] || getCrmDefaultConfig(selectedCrmType)),
+        [field]: value,
+      }
+    }));
+  };
+
+  const getCrmDefaultConfig = (type) => {
+    if (type === 'Company') return { prefix: 'LK-CRM-CMP-', nextNumber: '0001', padding: 4, suffix: '' };
+    if (type === 'Interview') return { prefix: 'LK-CRM-INT-', nextNumber: '0001', padding: 4, suffix: '' };
+    return { prefix: 'LK-CRM-LD-', nextNumber: '0001', padding: 4, suffix: '' };
+  };
+
+  const currentCrmConfig = crmConfigs[selectedCrmType] || getCrmDefaultConfig(selectedCrmType);
+
   const handleAssetChange = (field, value) => {
     setAssetConfigs((prev) => ({
       ...prev,
@@ -154,6 +181,10 @@ export default function NumberFormatsTab() {
         payload.employee = employeeConfig;
       } else if (section === 'contract') {
         payload.contract_employee = contractEmployeeConfig;
+      } else if (section === 'crm') {
+        payload.crm_lead = crmConfigs['Lead'] || getCrmDefaultConfig('Lead');
+        payload.crm_company = crmConfigs['Company'] || getCrmDefaultConfig('Company');
+        payload.crm_interview = crmConfigs['Interview'] || getCrmDefaultConfig('Interview');
       } else if (section === 'asset') {
         payload[`asset_${selectedAssetType}`] = assetConfigs[selectedAssetType] || getAssetDefaultConfig(selectedAssetType);
       }
@@ -170,7 +201,7 @@ export default function NumberFormatsTab() {
         throw new Error('Failed to update number formats');
       }
 
-      const sectionName = section === 'contract' ? 'Contract Employee' : section === 'asset' ? 'Asset Tag' : section.charAt(0).toUpperCase() + section.slice(1);
+      const sectionName = section === 'contract' ? 'Contract Employee' : section === 'asset' ? 'Asset Tag' : section === 'crm' ? 'CRM' : section.charAt(0).toUpperCase() + section.slice(1);
       showSuccessToast(`${sectionName} format updated successfully!`);
     } catch (error) {
       console.error(error);
@@ -775,6 +806,160 @@ export default function NumberFormatsTab() {
                 {isSaving === 'contract' ? (
                   <>
                     <div className="h-3 w-3 border-[1.5px] border-white border-t-transparent rounded-full animate-spin"></div>
+                    Saving...
+                  </>
+                ) : (
+                  'Save'
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* ================= CRM ID FORMAT CARD ================= */}
+          <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
+                <div className="p-2 bg-pink-50 text-pink-600 rounded-xl">
+                  <Users size={20} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-800 text-sm">
+                    CRM ID Format
+                  </h3>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {/* Select Type */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                    Select CRM Entity
+                  </label>
+                  <select
+                    value={selectedCrmType}
+                    onChange={(e) => setSelectedCrmType(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-pink-50/50 focus:border-pink-400 outline-none transition-all bg-white font-mono"
+                  >
+                    <option value="Lead">Lead</option>
+                    <option value="Company">Company</option>
+                    <option value="Interview">Interview</option>
+                  </select>
+                </div>
+
+                {/* Prefix */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                    Prefix
+                  </label>
+                  <input
+                    type="text"
+                    value={currentCrmConfig.prefix}
+                    onChange={(e) =>
+                      handleCrmChange('prefix', e.target.value)
+                    }
+                    placeholder="e.g. LK-CRM-LD-"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-pink-50/50 focus:border-pink-400 outline-none transition-all font-mono"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Next Sequence Number */}
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                      Next Number
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={currentCrmConfig.nextNumber}
+                      onChange={(e) =>
+                        handleCrmChange('nextNumber', e.target.value)
+                      }
+                      placeholder="e.g. 1"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-pink-50/50 focus:border-pink-400 outline-none transition-all font-mono"
+                    />
+                  </div>
+
+                  {/* Padding */}
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                      Number Padding
+                    </label>
+                    <select
+                      value={currentCrmConfig.padding}
+                      onChange={(e) =>
+                        handleCrmChange(
+                          'padding',
+                          parseInt(e.target.value, 10)
+                        )
+                      }
+                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-pink-50/50 focus:border-pink-400 outline-none transition-all bg-white font-mono"
+                    >
+                      <option value={2}>2 Digits (e.g. 01)</option>
+                      <option value={3}>3 Digits (e.g. 001)</option>
+                      <option value={4}>4 Digits (e.g. 0001)</option>
+                      <option value={5}>5 Digits (e.g. 00001)</option>
+                      <option value={6}>6 Digits (e.g. 000001)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Suffix */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                    Suffix
+                  </label>
+                  <input
+                    type="text"
+                    value={currentCrmConfig.suffix}
+                    onChange={(e) =>
+                      handleCrmChange('suffix', e.target.value)
+                    }
+                    placeholder="e.g. -LD"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-pink-50/50 focus:border-pink-400 outline-none transition-all font-mono"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Live Preview Block */}
+            <div className="mt-6 pt-5 border-t border-gray-100">
+              <span className="text-[10px] uppercase tracking-wider font-bold text-gray-400 block mb-2">
+                Live Format Preview
+              </span>
+              <div className="bg-pink-50/50 border border-pink-100 rounded-xl p-3.5 flex items-center justify-between">
+                <span className="text-xs font-medium text-pink-800">
+                  Generated ID:
+                </span>
+                <span className="font-mono text-sm font-bold text-pink-700 bg-pink-100 px-3 py-1 rounded-lg">
+                  {getFormattedNumber(currentCrmConfig)}
+                </span>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setCrmConfigs((prev) => ({
+                    ...prev,
+                    [selectedCrmType]: getCrmDefaultConfig(selectedCrmType)
+                  }));
+                }}
+                className="px-4 py-2 text-xs font-semibold text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Reset
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSaveSection('crm')}
+                disabled={isSaving === 'crm'}
+                className="px-4 py-2 text-xs font-bold text-white bg-[#004475] rounded-lg hover:bg-[#003355] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+              >
+                {isSaving === 'crm' ? (
+                  <>
+                    <div className="w-3 h-3 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                     Saving...
                   </>
                 ) : (

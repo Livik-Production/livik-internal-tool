@@ -50,7 +50,7 @@ export async function GET() {
 export async function PUT(request) {
   try {
     const body = await request.json();
-    const modules = ['invoice', 'quotation', 'employee', 'contract_employee'];
+    const modules = ['invoice', 'quotation', 'employee', 'contract_employee', 'crm_lead'];
     // Add dynamic asset keys from the request body
     Object.keys(body).forEach(key => {
       if (key.startsWith('asset_') && !modules.includes(key)) {
@@ -105,6 +105,20 @@ export async function PUT(request) {
               console.error('Failed to set contract employee sequence:', seqErr);
             }
           }
+        } else if (mod === 'crm_lead' && nextNumber) {
+          const nextVal = parseInt(nextNumber, 10);
+          if (!isNaN(nextVal)) {
+            try {
+              await prisma.$executeRawUnsafe(`CREATE SEQUENCE IF NOT EXISTS crm_lead_number_seq START 1;`);
+              if (nextVal > 1) {
+                await prisma.$executeRawUnsafe(`SELECT setval('crm_lead_number_seq', ${nextVal - 1}, true)`);
+              } else {
+                await prisma.$executeRawUnsafe(`SELECT setval('crm_lead_number_seq', ${nextVal}, false)`);
+              }
+            } catch (seqErr) {
+              console.error('Failed to set crm_lead sequence:', seqErr);
+            }
+          }
         } else if (mod.startsWith('asset_') && nextNumber) {
           const nextVal = parseInt(nextNumber, 10);
           if (!isNaN(nextVal)) {
@@ -126,6 +140,8 @@ export async function PUT(request) {
             oldS = { prefix: 'LK', padding: 3, suffix: '' };
           } else if (mod === 'contract_employee') {
             oldS = { prefix: 'LKC', padding: 3, suffix: '' };
+          } else if (mod === 'crm_lead') {
+            oldS = { prefix: 'LD-', padding: 4, suffix: '' };
           } else if (mod.startsWith('asset_')) {
             const assetType = mod.slice(6);
             const defaultKeywords = {
@@ -243,6 +259,30 @@ export async function PUT(request) {
           }, {
             timeout: 30000 // Increase timeout to 30 seconds to support larger datasets on remote DB
           });
+        } else if (mod === 'crm_lead') {
+          const leads = await prisma.crmLead.findMany({ where: { leadId: { not: null } } });
+          
+          // Step 1: Set temporary IDs to avoid unique constraint collisions
+          for (const lead of leads) {
+            await prisma.crmLead.update({
+              where: { id: lead.id },
+              data: { leadId: lead.leadId + '_temp' },
+            });
+          }
+          const usedSequences = new Set();
+          // Step 2: Format to final new IDs
+          for (const lead of leads) {
+            let seq = extractSequence(lead.leadId, oldS.prefix, oldS.suffix);
+            while (usedSequences.has(seq)) {
+              seq++;
+            }
+            usedSequences.add(seq);
+            const newLeadId = `${prefix || ''}${String(seq).padStart(Number(padding || 3), '0')}${suffix || ''}`;
+            await prisma.crmLead.update({
+              where: { id: lead.id },
+              data: { leadId: newLeadId },
+            });
+          }
         }
 
         updatedSettings[mod] = {

@@ -818,34 +818,56 @@ model WorkAnniversaryEmailLog {
 model CrmLead {
   id String @id @default(cuid())
 
+  leadId String? @unique @map("lead_id")
+
   companyName    String  @map("company_name")
-  companyAddress String? @map("company_address")
   companyEmail   String? @map("company_email")
-  companyWebsite String? @map("company_website")
+  websiteUrl     String? @map("website_url")
+  linkedinUrl    String? @map("linkedin_url")
+  companyAddress String? @map("company_address")
 
-  pocName       String  @map("poc_name")
-  pocDepartment String? @map("poc_department")
-  pocMobile     String? @map("poc_mobile")
-  pocEmail      String? @map("poc_email")
+  leadName    String  @map("lead_name")
+  department  String? @map("department")
+  phoneNumber String? @map("phone_number")
+  email       String? @map("email")
+  whatsapp    String? @map("whatsapp")
 
-  assigneeType String    @map("assignee_type") // "EMPLOYEE" | "CONTRACT_EMPLOYEE"
-  assigneeId   String?   @map("assignee_id")
-  assignee     Employee? @relation(fields: [assigneeId], references: [id])
+  source          String? @map("source")
+  expectedRevenue String? @map("expected_revenue")
+  leadStage       String  @default("New") @map("lead_stage")
 
-  date      DateTime? @map("date")
-  time      String?   @map("time")
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
-  createdBy String?   @map("created_by")
-  updatedBy String?   @map("updated_by")
-  notes     String?   @map("notes")
+  leadOwnerType String    @map("lead_owner_type") // "EMPLOYEE" | "CONTRACT_EMPLOYEE"
+  leadOwnerId   String?   @map("lead_owner_id")
+  leadOwner     Employee? @relation(fields: [leadOwnerId], references: [id])
+  leadOwnerName String?   @map("lead_owner_name")
 
-  reminderName String?   @map("reminder_name")
-  reminderDate DateTime? @map("reminder_date")
+  date            DateTime? @map("date")
+  time            String?   @map("time")
+  activityDetails String?   @map("activity_details")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  createdBy       String?   @map("created_by")
+  updatedBy       String?   @map("updated_by")
+  visibility      String    @default("Everyone") @map("visibility")
 
-  status String @default("New")
+  followUps CrmLeadFollowUp[]
 
   @@map("crm_leads")
+}
+
+model CrmLeadFollowUp {
+  id        String   @id @default(cuid())
+  leadId    String   @map("lead_id")
+  date      DateTime
+  time      String
+  notes     String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  lead      CrmLead  @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([leadId])
+  @@index([date])
+  @@map("crm_lead_follow_ups")
 }
 
 model EmployeeExit {
@@ -862,4 +884,76 @@ model EmployeeExit {
   createdAt           DateTime  @default(now()) @map("created_at")
   updatedAt           DateTime  @updatedAt @map("updated_at")
   employee            Employee  @relation("ExitEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+model CrmCompany {
+  id              String   @id @default(cuid())
+  companyId       String?  @unique @map("company_id")
+  companyName     String   @map("company_name")
+  email           String?  @map("email")
+  websiteUrl      String?  @map("website_url")
+  linkedinUrl     String?  @map("linkedin_url")
+  address         String?  @map("address")
+  expectedRevenue String?  @map("expected_revenue")
+  industry        String?  @map("industry")
+  city            String?  @map("city")
+  state           String?  @map("state")
+  country         String?  @map("country")
+  contactName     String?  @map("contact_name")
+  contactPhone    String?  @map("contact_phone")
+  documentUrl     String?  @map("document_url")
+  source          String?  @map("source")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("crm_companies")
+}
+
+model CrmInterview {
+  id                String    @id @default(cuid())
+  interviewId       String?   @unique @map("interview_id")
+  title             String    @map("title")
+  jobDescription    String?   @map("job_description")
+  description       String?   @map("description")
+  candidateName     String    @map("candidate_name")
+  date              DateTime? @map("date")
+  time              String?   @map("time")
+  interviewersName  String?   @map("interviewers_name")
+  interviewersEmail String?   @map("interviewers_email")
+  companyName       String?   @map("company_name")
+  result            String    @default("Pending") @map("result")
+  feedback          String?   @map("feedback")
+  notes             String?   @map("notes")
+  organizerName     String?   @map("organizer_name")
+  organizerPhone    String?   @map("organizer_phone")
+  organizerEmail    String?   @map("organizer_email")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@map("crm_interviews")
+}
+
+model CrmLocalLead {
+  id          String   @id @default(cuid())
+  leadId      String?  @unique @map("lead_id")
+  leadName    String   @map("lead_name")
+  phoneNumber String   @map("phone_number")
+  leadOwner   String   @map("lead_owner")
+  date        DateTime @map("date")
+
+  whatsapp    String? @map("whatsapp")
+  email       String? @map("email")
+  linkedinUrl String? @map("linkedin_url")
+  companyName String? @map("company_name")
+  source      String? @map("source")
+  visibility  String  @default("Everyone") @map("visibility")
+  keywords    String? @map("keywords")
+  notes       String? @map("notes")
+  stage       String  @default("New") @map("stage")
+  followUps   Json?   @default("[]") @map("follow_ups")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("crm_local_leads")
 }

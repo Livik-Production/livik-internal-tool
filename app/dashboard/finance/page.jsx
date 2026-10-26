@@ -5,7 +5,6 @@ import { useSelector } from 'react-redux';
 import { useSearchParams } from 'next/navigation';
 import OverviewForm from '../../components/Finance/Overview';
 import InvoiceTable from '../../components/Finance/InvoiceTab/Invoice';
-import QuotationTable from '../../components/Finance/QuotationTab/Quotation';
 import PaymentTable from '../../components/Finance/PaymentTab/Payment';
 import ExpensesTable from '../../components/Finance/ExpenseTab/Expenses';
 import Loader from '../../components/Loader';
@@ -21,7 +20,6 @@ import NotificationBell from '../../components/NotificationBell';
 const TAB_CONFIG = [
   { id: 'overview', label: 'Dashboard', right: 'finance_view_overview' },
   { id: 'invoice', label: 'Invoice', right: 'finance_view_invoices' },
-  { id: 'quotation', label: 'Proforma Invoice', right: 'finance_view_quotations' },
   { id: 'payment', label: 'Payments', right: 'finance_view_payments' },
   { id: 'expenses', label: 'Expenses', right: 'finance_view_expenses' },
 ];
@@ -101,7 +99,7 @@ function FinanceContent() {
           receiptNumber: `REC-${expense.id.slice(-6).toUpperCase()}`,
           approvedBy: 'Admin',
           department: 'General',
-          notes: expense.remarks || 'No notes',
+          notes: expense.remarks || '-',
           // Map API fields to your existing structure
           date: expense.expenseDate,
           category: expense.category,
@@ -172,6 +170,10 @@ function FinanceContent() {
         setExpenses((prev) =>
           prev.filter((expense) => expense.id !== expenseId)
         );
+
+        if (typeof window !== 'undefined' && window.refreshFinanceData) {
+          await window.refreshFinanceData();
+        }
 
         // Close modal if the deleted expense is currently open
         if (selectedRecord && selectedRecord.id === expenseId) {
@@ -254,14 +256,14 @@ function FinanceContent() {
     setExpenseModalOpen(true);
   };
 
-  const handleExpenseSuccess = async () => {
+  const handleExpenseSuccess = async (savedExpense) => {
+    // Trigger internal refresh in ExpensesTable to update its local state, category summary, and balance in hand
+    if (typeof window !== 'undefined' && window.refreshFinanceData) {
+      await window.refreshFinanceData(savedExpense);
+    }
+
     // Re-fetch in FinancePage silently to update combined financeData
     await fetchExpenses(true);
-
-    // Trigger internal refresh in ExpensesTable to update its local state without layout reset
-    if (typeof window !== 'undefined' && window.refreshFinanceData) {
-      window.refreshFinanceData();
-    }
 
     setExpenseModalOpen(false);
   };
@@ -419,8 +421,6 @@ function FinanceContent() {
                   onRefresh={fetchInvoices}
                 />
               )}
-
-              {activeTab === 'quotation' && <QuotationTable />}
               {activeTab === 'payment' && (
                 <PaymentTable
                   invoices={invoices}

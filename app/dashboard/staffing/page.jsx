@@ -95,7 +95,8 @@ function StaffingContent() {
         const activeEmployees = Array.isArray(eData)
           ? eData.filter((emp) => {
               const statusUpper = (emp.status || emp.__raw?.status || '').toUpperCase();
-              return statusUpper === 'ACTIVE';
+              const workType = (emp.workType || emp.__raw?.workType || '').toUpperCase();
+              return statusUpper === 'ACTIVE' && workType !== 'MANAGEMENT';
             })
           : [];
         setBenchData(
