@@ -53,6 +53,7 @@ const UpdateLeaveRequestTab = ({
   const [balanceHistory, setBalanceHistory] = useState([]);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [workTypeFilter, setWorkTypeFilter] = useState('REGULAR');
   const [companyHolidays, setCompanyHolidays] = useState([]);
   const [isMonthDropdownOpen, setIsMonthDropdownOpen] = useState(false);
 
