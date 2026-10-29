@@ -22,6 +22,7 @@ import IconButton from '../../Buttons/IconButton';
 import CustomModalForm from '../../CustomModalForm';
 
 const WORK_TYPE_OPTIONS = [
+  { value: 'REGULAR,CONTRACT', label: 'Regular + Contract' },
   { value: 'REGULAR', label: 'Regular' },
   { value: 'CONTRACT', label: 'Contract' },
 ];
@@ -53,6 +54,7 @@ const UpdateLeaveRequestTab = ({
   const [balanceHistory, setBalanceHistory] = useState([]);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [workTypeFilter, setWorkTypeFilter] = useState('REGULAR,CONTRACT');
   const [companyHolidays, setCompanyHolidays] = useState([]);
   const [isMonthDropdownOpen, setIsMonthDropdownOpen] = useState(false);
 
@@ -530,7 +532,7 @@ const UpdateLeaveRequestTab = ({
           </div>
 
           {/* Work Type Selector */}
-          <div className="w-36">
+          <div className="w-52">
             <FilterDropdown
               options={WORK_TYPE_OPTIONS}
               value={workTypeFilter}
