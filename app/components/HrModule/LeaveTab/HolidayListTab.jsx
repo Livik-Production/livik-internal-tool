@@ -19,6 +19,7 @@ import Loader from '../../Loader';
 import CustomModalForm from '../../CustomModalForm';
 import IconButton from '../../Buttons/IconButton';
 import FilterDropdown from '../../Buttons/FilterDropdown';
+import useTimedState from '../../../../utils/useTimedState';
 
 // Export static holiday list so other components can reuse it
 export const HOLIDAYS = [
@@ -207,7 +208,7 @@ const HolidayListTab = ({
 
   // Year filter logic
   const now = new Date();
-  const [selectedYear, setSelectedYear] = useState(now.getFullYear().toString());
+  const [selectedYear, setSelectedYear] = useTimedState('hr.hol.year', now.getFullYear().toString());
 
   const yearOptions = [];
   const startYear = 2025;
@@ -227,10 +228,10 @@ const HolidayListTab = ({
   }
 
   // Month Selection State
-  const [selectedMonthIndex, setSelectedMonthIndex] = useState(null);
+  const [selectedMonthIndex, setSelectedMonthIndex] = useTimedState('hr.hol.month', null);
 
   // Local Search State
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useTimedState('hr.hol.search', '');
 
   // Detail Modal State
   const [selectedHoliday, setSelectedHoliday] = useState(null);

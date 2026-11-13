@@ -1,6 +1,10 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
+
+// Fixed, app-wide rows-per-page choices (rowsPerPageOptions prop is ignored)
+const ROWS_PER_PAGE_OPTIONS = [5, 10, 15, 20, 25, 50, 100];
+const MIN_ITEMS_TO_PAGINATE = 5;
 
 export default function Pagination({
   currentPage,
@@ -10,30 +14,18 @@ export default function Pagination({
   rowsPerPageOptions, // ignored to enforce global pagination rules
   onItemsPerPageChange,
 }) {
-  const options = useMemo(() => {
-    const opts = [];
-    if (totalItems > 7) {
-      opts.push(10);
-    }
-    if (totalItems > 20) {
-      opts.push(20);
-    }
-    if (totalItems > 50) {
-      opts.push(50);
-    }
-    if (totalItems > 100) {
-      opts.push(100);
-    }
-    return opts;
-  }, [totalItems]);
+  const options = ROWS_PER_PAGE_OPTIONS;
 
   useEffect(() => {
-    if (totalItems > 7 && options.length > 0 && !options.includes(itemsPerPage)) {
-      onItemsPerPageChange?.(options[0]);
+    if (
+      totalItems > MIN_ITEMS_TO_PAGINATE &&
+      !options.includes(itemsPerPage)
+    ) {
+      onItemsPerPageChange?.(10);
     }
   }, [totalItems, itemsPerPage, options, onItemsPerPageChange]);
 
-  if (totalItems <= 7) {
+  if (totalItems <= MIN_ITEMS_TO_PAGINATE) {
     return null;
   }
 

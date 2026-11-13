@@ -10,6 +10,7 @@ import UpdateLeaveRequestTab from './UpdateLeaveRequestTab';
 import AttendanceTab from '../AttendanceTab/AttendanceTab';
 import CustomModalForm from '../../CustomModalForm';
 import TabButton from '../../Buttons/TabButton';
+import useTimedState from '../../../../utils/useTimedState';
 
 const leaveSubTabs = [
   { id: 'attendance', label: 'Attendance' },
@@ -33,7 +34,8 @@ export default function LeaveMainTab({
   initialSubTab = null,
   isViewOnly = false,
 }) {
-  const [activeLeaveTab, setActiveLeaveTab] = useState(
+  const [activeLeaveTab, setActiveLeaveTab] = useTimedState(
+    'hr.leave.subTab',
     initialSubTab || 'attendance'
   );
   const [animatingSubTab, setAnimatingSubTab] = useState(false);

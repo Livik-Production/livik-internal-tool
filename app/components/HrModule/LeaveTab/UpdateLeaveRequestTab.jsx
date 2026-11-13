@@ -20,6 +20,7 @@ import BalanceDetailModal from './BalanceDetailModal';
 import FilterDropdown from '../../Buttons/FilterDropdown';
 import IconButton from '../../Buttons/IconButton';
 import CustomModalForm from '../../CustomModalForm';
+import useTimedState from '../../../../utils/useTimedState';
 
 const WORK_TYPE_OPTIONS = [
   { value: 'REGULAR,CONTRACT', label: 'Regular + Contract' },
@@ -35,7 +36,7 @@ const UpdateLeaveRequestTab = ({
 }) => {
   const [data, setData] = useState([]);
   const authUser = useSelector((state) => state.auth?.user);
-  const [searchQuery, setSearchQuery] = useState(''); // Local State
+  const [searchQuery, setSearchQuery] = useTimedState('hr.bal.search', ''); // Local State
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -52,9 +53,9 @@ const UpdateLeaveRequestTab = ({
   const [openedFromDetails, setOpenedFromDetails] = useState(false);
   const [selectedBalanceData, setSelectedBalanceData] = useState(null);
   const [balanceHistory, setBalanceHistory] = useState([]);
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [workTypeFilter, setWorkTypeFilter] = useState('REGULAR,CONTRACT');
+  const [selectedMonth, setSelectedMonth] = useTimedState('hr.bal.month', new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useTimedState('hr.bal.year', new Date().getFullYear());
+  const [workTypeFilter, setWorkTypeFilter] = useTimedState('hr.bal.workType', 'REGULAR,CONTRACT');
   const [companyHolidays, setCompanyHolidays] = useState([]);
   const [isMonthDropdownOpen, setIsMonthDropdownOpen] = useState(false);
 
@@ -470,7 +471,7 @@ const UpdateLeaveRequestTab = ({
                   onClick={() => setIsMonthDropdownOpen(false)}
                 />
                 <div className="absolute z-[999] mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-xl max-h-[200px] overflow-y-auto no-scrollbar">
-                  {Array.from({ length: 12 }, (_, i) => {
+                  {Array.from({ length: 12 }, (_, i) => 11 - i).map((i) => {
                     const monthIndex = i + 1;
                     const isDisabled = selectedYear === 2025 && monthIndex < 9;
                     const date = new Date(2000, i, 1);
@@ -883,7 +884,7 @@ const UpdateLeaveRequestTab = ({
                   Select Month
                 </label>
                 <FilterDropdown
-                  options={Array.from({ length: 12 }, (_, i) => {
+                  options={Array.from({ length: 12 }, (_, i) => 11 - i).map((i) => {
                     const monthIndex = i + 1;
                     const currentYear = parseInt(
                       formData.monthYear.split('/')[1]
