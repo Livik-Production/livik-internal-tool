@@ -3,6 +3,8 @@ import Button from '../../Buttons/Button';
 import HyperlinkButton from '../../Buttons/HyperlinkButton';
 
 import { useState, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { setFilter } from '../../../../store/slices/approvalsSlice';
 import { Search, ChevronDown, X } from 'lucide-react';
 import CustomTable from '../../CustomTable';
 import Loader from '../../Loader';
@@ -18,8 +20,12 @@ const ApprovalsTab = ({ onViewLeaveDetails }) => {
   const [actionLoading, setActionLoading] = useState(false);
 
   // Local state for filters
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const dispatch = useDispatch();
+  const { filter } = useSelector((state) => state.approvals);
+
+  const searchQuery = filter.searchQuery || '';
+  const statusFilter = filter.statusFilter || 'all';
+
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
@@ -271,14 +277,14 @@ const ApprovalsTab = ({ onViewLeaveDetails }) => {
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => dispatch(setFilter({ searchQuery: e.target.value }))}
               placeholder="Search approvals..."
               className="px-3 py-2 pl-10 pr-9 border border-gray-300 rounded-lg text-sm w-64 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
             />
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
             {searchQuery && (
               <IconButton
-                onClick={() => setSearchQuery('')}
+                onClick={() => dispatch(setFilter({ searchQuery: '' }))}
                 className="absolute right-2 top-0.5 shadow-none bg-transparent hover:bg-transparent"
                 title="Clear search"
               >
@@ -299,7 +305,7 @@ const ApprovalsTab = ({ onViewLeaveDetails }) => {
                 { value: 'Rejected', label: 'Rejected' },
               ]}
               value={statusFilter}
-              onChange={(val) => setStatusFilter(val)}
+              onChange={(val) => dispatch(setFilter({ statusFilter: val }))}
               placeholder="Status"
               className="min-w-[140px]"
             />

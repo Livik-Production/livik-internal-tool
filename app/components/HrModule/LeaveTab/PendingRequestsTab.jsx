@@ -19,6 +19,7 @@ import {
   X,
   ArrowUpDown,
 } from 'lucide-react';
+import useTimedState from '../../../../utils/useTimedState';
 
 const LeaveRequestsTab = ({
   approvals = [],
@@ -34,9 +35,9 @@ const LeaveRequestsTab = ({
   // State to store leave history per employee
   const [employeeHistoryMap, setEmployeeHistoryMap] = useState({});
   const [loadingHistory, setLoadingHistory] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortOrder, setSortOrder] = useState('desc'); // 'asc' | 'desc'
-  const [requestType, setRequestType] = useState('leave'); // 'leave' | 'permission'
+  const [searchQuery, setSearchQuery] = useTimedState('hr.pending.search', '');
+  const [sortOrder, setSortOrder] = useTimedState('hr.pending.sort', 'desc'); // 'asc' | 'desc'
+  const [requestType, setRequestType] = useTimedState('hr.pending.type', 'leave'); // 'leave' | 'permission'
   const [confirmingPermission, setConfirmingPermission] = useState(null); // permission object for confirm modal
 
   // Pagination states

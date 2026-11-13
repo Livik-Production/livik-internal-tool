@@ -22,6 +22,7 @@ import AttendanceDetailedModal from './AttendanceDetailedModal';
 import Loader from '../../Loader';
 import ConfirmDialog from '../../ConfirmDialog';
 import FilterDropdown from '../../Buttons/FilterDropdown';
+import useTimedState from '../../../../utils/useTimedState';
 
 const WORK_TYPE_OPTIONS = [
   { value: 'REGULAR,CONTRACT', label: 'Regular + Contract' },
@@ -35,7 +36,7 @@ export default function AttendanceTab({
   isAdmin = false,
 }) {
   const [data, setData] = useState([]);
-  const [workTypeFilter, setWorkTypeFilter] = useState('REGULAR,CONTRACT');
+  const [workTypeFilter, setWorkTypeFilter] = useTimedState('hr.att.workType', 'REGULAR,CONTRACT');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -48,10 +49,12 @@ export default function AttendanceTab({
 
   // Initialize with current month and year
   const now = new Date();
-  const [selectedMonthNum, setSelectedMonthNum] = useState(
+  const [selectedMonthNum, setSelectedMonthNum] = useTimedState(
+    'hr.att.monthNum',
     (now.getMonth() + 1).toString().padStart(2, '0')
   );
-  const [selectedYear, setSelectedYear] = useState(
+  const [selectedYear, setSelectedYear] = useTimedState(
+    'hr.att.year',
     now.getFullYear().toString()
   );
 
@@ -101,7 +104,7 @@ export default function AttendanceTab({
       return monthVal <= currentMonthNum;
     }
     return true;
-  });
+  }).reverse(); // newest month first (Nov, Oct, Sep ...)
 
   // Ensure selectedMonthNum is valid for the current selectedYear
   useEffect(() => {
@@ -111,13 +114,13 @@ export default function AttendanceTab({
     if (!isAvailable && filteredMonthOptions.length > 0) {
       // Default to the last available month in the list
       setSelectedMonthNum(
-        filteredMonthOptions[filteredMonthOptions.length - 1].value
+        filteredMonthOptions[0].value
       );
     }
   }, [selectedYear, filteredMonthOptions, selectedMonthNum]);
 
   // Local Search State
-  const [localSearch, setLocalSearch] = useState('');
+  const [localSearch, setLocalSearch] = useTimedState('hr.att.search', '');
 
   // Fetch available months for dropdown
   const fetchAvailableMonths = async () => {
