@@ -26,7 +26,6 @@ import FilterDropdown from '../../Buttons/FilterDropdown';
 const WORK_TYPE_OPTIONS = [
   { value: 'REGULAR,CONTRACT', label: 'Regular + Contract' },
   { value: 'REGULAR', label: 'Regular' },
-  { value: 'MANAGEMENT', label: 'Management' },
   { value: 'CONTRACT', label: 'Contract' },
 ];
 
@@ -713,7 +712,7 @@ export default function AttendanceTab({
           <span className="text-sm font-medium text-gray-700">
             Work Type :
           </span>
-          <div className="w-36">
+          <div className="w-52">
             <FilterDropdown
               options={WORK_TYPE_OPTIONS.map((o) => ({
                 value: o.value,
