@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
+import { SESSION_COOKIE, verifySession } from './lib/session';
 
-export function proxy(req) {
+export async function proxy(req) {
   const { pathname } = req.nextUrl;
   const url = req.nextUrl.clone();
 
-  const authSession = req.cookies.get('auth_session')?.value;
+  const authSession = req.cookies.get(SESSION_COOKIE)?.value;
 
   // 🔐 Protect dashboard and API routes
   const isDashboard = pathname.startsWith('/dashboard');
@@ -29,15 +30,16 @@ const isPublicApi =
       return NextResponse.redirect(url);
     }
 
-    let session;
-    try {
-      session = JSON.parse(authSession);
-    } catch {
-      if (isApi) {
-        return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
-      }
+    const session = await verifySession(authSession);
+    if (!session) {
+      // Unsigned, tampered, expired or otherwise invalid: treat as logged out
+      // and clear the bad cookie.
       url.pathname = '/login';
-      return NextResponse.redirect(url);
+      const res = isApi
+        ? NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        : NextResponse.redirect(url);
+      res.cookies.delete(SESSION_COOKIE);
+      return res;
     }
 
     // minimal validation

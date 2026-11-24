@@ -1,21 +1,21 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { safeExecute } from '../../../../lib/dbHelpers';
+import { SESSION_COOKIE, verifySession } from '../../../../lib/session';
 
 export async function GET() {
   try {
     const cookieStore = await cookies();
-    const sessionValue = cookieStore.get('auth_session')?.value;
+    const sessionValue = cookieStore.get(SESSION_COOKIE)?.value;
 
     if (!sessionValue) {
       return NextResponse.json({ user: null }, { status: 200 });
     }
 
-    let session;
-    try {
-      session = JSON.parse(sessionValue);
-    } catch {
-      return NextResponse.json({ user: null }, { status: 200 });
+    const session = await verifySession(sessionValue);
+    if (!session) {
+      cookieStore.delete(SESSION_COOKIE);
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const employeeId = session?.employeeId;

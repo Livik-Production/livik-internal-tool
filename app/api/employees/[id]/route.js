@@ -7,6 +7,7 @@ import {
   checkRoleAssignmentPermission,
 } from '../../../../lib/employeeService';
 import { cookies } from 'next/headers';
+import { SESSION_COOKIE, verifySession } from '../../../../lib/session';
 import { createDocumentRequest } from '../../../../lib/documentService';
 import { prisma } from '../../../../lib/prisma';
 import transporter from '../../../../config/emailConfig';
@@ -85,15 +86,16 @@ export async function PUT(req, context) {
 
     // Check for document updates by HR roles
     const cookieStore = await cookies();
-    const sessionValue = cookieStore.get('auth_session')?.value;
+    const sessionValue = cookieStore.get(SESSION_COOKIE)?.value;
     let currentUser = null;
     if (sessionValue) {
-      try {
-        const session = JSON.parse(sessionValue);
-        // We need the role from DB to be sure, but let's assume session has roleName
-        // For production, we'd fetch fresh role info
-        currentUser = session;
-      } catch (err) {}
+      // We need the role from DB to be sure, but let's assume session has roleName
+      // For production, we'd fetch fresh role info
+      currentUser = await verifySession(sessionValue);
+      if (!currentUser) {
+        cookieStore.delete(SESSION_COOKIE);
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
     }
 
     // Check if roleId or role is being modified in PUT request
