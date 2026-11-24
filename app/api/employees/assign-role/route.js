@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { safeExecute } from '../../../../lib/dbHelpers';
 import { cookies } from 'next/headers';
+import { SESSION_COOKIE, verifySession } from '../../../../lib/session';
 import { checkRoleAssignmentPermission } from '../../../../lib/employeeService';
 
 export async function POST(req) {
@@ -17,7 +18,7 @@ export async function POST(req) {
 
     // Get current logged-in user session
     const cookieStore = await cookies();
-    const sessionValue = cookieStore.get('auth_session')?.value;
+    const sessionValue = cookieStore.get(SESSION_COOKIE)?.value;
     if (!sessionValue) {
       return NextResponse.json(
         { error: 'Unauthorized: Session not found' },
@@ -25,14 +26,10 @@ export async function POST(req) {
       );
     }
 
-    let session;
-    try {
-      session = JSON.parse(sessionValue);
-    } catch (err) {
-      return NextResponse.json(
-        { error: 'Unauthorized: Invalid session' },
-        { status: 401 }
-      );
+    const session = await verifySession(sessionValue);
+    if (!session) {
+      cookieStore.delete(SESSION_COOKIE);
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const requesterId = session.employeeId;

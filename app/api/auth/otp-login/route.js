@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { safeExecute } from '../../../../lib/dbHelpers';
+import {
+  SESSION_COOKIE,
+  signSession,
+  sessionCookieOptions,
+} from '../../../../lib/session';
 
 export async function POST(req) {
   try {
@@ -99,17 +104,13 @@ export async function POST(req) {
       lastName: employee.lastName,
     };
 
-    const maxAge = 60 * 60; // 1 hour
-
     const cookieStore = await cookies();
 
-    cookieStore.set('auth_session', JSON.stringify(sessionPayload), {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge,
-    });
+    cookieStore.set(
+      SESSION_COOKIE,
+      await signSession(sessionPayload),
+      sessionCookieOptions
+    );
 
     return NextResponse.json(
       { success: true, message: 'Login successful' },

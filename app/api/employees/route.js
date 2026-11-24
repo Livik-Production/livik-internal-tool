@@ -6,6 +6,7 @@ import {
   checkRoleAssignmentPermission,
 } from '../../../lib/employeeService';
 import { cookies } from 'next/headers';
+import { SESSION_COOKIE, verifySession } from '../../../lib/session';
 import sendMail from '../../../utils/emailService';
 
 export async function GET() {
@@ -64,13 +65,15 @@ export async function POST(req) {
     const body = await req.json();
 
     const cookieStore = await cookies();
-    const sessionValue = cookieStore.get('auth_session')?.value;
+    const sessionValue = cookieStore.get(SESSION_COOKIE)?.value;
     let session = null;
-    
+
     if (sessionValue) {
-      try {
-        session = JSON.parse(sessionValue);
-      } catch (err) {}
+      session = await verifySession(sessionValue);
+      if (!session) {
+        cookieStore.delete(SESSION_COOKIE);
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
     }
 
     // Check role assignment permission if roleId is provided during creation

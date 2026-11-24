@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import bcrypt from 'bcrypt';
 import { safeExecute } from '../../../../lib/dbHelpers';
+import { SESSION_COOKIE, verifySession } from '../../../../lib/session';
 
 /**
  * POST /api/employees/password/check
@@ -64,7 +65,7 @@ export async function PATCH(req) {
 
     // 1. Check for active session (set by OTP login)
     const cookieStore = await cookies();
-    const sessionCookie = cookieStore.get('auth_session');
+    const sessionCookie = cookieStore.get(SESSION_COOKIE);
 
     if (!sessionCookie) {
       return NextResponse.json(
@@ -73,14 +74,10 @@ export async function PATCH(req) {
       );
     }
 
-    let sessionUser;
-    try {
-      sessionUser = JSON.parse(sessionCookie.value);
-    } catch (e) {
-      return NextResponse.json(
-        { message: 'Invalid session.' },
-        { status: 401 }
-      );
+    const sessionUser = await verifySession(sessionCookie.value);
+    if (!sessionUser) {
+      cookieStore.delete(SESSION_COOKIE);
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Optional: Verify mobile/ID matches session
